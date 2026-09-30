@@ -1214,6 +1214,45 @@ select.champ__saisie {
   }
 }
 
+/* ----------------------------------------------- Ecran du jour */
+
+.ligne-rayon-jour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.ligne-rayon-jour:last-child {
+  border-bottom: none;
+}
+
+.ligne-rayon-jour__nom {
+  font-weight: 600;
+}
+
+.ligne-remplacant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ligne-remplacant__nom {
+  margin: 0 0 2px;
+  font-weight: 650;
+}
+
+.ligne-remplacant__reserve {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: var(--avertissement);
+}
+
 /* ---------------------------------------------- Documents imprimables */
 
 .apercu-document {

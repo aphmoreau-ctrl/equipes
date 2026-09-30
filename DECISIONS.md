@@ -328,3 +328,39 @@ figure sur un document imprimé — y compris quand une remarque a été saisie
 juste avant.
 **Raison.** C'est une règle absolue du projet. Une règle qui n'est pas testée
 finit toujours par être enfreinte par accident.
+
+---
+
+## Lot 6 — Écran du jour et remplacements
+
+### D-36 — Les absences n'enregistrent que le type et les dates
+**Décision.** Aucun champ de commentaire sur une absence. Sept types : congé
+payé, RTT, maladie, absence autorisée, formation, accident du travail, autre.
+**Raison.** RGPD. « Maladie » suffit à organiser le travail ; la nature de la
+maladie ne regarde pas l'employeur. Un champ libre finirait tôt ou tard par
+contenir ce qu'il ne devrait pas. L'écran le rappelle au moment de la saisie.
+**Alternative.** Un commentaire libre — pratique, mais c'est exactement le
+genre de champ qui fait basculer un fichier du côté interdit.
+
+### D-37 — Un remplaçant n'a pas à savoir tout faire
+**Décision.** Une personne n'est écartée que si elle n'est autonome sur
+**aucune** des compétences manquantes du créneau. Ce qu'elle ne couvre pas
+apparaît en réserve, et le classement favorise qui en couvre le plus.
+**Raison.** Exiger d'une seule personne toutes les compétences du rayon
+écartait dix-neuf collaborateurs sur vingt : la liste de remplaçants était
+toujours vide. Un remplacement se fait rarement à l'identique.
+**Alternative.** Exiger toutes les compétences — inutilisable en pratique.
+
+### D-38 — Le classement des remplaçants explique toujours ses choix
+**Décision.** Chaque proposition affiche ses atouts et ses réserves ; chaque
+personne écartée affiche le motif exact.
+**Raison.** Le cahier des charges veut une proposition, pas une décision. Sans
+explication, il serait impossible de contester le classement — donc impossible
+de lui faire confiance.
+
+### D-39 — Une absence rend la personne invisible, sans effacer sa vacation
+**Décision.** Déclarer une absence retire la personne des présents et découvre
+le rayon, mais sa vacation reste au planning jusqu'à ce qu'un remplaçant soit
+choisi.
+**Raison.** C'est ce qui permet de lister « les vacations à remplacer ». Effacer
+la vacation ferait disparaître le problème au lieu de le montrer.

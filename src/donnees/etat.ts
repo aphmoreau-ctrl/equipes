@@ -1,3 +1,4 @@
+import type { Absence } from '../domaine/absence'
 import type { Collaborateur } from '../domaine/collaborateur'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
@@ -25,6 +26,7 @@ export interface EtatApplication {
   readonly magasin: Magasin
   readonly configurations: readonly ConfigurationRayon[]
   readonly collaborateurs: readonly Collaborateur[]
+  readonly absences: readonly Absence[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -47,6 +49,7 @@ export function etatInitial(): EtatApplication {
     magasin: MAGASIN_DEMO,
     configurations: CONFIGURATIONS_DEMO,
     collaborateurs: COLLABORATEURS_DEMO,
+    absences: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,

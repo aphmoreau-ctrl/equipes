@@ -25,7 +25,7 @@ export const MODULES: readonly Module[] = [
     titre: "Aujourd’hui",
     resume: 'Qui est là, dans quel rayon, les trous de couverture et les alertes du jour.',
     livraison: 'Lot 6',
-    pret: false,
+    pret: true,
   },
   {
     id: 'planning',

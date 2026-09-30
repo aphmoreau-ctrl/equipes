@@ -150,12 +150,14 @@ describe('navigation, une fois l application ouverte', () => {
     expect(menu).toBeInTheDocument()
   })
 
-  it('ouvre l ecran d accueil sur « Aujourd’hui »', () => {
+  it('ouvre l ecran d accueil sur « Aujourd’hui », desormais construit', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Aujourd’hui')
+    expect(screen.getByText('Absence imprévue')).toBeInTheDocument()
   })
 
-  it('annonce clairement les ecrans pas encore construits', () => {
-    expect(screen.getByText('Cet écran n’est pas encore construit')).toBeInTheDocument()
+  it('annonce clairement les ecrans pas encore construits', async () => {
+    fireEvent.click(screen.getByRole('link', { name: /Heures/ }))
+    expect(await screen.findByText('Cet écran n’est pas encore construit')).toBeInTheDocument()
   })
 
   it('affiche l ecran Parametres avec la version', async () => {

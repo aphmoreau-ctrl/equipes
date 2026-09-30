@@ -7,6 +7,7 @@ import { Besoin } from './ecrans/Besoin'
 import { Equipe } from './ecrans/Equipe'
 import { Alertes } from './ecrans/Alertes'
 import { Planning } from './ecrans/Planning'
+import { Aujourdhui } from './ecrans/Aujourdhui'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -72,6 +73,8 @@ export function App() {
                     <Alertes />
                   ) : module.id === 'planning' ? (
                     <Planning />
+                  ) : module.id === 'aujourdhui' ? (
+                    <Aujourdhui />
                   ) : (
                     <EcranAVenir module={module} />
                   )

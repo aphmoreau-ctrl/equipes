@@ -80,6 +80,7 @@ export const heuresComplementaires: Regle = {
 
       for (const [lundi, semaine] of grouperParSemaine(vacationsDe(vacations, collaborateurId))) {
         const total = semaine.reduce((somme, v) => somme + dureeTravailEffectif(v), 0)
+
         if (total > plafond) {
           infractions.push({
             regle: 'heures-complementaires',
@@ -91,6 +92,26 @@ export const heuresComplementaires: Regle = {
               `${dureeEnTexte(total)} prévues la semaine du ${lundi}, pour un contrat de ` +
               `${dureeEnTexte(contrat)}. Le plafond est de ${dureeEnTexte(plafond)} ` +
               `(${parametres.plafondHeuresComplementairesPourcent} % au-dessus du contrat).`,
+          })
+        }
+
+        /*
+         * Les heures complementaires ne peuvent JAMAIS porter la duree de
+         * travail au niveau de la duree legale (L3123-9) : au-dela, le contrat
+         * devrait etre requalifie en temps plein.
+         */
+        if (total >= parametres.dureeLegaleHebdomadaireMinutes) {
+          infractions.push({
+            regle: 'heures-complementaires',
+            severite: parametres.severites['heures-complementaires'],
+            collaborateurId,
+            jour: lundi,
+            libelle: `Temps partiel porté à la durée légale : ${dureeEnTexte(total)}`,
+            explication:
+              `${dureeEnTexte(total)} prévues la semaine du ${lundi} pour un contrat à temps ` +
+              `partiel. Les heures complémentaires ne peuvent jamais atteindre la durée ` +
+              `légale de ${dureeEnTexte(parametres.dureeLegaleHebdomadaireMinutes)} : ` +
+              `le contrat devrait alors être requalifié en temps plein.`,
           })
         }
       }
@@ -112,11 +133,17 @@ export function verifierDureeMinimaleTempsPartiel(
 
   for (const collaborateur of collaborateurs) {
     if (!collaborateur.actif || collaborateur.tempsPlein) continue
-    // Les etudiants et les apprentis relevent de regimes derogatoires.
-    if (collaborateur.contrat === 'etudiant' || collaborateur.contrat === 'apprenti') continue
 
     const contrat = minutesHebdomadaires(collaborateur)
     if (contrat >= parametres.dureeMinimaleTempsPartielMinutes) continue
+
+    /*
+     * Aucune dispense silencieuse : meme pour un etudiant ou un apprenti, le
+     * constat est affiche. La derogation existe, mais elle doit etre ECRITE :
+     * la signaler vaut mieux que la supposer.
+     */
+    const derogationCourante =
+      collaborateur.contrat === 'etudiant' || collaborateur.contrat === 'apprenti'
 
     infractions.push({
       regle: 'temps-partiel-coupures',
@@ -127,7 +154,9 @@ export function verifierDureeMinimaleTempsPartiel(
       explication:
         `Le contrat prévoit ${dureeEnTexte(contrat)} par semaine, sous la durée minimale ` +
         `de ${dureeEnTexte(parametres.dureeMinimaleTempsPartielMinutes)}. ` +
-        `Une dérogation écrite est nécessaire (demande du salarié, cumul d’emplois, études).`,
+        (derogationCourante
+          ? `Une dérogation existe pour ce type de contrat, mais elle doit figurer par écrit.`
+          : `Une dérogation écrite est nécessaire (demande du salarié, cumul d’emplois, études).`),
     })
   }
 

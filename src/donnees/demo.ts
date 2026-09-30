@@ -80,9 +80,9 @@ export const MAGASIN_DEMO: Magasin = {
   },
 
   horairesTypes: [
-    { id: 'matin', nom: 'Matin', debut: '05:30', fin: '12:30', pauseMinutes: 20 },
-    { id: 'journee', nom: 'Journée', debut: '07:00', fin: '14:00', pauseMinutes: 20 },
-    { id: 'apres-midi', nom: 'Après-midi', debut: '13:30', fin: '20:30', pauseMinutes: 20 },
+    { id: 'matin', nom: 'Matin', debut: '05:30', fin: '12:30', pauseMinutes: 20, pauseDebut: '09:00' },
+    { id: 'journee', nom: 'Journée', debut: '07:00', fin: '14:00', pauseMinutes: 20, pauseDebut: '10:30' },
+    { id: 'apres-midi', nom: 'Après-midi', debut: '13:30', fin: '20:30', pauseMinutes: 20, pauseDebut: '17:00' },
   ],
 
   evenements: [

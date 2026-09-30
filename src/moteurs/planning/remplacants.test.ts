@@ -50,6 +50,7 @@ function chercher(
     absences?: readonly Absence[]
     vacations?: readonly Vacation[]
     competences?: readonly string[]
+    critiques?: readonly string[]
   } = {},
 ) {
   return chercherDesRemplacants({
@@ -58,6 +59,7 @@ function chercher(
     absences: options.absences ?? [],
     vacationsDeLaSemaine: options.vacations ?? [],
     competencesRequises: options.competences ?? ['mise en place'],
+    competencesCritiques: options.critiques ?? [],
     reposQuotidienMinutes: 11 * 60,
   })
 }
@@ -97,19 +99,45 @@ describe('qui est écarté, et pourquoi', () => {
     expect(chercher([debutant]).ecartes[0]?.motif).toContain('autonome sur aucune')
   })
 
-  it('garde qui couvre une partie des compétences, avec une réserve', () => {
+  it('range à part qui ne couvre qu’une partie du poste', () => {
     const partiel = personne({ id: 'a', competences: { 'mise en place': 2 } })
     const resultat = chercher([partiel], { competences: ['mise en place', 'commandes'] })
-    expect(resultat.possibles).toHaveLength(1)
-    expect(resultat.possibles[0]?.atouts.join(' ')).toContain('1 compétence sur 2')
-    expect(resultat.possibles[0]?.reserves.join(' ')).toContain('commandes')
+    expect(resultat.possibles).toEqual([])
+    expect(resultat.partiels).toHaveLength(1)
+    expect(resultat.partiels[0]?.reserves.join(' ')).toContain('commandes')
   })
 
-  it('préfère qui couvre le plus de compétences', () => {
+  it('ne propose en remplacement que qui couvre tout le poste', () => {
     const complet = personne({ id: 'complet', competences: { 'mise en place': 2, commandes: 2 } })
     const partiel = personne({ id: 'partiel', competences: { 'mise en place': 2 } })
     const resultat = chercher([partiel, complet], { competences: ['mise en place', 'commandes'] })
-    expect(resultat.possibles[0]?.collaborateur.id).toBe('complet')
+    expect(resultat.possibles.map((r) => r.collaborateur.id)).toEqual(['complet'])
+    expect(resultat.partiels.map((r) => r.collaborateur.id)).toEqual(['partiel'])
+  })
+
+  it('écarte sans discussion qui n’a pas une compétence critique', () => {
+    // Quelqu'un de tres bien par ailleurs, mais pas boucher.
+    const polyvalent = personne({
+      id: 'polyvalent',
+      competences: { 'mise en place': 3, 'hygiène': 3 },
+      contactAutorise: true,
+    })
+    const resultat = chercher([polyvalent], {
+      competences: ['mise en place', 'boucherie'],
+      critiques: ['boucherie'],
+    })
+    expect(resultat.possibles).toEqual([])
+    expect(resultat.partiels).toEqual([])
+    expect(resultat.ecartes[0]?.motif).toContain('indispensable pour tenir ce poste')
+  })
+
+  it('accepte qui possède la compétence critique', () => {
+    const boucher = personne({ id: 'boucher', competences: { boucherie: 2, 'mise en place': 2 } })
+    const resultat = chercher([boucher], {
+      competences: ['mise en place', 'boucherie'],
+      critiques: ['boucherie'],
+    })
+    expect(resultat.possibles.map((r) => r.collaborateur.id)).toEqual(['boucher'])
   })
 
   it('n’écarte jamais sans expliquer', () => {

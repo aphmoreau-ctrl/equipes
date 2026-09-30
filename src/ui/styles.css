@@ -941,6 +941,24 @@ select.champ__saisie {
   color: var(--alerte);
 }
 
+/* « A confirmer » : ni alerte, ni validation. Discret, sans couleur d'alarme. */
+.verdict--discret {
+  color: var(--texte-doux);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.alerte--discret {
+  border-left-color: var(--bordure);
+  border-left-style: dashed;
+  opacity: 0.85;
+}
+
+.alerte--discret .alerte__titre {
+  font-weight: 500;
+  color: var(--texte-doux);
+}
+
 .etat {
   display: inline-block;
   font-size: 13px;

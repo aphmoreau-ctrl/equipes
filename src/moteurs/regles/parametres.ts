@@ -14,8 +14,9 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
   dureeMaximaleQuotidienneMinutes: 10 * 60,
   // Derogation exceptionnelle (inventaire, etc.) : 12 h.
   dureeMaximaleQuotidienneDerogationMinutes: 12 * 60,
-  // Moins de 18 ans : 8 h par jour.
+  // Moins de 18 ans : 8 h par jour et 35 h par semaine (L3162-1).
   dureeMaximaleQuotidienneJeuneMinutes: 8 * 60,
+  dureeMaximaleHebdomadaireJeuneMinutes: 35 * 60,
   // Duree maximale sur une semaine isolee : 48 h.
   dureeMaximaleHebdomadaireMinutes: 48 * 60,
   // Moyenne maximale sur 12 semaines consecutives : 44 h.
@@ -24,12 +25,22 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
   reposQuotidienMinutes: 11 * 60,
   // Moins de 18 ans : 12 h consecutives.
   reposQuotidienJeuneMinutes: 12 * 60,
-  // Repos hebdomadaire : 35 h consecutives (24 h + 11 h).
+  // Repos hebdomadaire : 35 h consecutives (24 h de repos hebdomadaire
+  // AUXQUELLES S'AJOUTENT les 11 h de repos quotidien) - L3132-2.
   reposHebdomadaireMinutes: 35 * 60,
+  // Moins de 18 ans : deux jours consecutifs, soit 48 h (L3164-2).
+  reposHebdomadaireJeuneMinutes: 48 * 60,
+  // Six jours de travail au maximum par semaine civile (L3132-1).
+  joursMaximumParSemaine: 6,
+  // Moins de 18 ans : cinq jours, puisqu'il leur faut deux jours de repos.
+  joursMaximumParSemaineJeune: 5,
   // Une pause est due des 6 h de travail...
   seuilDeclenchantLaPauseMinutes: 6 * 60,
   // ... et elle dure au minimum 20 min.
   dureeMinimaleDeLaPauseMinutes: 20,
+  // Moins de 18 ans : 30 min des 4 h 30 de travail (L3162-3).
+  seuilDeclenchantLaPauseJeuneMinutes: 4 * 60 + 30,
+  dureeMinimaleDeLaPauseJeuneMinutes: 30,
   // Delai de prevenance avant un changement de planning, en jours ouvres.
   delaiDePrevenanceJoursOuvres: 7,
   // Contingent annuel d'heures supplementaires (convention 2216).
@@ -66,6 +77,7 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
     'duree-moyenne-12-semaines': 'bloquante',
     'repos-quotidien': 'bloquante',
     'repos-hebdomadaire': 'bloquante',
+    'jours-maximum-par-semaine': 'bloquante',
     'pause-obligatoire': 'bloquante',
     'temps-partiel-coupures': 'bloquante',
     'heures-complementaires': 'bloquante',

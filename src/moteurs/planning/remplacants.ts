@@ -37,7 +37,10 @@ export interface Obstacle {
 }
 
 export interface RechercheRemplacants {
+  /** Personnes qui couvrent TOUT ce qui manque : elles tiennent le poste. */
   readonly possibles: readonly Remplacant[]
+  /** Personnes qui n'en couvrent qu'une partie : un renfort, pas un remplacement. */
+  readonly partiels: readonly Remplacant[]
   readonly ecartes: readonly Obstacle[]
 }
 
@@ -50,6 +53,12 @@ interface Contexte {
   readonly vacationsDeLaSemaine: readonly Vacation[]
   /** Competences exigees sur le creneau. */
   readonly competencesRequises: readonly string[]
+  /**
+   * Competences CRITIQUES : sans elles, le poste ne peut pas etre tenu.
+   * Un boucher qualifie au comptoir n'est remplacable que par un boucher.
+   * Qui ne les a pas est ecarte, sans discussion.
+   */
+  readonly competencesCritiques: readonly string[]
   /** Repos quotidien minimal, en minutes. */
   readonly reposQuotidienMinutes: number
 }
@@ -59,10 +68,18 @@ interface Contexte {
  * sont ecartes. Deterministe : a donnees egales, le meme ordre.
  */
 export function chercherDesRemplacants(contexte: Contexte): RechercheRemplacants {
-  const { vacation, collaborateurs, absences, vacationsDeLaSemaine, competencesRequises } = contexte
+  const {
+    vacation,
+    collaborateurs,
+    absences,
+    vacationsDeLaSemaine,
+    competencesRequises,
+    competencesCritiques,
+  } = contexte
   const jour = jourDeLaSemaine(vacation.jour)
 
   const possibles: Remplacant[] = []
+  const partiels: Remplacant[] = []
   const ecartes: Obstacle[] = []
 
   for (const collaborateur of collaborateurs) {
@@ -96,10 +113,27 @@ export function chercherDesRemplacants(contexte: Contexte): RechercheRemplacants
     }
 
     /*
-     * Competences : un remplacant n'a pas a savoir tout faire. Exiger d'une
-     * seule personne toutes les competences du rayon ecarterait presque tout
-     * le monde. On ecarte donc seulement qui n'en couvre AUCUNE ; ce qu'il ne
-     * couvre pas est signale en reserve.
+     * Competences CRITIQUES : sans elles, le poste ne peut pas etre tenu.
+     * Aucune tolerance, aucune exception : un comptoir boucherie ne se
+     * remplace que par quelqu'un d'autonome en boucherie.
+     */
+    const critiquesManquantes = competencesCritiques.filter(
+      (competence) => !estAutonome(collaborateur, competence),
+    )
+    if (critiquesManquantes.length > 0) {
+      ecartes.push({
+        collaborateur,
+        motif:
+          `${nom} n’est pas autonome en « ${critiquesManquantes.join(' », « ')} », ` +
+          `indispensable pour tenir ce poste.`,
+      })
+      continue
+    }
+
+    /*
+     * Autres competences : un remplacant n'a pas a savoir tout faire. Qui n'en
+     * couvre aucune est ecarte ; qui n'en couvre qu'une partie est propose a
+     * part, comme renfort et non comme remplacement.
      */
     const couvertes = competencesRequises.filter((competence) =>
       estAutonome(collaborateur, competence),
@@ -191,13 +225,17 @@ export function chercherDesRemplacants(contexte: Contexte): RechercheRemplacants
       atouts.push('Accepte d’être contacté')
     }
 
-    possibles.push({ collaborateur, score, atouts, reserves })
+    const proposition = { collaborateur, score, atouts, reserves }
+    if (manquantes.length === 0) possibles.push(proposition)
+    else partiels.push(proposition)
   }
 
+  const parScore = (a: Remplacant, b: Remplacant) =>
+    b.score - a.score || a.collaborateur.id.localeCompare(b.collaborateur.id)
+
   return {
-    possibles: possibles.sort(
-      (a, b) => b.score - a.score || a.collaborateur.id.localeCompare(b.collaborateur.id),
-    ),
+    possibles: possibles.sort(parScore),
+    partiels: partiels.sort(parScore),
     ecartes: ecartes.sort((a, b) => a.collaborateur.id.localeCompare(b.collaborateur.id)),
   }
 }

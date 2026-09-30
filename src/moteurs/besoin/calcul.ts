@@ -83,6 +83,7 @@ export function calculerBesoin(
   for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
     const minutesParBloc: Record<string, number> = {}
     const competences = new Set<string>()
+    const critiques = new Set<string>()
     let minutesDeLaTranche = 0
 
     for (const bloc of blocsActifs) {
@@ -91,6 +92,10 @@ export function calculerBesoin(
       minutesParBloc[bloc.id] = minutes
       minutesDeLaTranche += minutes
       for (const competence of bloc.competences) competences.add(competence)
+      for (const competence of bloc.competencesCritiques ?? []) {
+        competences.add(competence)
+        critiques.add(competence)
+      }
     }
 
     // La presence minimum est la plus exigeante entre celle du rayon (pendant
@@ -118,6 +123,7 @@ export function calculerBesoin(
       minutesTotal: minutesDeLaTranche,
       personnes,
       competences: [...competences].sort(),
+      competencesCritiques: [...critiques].sort(),
     })
   }
 

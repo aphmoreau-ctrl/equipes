@@ -1,3 +1,4 @@
+import { ajouterJours, lundiDeLaSemaine } from '../../../domaine/calendrier'
 import { dureeEnTexte } from '../../../domaine/temps'
 import { dureeTravailEffectif, grouperParJournee } from '../regroupement'
 import { grouperParSemaine, vacationsDe, collaborateursConcernes } from '../reperes'
@@ -53,13 +54,18 @@ export const dureeMaximaleHebdomadaire: Regle = {
   nom: 'Durée maximale de travail par semaine',
   reference: 'Code du travail, article L3121-20',
 
-  verifier({ vacations, parametres }) {
+  verifier({ vacations, parametres, collaborateurs }) {
     const infractions: Infraction[] = []
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
+      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const plafond = mineur
+        ? parametres.dureeMaximaleHebdomadaireJeuneMinutes
+        : parametres.dureeMaximaleHebdomadaireMinutes
+
       for (const [lundi, semaine] of grouperParSemaine(vacationsDe(vacations, collaborateurId))) {
         const total = semaine.reduce((somme, v) => somme + dureeTravailEffectif(v), 0)
-        if (total > parametres.dureeMaximaleHebdomadaireMinutes) {
+        if (total > plafond) {
           infractions.push({
             regle: 'duree-maximale-hebdomadaire',
             severite: parametres.severites['duree-maximale-hebdomadaire'],
@@ -68,9 +74,9 @@ export const dureeMaximaleHebdomadaire: Regle = {
             libelle: `Semaine trop longue : ${dureeEnTexte(total)}`,
             explication:
               `${dureeEnTexte(total)} de travail effectif sur la semaine du ${lundi}, ` +
-              `soit ${dureeEnTexte(total - parametres.dureeMaximaleHebdomadaireMinutes)} ` +
-              `de plus que le plafond de ` +
-              `${dureeEnTexte(parametres.dureeMaximaleHebdomadaireMinutes)}.`,
+              `soit ${dureeEnTexte(total - plafond)} de plus que le plafond de ` +
+              `${dureeEnTexte(plafond)}` +
+              (mineur ? ' (moins de 18 ans).' : '.'),
           })
         }
       }
@@ -94,31 +100,43 @@ export const dureeMoyenneSur12Semaines: Regle = {
     const toutes = [...vacationsAnterieures, ...vacations]
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
-      const semaines = [...grouperParSemaine(vacationsDe(toutes, collaborateurId))].sort(
-        ([a], [b]) => a.localeCompare(b),
-      )
+      const siennes = vacationsDe(toutes, collaborateurId)
+      if (siennes.length === 0) continue
 
-      // On ne se prononce qu'avec douze semaines completes d'historique.
-      for (let fin = 12; fin <= semaines.length; fin += 1) {
-        const fenetre = semaines.slice(fin - 12, fin)
-        const total = fenetre.reduce(
-          (somme, [, semaine]) =>
-            somme + semaine.reduce((sousTotal, v) => sousTotal + dureeTravailEffectif(v), 0),
-          0,
-        )
-        const moyenne = total / 12
+      const parSemaine = grouperParSemaine(siennes)
+
+      /*
+       * Douze semaines CIVILES CONSECUTIVES, et non douze semaines contenant
+       * du travail : sauter les semaines vides gonflerait artificiellement la
+       * moyenne. On parcourt donc le calendrier semaine apres semaine, en
+       * comptant zero pour celles ou rien n'est prevu.
+       */
+      const premiere = lundiDeLaSemaine(siennes[0]!.jour)
+      const derniere = lundiDeLaSemaine(siennes[siennes.length - 1]!.jour)
+
+      const calendrier: { lundi: string; minutes: number }[] = []
+      for (let lundi = premiere; lundi <= derniere; lundi = ajouterJours(lundi, 7)) {
+        const semaine = parSemaine.get(lundi) ?? []
+        calendrier.push({
+          lundi,
+          minutes: semaine.reduce((somme, v) => somme + dureeTravailEffectif(v), 0),
+        })
+      }
+
+      for (let fin = 12; fin <= calendrier.length; fin += 1) {
+        const fenetre = calendrier.slice(fin - 12, fin)
+        const moyenne = fenetre.reduce((somme, s) => somme + s.minutes, 0) / 12
 
         if (moyenne > parametres.dureeMoyenneMaximaleSur12SemainesMinutes) {
-          const premiere = fenetre[0]?.[0] ?? ''
           infractions.push({
             regle: 'duree-moyenne-12-semaines',
             severite: parametres.severites['duree-moyenne-12-semaines'],
             collaborateurId,
-            jour: fenetre[11]?.[0] ?? premiere,
+            jour: fenetre[11]!.lundi,
             libelle: `Moyenne sur 12 semaines trop élevée : ${dureeEnTexte(Math.round(moyenne))}`,
             explication:
               `Moyenne de ${dureeEnTexte(Math.round(moyenne))} par semaine sur les douze ` +
-              `semaines à partir du ${premiere}, au-delà du plafond de ` +
+              `semaines consécutives à partir du ${fenetre[0]!.lundi}, au-delà du plafond de ` +
               `${dureeEnTexte(parametres.dureeMoyenneMaximaleSur12SemainesMinutes)}.`,
           })
         }

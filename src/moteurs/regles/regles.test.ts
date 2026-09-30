@@ -72,8 +72,19 @@ function controler(
   )
 }
 
+/** Constats fermes : on laisse de cote ce qui reste « a confirmer ». */
+function constats(
+  vacations: readonly Vacation[],
+  complements: Parameters<typeof contexteDeVerification>[2] = {},
+  parametres: ParametresRegles = P,
+) {
+  return controler(vacations, complements, parametres).filter(
+    (infraction) => infraction.severite !== 'a-confirmer',
+  )
+}
+
 function regles(vacations: readonly Vacation[], complements = {}): IdentifiantRegle[] {
-  return [...new Set(controler(vacations, complements).map((infraction) => infraction.regle))].sort()
+  return [...new Set(constats(vacations, complements).map((infraction) => infraction.regle))].sort()
 }
 
 /** Semaine type : cinq jours de 7 h, sans aucun probleme. */
@@ -129,11 +140,43 @@ describe('outils de base', () => {
 
 describe('une semaine correcte ne declenche rien', () => {
   it('ne signale aucune infraction', () => {
-    expect(controler(SEMAINE_SAINE)).toEqual([])
+    expect(constats(SEMAINE_SAINE)).toEqual([])
   })
 
   it('ne signale rien sur un planning vide', () => {
     expect(controler([])).toEqual([])
+  })
+})
+
+describe('données incomplètes : « à confirmer », ni alerte ni validation', () => {
+  it('ne valide pas un repos hebdomadaire qu’il ne peut pas mesurer', () => {
+    const constat = controler(SEMAINE_SAINE).find(
+      (infraction) => infraction.regle === 'repos-hebdomadaire',
+    )
+    expect(constat?.severite).toBe('a-confirmer')
+    expect(constat?.libelle).toContain('à confirmer')
+  })
+
+  it('ne compte pas « à confirmer » parmi les règles enfreintes', () => {
+    const resume = resumerInfractions(controler(SEMAINE_SAINE))
+    expect(resume.bloquantes).toBe(0)
+    expect(resume.avertissements).toBe(0)
+    expect(resume.aConfirmer).toBeGreaterThan(0)
+  })
+
+  it('se prononce dès que la semaine suivante est connue', () => {
+    // C'est la semaine SUIVANTE qui permet de mesurer le repos : tant que le
+    // travail ne reprend nulle part, la durée du dernier repos est inconnue.
+    const semaineSuivante = ['2026-11-09', '2026-11-10'].map((jour) =>
+      vacation({ jour, debut: '06:00', fin: '13:20' }),
+    )
+    const indetermines = controler([...SEMAINE_SAINE, ...semaineSuivante])
+      .filter((i) => i.regle === 'repos-hebdomadaire' && i.severite === 'a-confirmer')
+      .map((i) => i.jour)
+
+    expect(indetermines).not.toContain('2026-11-02')
+    // La dernière semaine, elle, reste à confirmer.
+    expect(indetermines).toContain('2026-11-09')
   })
 })
 
@@ -145,7 +188,7 @@ describe('durée maximale par jour', () => {
   })
 
   it('signale un dépassement, même d’une minute', () => {
-    const infractions = controler([vacation({ debut: '05:00', fin: '15:21' })])
+    const infractions = constats([vacation({ debut: '05:00', fin: '15:21' })])
     expect(infractions).toHaveLength(1)
     expect(infractions[0]?.regle).toBe('duree-maximale-quotidienne')
     expect(infractions[0]?.severite).toBe('bloquante')
@@ -283,29 +326,93 @@ describe('repos quotidien', () => {
   })
 })
 
-describe('repos hebdomadaire', () => {
-  it('accepte une semaine avec deux jours de repos', () => {
-    expect(regles(SEMAINE_SAINE)).not.toContain('repos-hebdomadaire')
+describe('repos hebdomadaire : 35 heures consécutives, strictement', () => {
+  it('accepte un repos réel de 35 h ou plus', () => {
+    // Fin samedi 13:20, reprise lundi 06:00 : 40 h 40.
+    const semaine = [2, 3, 4, 5, 6, 7].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '13:20' }),
+    )
+    const suivante = [vacation({ jour: '2026-11-09', debut: '06:00', fin: '13:20' })]
+    expect(regles([...semaine, ...suivante])).not.toContain('repos-hebdomadaire')
+  })
+
+  it('signale 33 h de repos : fin samedi 20h30, reprise lundi 5h30', () => {
+    const semaine = [2, 3, 4, 5, 6].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '13:00', fin: '20:30' }),
+    )
+    semaine.push(vacation({ id: 'samedi', jour: '2026-11-07', debut: '13:00', fin: '20:30' }))
+    const lundiSuivant = vacation({ id: 'lundi-suivant', jour: '2026-11-09', debut: '05:30', fin: '12:50' })
+
+    const infractions = controler([...semaine, lundiSuivant])
+    const repos = infractions.find(
+      (infraction) => infraction.regle === 'repos-hebdomadaire' && infraction.jour === '2026-11-02',
+    )
+    expect(repos).toBeDefined()
+    expect(repos?.severite).toBe('bloquante')
+    expect(repos?.libelle).toContain('33 h')
+  })
+
+  it('refuse 34 h 40 : un dimanche entier ne suffit pas toujours', () => {
+    // Fin samedi 14:00, reprise lundi 00:40 : 34 h 40, sous les 35 h.
+    const semaine = [2, 3, 4, 5, 6, 7].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '14:00' }),
+    )
+    const suivante = vacation({ id: 'nuit', jour: '2026-11-09', debut: '00:40', fin: '05:00', pauseMinutes: 0 })
+    expect(regles([...semaine, suivante])).toContain('repos-hebdomadaire')
+  })
+
+  it('exige 48 h consécutives pour un salarié de moins de 18 ans', () => {
+    // Fin samedi 13:20, reprise lundi 06:00 : 40 h 40.
+    // Suffisant pour un majeur (35 h), insuffisant pour un mineur (48 h).
+    const semaine = [2, 3, 4, 5, 6, 7].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '12:00', pauseMinutes: 30 }),
+    )
+    const suivante = vacation({ id: 'suite', jour: '2026-11-09', debut: '06:00', fin: '12:00', pauseMinutes: 30 })
+    const planning = [...semaine, suivante]
+
+    const majeur = constats(planning).filter((i) => i.regle === 'repos-hebdomadaire')
+    expect(majeur).toEqual([])
+
+    const mineur = constats(planning, { collaborateurs: [personne({ estMineur: true })] })
+    expect(mineur.map((i) => i.regle)).toContain('repos-hebdomadaire')
+  })
+})
+
+describe('six jours par semaine au maximum', () => {
+  it('accepte six jours travaillés', () => {
+    const six = [2, 3, 4, 5, 6, 7].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '13:20' }),
+    )
+    expect(regles(six)).not.toContain('jours-maximum-par-semaine')
   })
 
   it('signale sept jours travaillés d’affilée', () => {
-    const septJours = [2, 3, 4, 5, 6, 7, 8].map((jour) =>
+    const sept = [2, 3, 4, 5, 6, 7, 8].map((jour) =>
       vacation({ jour: `2026-11-0${jour}`, debut: '08:00', fin: '15:20' }),
     )
-    expect(regles(septJours)).toContain('repos-hebdomadaire')
+    const infractions = constats(sept)
+    expect(infractions.map((i) => i.regle)).toContain('jours-maximum-par-semaine')
+    expect(infractions.find((i) => i.regle === 'jours-maximum-par-semaine')?.severite).toBe(
+      'bloquante',
+    )
   })
 
-  it('accepte un repos à cheval sur deux semaines', () => {
-    // Repos du samedi soir au lundi matin : 35 h atteintes sans jour plein.
-    const semaine = [
-      vacation({ jour: '2026-11-02', debut: '06:00', fin: '13:20' }),
-      vacation({ jour: '2026-11-03', debut: '06:00', fin: '13:20' }),
-      vacation({ jour: '2026-11-04', debut: '06:00', fin: '13:20' }),
-      vacation({ jour: '2026-11-05', debut: '06:00', fin: '13:20' }),
-      vacation({ jour: '2026-11-06', debut: '06:00', fin: '13:20' }),
-      vacation({ jour: '2026-11-07', debut: '06:00', fin: '13:20' }),
-    ]
-    expect(regles(semaine)).not.toContain('repos-hebdomadaire')
+  it('ne compte qu’une fois un jour comportant deux vacations', () => {
+    const avecCoupures = [2, 3, 4, 5, 6, 7].flatMap((jour) => [
+      vacation({ id: `m${jour}`, jour: `2026-11-0${jour}`, debut: '06:00', fin: '10:00', pauseMinutes: 0 }),
+      vacation({ id: `s${jour}`, jour: `2026-11-0${jour}`, debut: '11:30', fin: '15:00', pauseMinutes: 0 }),
+    ])
+    expect(regles(avecCoupures)).not.toContain('jours-maximum-par-semaine')
+  })
+
+  it('limite les moins de 18 ans à cinq jours', () => {
+    const six = [2, 3, 4, 5, 6, 7].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '12:00', pauseMinutes: 30 }),
+    )
+    expect(regles(six)).not.toContain('jours-maximum-par-semaine')
+    expect(
+      constats(six, { collaborateurs: [personne({ estMineur: true })] }).map((i) => i.regle),
+    ).toContain('jours-maximum-par-semaine')
   })
 })
 
@@ -324,6 +431,31 @@ describe('pause obligatoire', () => {
 
   it('accepte une pause suffisante', () => {
     expect(regles([vacation({ debut: '06:00', fin: '13:00', pauseMinutes: 20 })])).toEqual([])
+  })
+
+  it('compte le travail de la JOURNÉE, pas de chaque vacation', () => {
+    // Deux vacations de 3 h 30 : aucune n'atteint six heures, mais la journée si.
+    const coupee = [
+      vacation({ id: 'a', debut: '06:00', fin: '09:30', pauseMinutes: 0 }),
+      vacation({ id: 'b', debut: '11:30', fin: '15:00', pauseMinutes: 0 }),
+    ]
+    expect(regles(coupee)).toContain('pause-obligatoire')
+  })
+
+  it('ne compte pas la coupure comme une pause', () => {
+    const coupee = [
+      vacation({ id: 'a', debut: '06:00', fin: '09:30', pauseMinutes: 0 }),
+      vacation({ id: 'b', debut: '13:00', fin: '16:30', pauseMinutes: 0 }),
+    ]
+    expect(regles(coupee)).toContain('pause-obligatoire')
+  })
+
+  it('exige 30 min dès 4 h 30 pour un salarié de moins de 18 ans', () => {
+    const journee = [vacation({ debut: '06:00', fin: '11:00', pauseMinutes: 20 })]
+    expect(regles(journee)).not.toContain('pause-obligatoire')
+    expect(
+      constats(journee, { collaborateurs: [personne({ estMineur: true })] }).map((i) => i.regle),
+    ).toContain('pause-obligatoire')
   })
 
   it('signale une pause trop courte', () => {
@@ -402,13 +534,23 @@ describe('temps partiel', () => {
     expect(infractions[0]?.libelle).toContain('sous la durée minimale')
   })
 
-  it('épargne les étudiants et les apprentis', () => {
-    expect(
-      verifierLesContrats(
-        [personne({ heuresHebdomadaires: 12, tempsPlein: false, contrat: 'etudiant' })],
-        P,
-      ),
-    ).toEqual([])
+  it('signale aussi les étudiants, en rappelant que la dérogation doit être écrite', () => {
+    const infractions = verifierLesContrats(
+      [personne({ heuresHebdomadaires: 12, tempsPlein: false, contrat: 'etudiant' })],
+      P,
+    )
+    expect(infractions).toHaveLength(1)
+    expect(infractions[0]?.explication).toContain('par écrit')
+  })
+
+  it('refuse qu’un temps partiel atteigne la durée légale', () => {
+    const partiel28 = personne({ heuresHebdomadaires: 28, tempsPlein: false })
+    // Cinq jours de 7 h = 35 h : la durée légale est atteinte.
+    const semaine = [2, 3, 4, 5, 6].map((jour) =>
+      vacation({ jour: `2026-11-0${jour}`, debut: '06:00', fin: '13:20' }),
+    )
+    const infractions = constats(semaine, { collaborateurs: [partiel28] })
+    expect(infractions.some((i) => i.libelle.includes('durée légale'))).toBe(true)
   })
 })
 
@@ -538,8 +680,8 @@ describe('moins de 18 ans', () => {
 // ------------------------------------------------------- Vue d’ensemble
 
 describe('cohérence de l’ensemble', () => {
-  it('implémente les douze règles du cahier des charges', () => {
-    expect(REGLES_IMPLEMENTEES).toHaveLength(12)
+  it('implémente les treize règles du cahier des charges', () => {
+    expect(REGLES_IMPLEMENTEES).toHaveLength(13)
   })
 
   it('donne une sévérité, un nom et une référence à chaque règle', () => {
@@ -567,7 +709,7 @@ describe('cohérence de l’ensemble', () => {
   })
 
   it('retrouve les infractions d’une personne', () => {
-    const infractions = controler(
+    const infractions = constats(
       [
         vacation({ collaborateurId: 'a', debut: '05:00', fin: '17:00' }),
         vacation({ collaborateurId: 'b', debut: '06:00', fin: '13:20' }),
@@ -575,7 +717,9 @@ describe('cohérence de l’ensemble', () => {
       { collaborateurs: [personne({ id: 'a' }), personne({ id: 'b' })] },
     )
     expect(infractionsDe(infractions, 'a').length).toBeGreaterThan(0)
-    expect(infractionsDe(infractions, 'b')).toEqual([])
+    expect(
+      infractionsDe(infractions, 'b').filter((i) => i.severite !== 'a-confirmer'),
+    ).toEqual([])
   })
 
   it('suit la sévérité choisie par l’utilisateur', () => {

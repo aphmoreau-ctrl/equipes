@@ -5,7 +5,7 @@ import { jeuneTravailleur } from './regles/jeunes'
 import { travailDeNuit } from './regles/nuit'
 import { pauseObligatoire } from './regles/pause'
 import { delaiDePrevenance } from './regles/prevenance'
-import { reposHebdomadaire, reposQuotidien } from './regles/repos'
+import { joursMaximumParSemaine, reposHebdomadaire, reposQuotidien } from './regles/repos'
 import {
   coupuresTempsPartiel,
   heuresComplementaires,
@@ -23,6 +23,7 @@ export const REGLES_IMPLEMENTEES: readonly Regle[] = [
   dureeMoyenneSur12Semaines,
   reposQuotidien,
   reposHebdomadaire,
+  joursMaximumParSemaine,
   pauseObligatoire,
   coupuresTempsPartiel,
   heuresComplementaires,
@@ -79,14 +80,17 @@ function trier(infractions: readonly Infraction[]): Infraction[] {
 export function resumerInfractions(infractions: readonly Infraction[]): {
   readonly bloquantes: number
   readonly avertissements: number
+  readonly aConfirmer: number
 } {
   let bloquantes = 0
   let avertissements = 0
+  let aConfirmer = 0
   for (const infraction of infractions) {
     if (infraction.severite === 'bloquante') bloquantes += 1
+    else if (infraction.severite === 'a-confirmer') aConfirmer += 1
     else avertissements += 1
   }
-  return { bloquantes, avertissements }
+  return { bloquantes, avertissements, aConfirmer }
 }
 
 /** Infractions concernant une personne donnee. */

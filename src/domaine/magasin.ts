@@ -45,6 +45,8 @@ export interface HoraireType {
   readonly debut: string
   readonly fin: string
   readonly pauseMinutes: number
+  /** Heure a laquelle la pause commence : une personne en pause ne couvre rien. */
+  readonly pauseDebut: string
 }
 
 export interface Evenement {

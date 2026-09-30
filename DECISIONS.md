@@ -179,7 +179,7 @@ et rendaient la démonstration illisible.
 **Alternative.** Garder des budgets arbitraires.
 **À relire en priorité** : ce sont vos vrais budgets qui comptent.
 
-### D-20 — Les comptoirs sont comptés séparément
+### D-20 — Les comptoirs sont comptés séparément ⚠️ *corrigée, voir C-05*
 **Décision.** Chaque comptoir (boucherie, marée, charcuterie, fromage,
 boulangerie) exige sa propre présence minimum toute la journée d'ouverture.
 **Conséquence.** Le besoin calculé pour le fromage et la charcuterie est élevé
@@ -242,7 +242,7 @@ pourra le rappeler plus tard.
 **Alternative.** Enregistrer la date de naissance et calculer — plus pratique,
 mais c'est une donnée personnelle de plus dans un dépôt public.
 
-### D-26 — Repos hebdomadaire : les 24 heures visibles suffisent
+### D-26 — Repos hebdomadaire : les 24 heures visibles suffisent ❌ *ANNULÉE, voir C-01*
 **Décision.** Un repos qui commence dans la semaine et se poursuit après le
 dimanche soir compte comme suffisant dès lors qu'il atteint déjà 24 h avant la
 fin de la semaine.
@@ -253,7 +253,7 @@ d'affilée restent bien signalés : aucun repos de 24 h n'y apparaît.
 **Alternative.** Une fenêtre glissante de sept jours, plus exacte mais qui
 exige de connaître les semaines voisines.
 
-### D-27 — Une règle ne se déclenche que sur un manquement constaté
+### D-27 — Une règle ne se déclenche que sur un manquement constaté ⚠️ *corrigée, voir C-02*
 **Décision.** Quand l'application ignore ce qui précède une semaine, elle ne
 suppose pas le pire : elle ne signale rien.
 **Raison.** Un contrôle qui crie au loup sur des données incomplètes finit par
@@ -293,7 +293,7 @@ inutilisable au clavier. Le toucher fonctionne partout, iPad comme Mac.
 **Alternative.** Le glisser-déposer prévu au cahier des charges — à ajouter
 plus tard, en plus du toucher, pas à la place.
 
-### D-32 — La couverture compte la présence, pas le travail effectif
+### D-32 — La couverture compte la présence, pas le travail effectif ⚠️ *corrigée, voir C-03*
 **Décision.** Une personne présente couvre la tranche entière ; sa pause est
 déduite de son temps de travail, pas de sa présence.
 **Raison.** L'application ne place pas les pauses à la minute près. Compter la
@@ -342,7 +342,7 @@ contenir ce qu'il ne devrait pas. L'écran le rappelle au moment de la saisie.
 **Alternative.** Un commentaire libre — pratique, mais c'est exactement le
 genre de champ qui fait basculer un fichier du côté interdit.
 
-### D-37 — Un remplaçant n'a pas à savoir tout faire
+### D-37 — Un remplaçant n'a pas à savoir tout faire ⚠️ *corrigée, voir C-04*
 **Décision.** Une personne n'est écartée que si elle n'est autonome sur
 **aucune** des compétences manquantes du créneau. Ce qu'elle ne couvre pas
 apparaît en réserve, et le classement favorise qui en couvre le plus.
@@ -402,3 +402,157 @@ chiffre sans signification.
 l'effet sur le besoin. Sur iPhone, l'écran est atteignable en deux touches.
 **Alternative.** Un écran dédié, atteignable en une seule touche depuis
 l'accueil — à envisager si l'usage au rayon le demande.
+
+
+---
+
+# Corrections demandées après relecture (30 septembre 2026)
+
+## C-01 — Repos hebdomadaire : 35 heures, sans aucune tolérance ❗
+**Ce qui n'allait pas.** J'avais accepté qu'un repos débordant sur la semaine
+suivante compte dès 24 h visibles, en supposant que les 11 h de repos quotidien
+suivraient. **C'était un assouplissement d'une règle légale, et il est annulé.**
+
+**Ce qui s'applique désormais.** Le repos hebdomadaire est mesuré **réellement**,
+d'une vacation à la suivante, en utilisant les semaines voisines. 33 h restent
+33 h, même si elles couvrent un dimanche entier.
+
+Un repos est rattaché à la **semaine où il commence** : le repos qui précède le
+premier jour travaillé appartient à la semaine d'avant. Sans cette précision,
+l'incertitude sur la semaine précédente masquait de vraies infractions.
+
+**Cas de test ajouté** — celui que vous avez donné : fin samedi 20 h 30, reprise
+lundi 5 h 30 = **33 h** → infraction bloquante.
+
+**Deux autres contrôles ajoutés dans la foulée :**
+- **Six jours maximum par semaine civile** (L3132-1). Travailler sept jours est
+  interdit en soi, indépendamment de la durée des repos. Cinq jours pour les
+  moins de 18 ans.
+- **48 h consécutives** de repos hebdomadaire pour les moins de 18 ans (L3164-2),
+  au lieu de 35 h.
+
+## C-02 — Données incomplètes : « à confirmer », ni alerte ni validation
+**Ce qui s'applique.** Une troisième mention existe désormais, à côté de
+« bloquante » et « avertissement » : **« à confirmer »**, affichée en gris et en
+pointillés, sans couleur d'alarme et sans compter comme une infraction.
+
+Elle apparaît quand l'application ne peut **pas** se prononcer — typiquement un
+repos hebdomadaire dont on ignore quand le travail reprend, parce que la semaine
+suivante n'est pas encore construite. Elle disparaît d'elle-même dès que la
+semaine voisine est renseignée.
+
+**Le principe est donc inversé** par rapport à D-27 : on ne valide plus
+silencieusement ce qu'on ne peut pas vérifier.
+
+## C-03 — La pause est positionnée, et creuse la couverture
+**Ce qui s'applique.** Chaque horaire type porte désormais une **heure de début
+de pause** (par défaut 09 h 00 le matin, 10 h 30 en journée, 17 h 00
+l'après-midi), réglable dans Paramètres. Une personne **en pause ne couvre plus
+son rayon**.
+
+**Seuil retenu :** une tranche de 30 minutes est comptée non couverte dès que la
+pause en occupe la moitié ou plus. Sans ce seuil, une pause de 20 minutes à
+cheval sur deux tranches en aurait fait perdre soixante.
+
+Une vacation dont la pause n'est pas positionnée continue de voir sa pause
+déduite du temps de travail, sans creuser la couverture : on ne sait pas quand
+elle tombe.
+
+## C-04 — Compétences critiques : aucune tolérance
+**Ce qui s'applique.** Un bloc peut déclarer des **compétences critiques** :
+sans elles, le poste ne peut pas être tenu. C'est le cas du comptoir boucherie
+(`boucherie`), de l'étal marée (`marée`), et des comptoirs charcuterie et
+fromage.
+
+**Un remplaçant qui n'a pas une compétence critique est écarté, sans
+discussion**, quels que soient ses autres atouts. Le motif l'indique :
+« n'est pas autonome en boucherie, indispensable pour tenir ce poste ».
+
+Pour les compétences non critiques, la souplesse de D-37 est conservée, mais
+**deux listes séparées** apparaissent désormais :
+- **« Remplaçants possibles »** — ils couvrent tout le poste ;
+- **« Renforts possibles — ils ne couvrent qu'une partie du poste »**, avec le
+  bouton « Choisir quand même » et la liste de ce qu'ils ne couvrent pas.
+
+Les compétences critiques se règlent bloc par bloc dans Paramètres.
+
+## C-05 — Comptoir partagé entre deux rayons
+**Ce qui s'applique.** Un comptoir peut déclarer qu'il est **tenu avec celui
+d'un autre rayon**. Il apporte alors sa charge de travail, mais **n'exige
+personne de plus** : la présence minimum est assurée dans l'autre rayon.
+
+C'est réglé ainsi dans la démonstration : le **comptoir fromage est tenu avec
+celui de la charcuterie**. Le besoin du fromage passe de 105 h à **95,5 h** par
+semaine, ce qui correspond à la réalité d'une personne pour deux vitrines.
+
+Pour les séparer, il suffit de retirer le partage dans le modèle du rayon.
+
+---
+
+# Audit complet des règles légales (30 septembre 2026)
+
+Vous m'avez demandé de vérifier qu'aucune autre règle n'avait été assouplie.
+J'en ai trouvé **quatre**, toutes corrigées.
+
+## C-06 — La pause se compte sur la JOURNÉE, pas sur chaque vacation ❗
+**Ce qui n'allait pas.** Je vérifiais la pause vacation par vacation. Deux
+vacations de 3 h 30 dans la même journée font **7 h de travail** et ouvrent
+droit à la pause — mais aucune ne dépassait six heures prise isolément, donc
+**rien n'était signalé**. C'était un trou réel.
+
+**Ce qui s'applique.** Le contrôle porte sur le **temps de travail quotidien**
+(c'est le texte même de L3121-16), et additionne les pauses déclarées de la
+journée.
+
+**Interprétation retenue, la plus protectrice :** une **coupure** entre deux
+vacations **n'est pas comptée comme une pause**. La pause doit être accordée
+pendant le temps de travail et figurer comme telle au planning.
+
+**Ajouté :** 30 minutes dès 4 h 30 pour les moins de 18 ans (L3162-3).
+
+## C-07 — Moyenne sur douze semaines CIVILES consécutives ❗
+**Ce qui n'allait pas.** Je prenais « les douze dernières semaines contenant du
+travail ». Les semaines de congés, absentes des données, étaient **sautées** :
+douze semaines pouvaient en couvrir vingt, et la moyenne était faussée.
+
+**Ce qui s'applique.** Le calendrier est parcouru semaine après semaine, en
+comptant **zéro** pour celles où rien n'est prévu. Douze semaines civiles
+consécutives, comme l'exige L3121-22.
+
+## C-08 — Les heures complémentaires ne peuvent atteindre la durée légale
+**Ce qui manquait.** Je contrôlais le plafond de 10 % au-dessus du contrat, mais
+pas l'interdiction absolue de L3123-9 : les heures complémentaires ne peuvent
+**jamais** porter un temps partiel au niveau de la durée légale (35 h). Au-delà,
+le contrat devrait être requalifié en temps plein.
+
+**Ce qui s'applique.** Un temps partiel planifié à 35 h ou plus est désormais
+signalé, indépendamment du plafond de 10 %.
+
+## C-09 — Plus aucune dispense silencieuse pour les étudiants
+**Ce qui n'allait pas.** Les contrats étudiants et apprentis sous 24 h par
+semaine étaient **écartés du contrôle sans rien afficher**.
+
+**Ce qui s'applique.** Le constat est affiché pour tout le monde. Pour les
+étudiants et les apprentis, l'explication rappelle qu'une dérogation existe
+**mais qu'elle doit figurer par écrit**. Signaler vaut mieux que supposer.
+
+## Règles vérifiées et déjà strictes
+
+| Règle | Vérification | Verdict |
+|---|---|---|
+| **10 h par jour** | Travail effectif, dépassement signalé dès la minute | ✅ strict |
+| **48 h par semaine** | Semaine civile, travail effectif | ✅ strict |
+| **Repos quotidien 11 h** | Mesuré entre la fin d'un jour et le début du suivant ; les coupures d'une même journée relèvent du temps partiel, pas du repos quotidien | ✅ strict |
+| **Coupures des temps partiels** | Nombre et durée, paramétrables | ✅ strict |
+| **Délai de prévenance** | Jours ouvrés, dimanche exclu | ✅ strict |
+| **Travail de nuit** | Signalé, jamais interdit — travailler la nuit est légal | ✅ correct |
+| **Moins de 18 ans** | 8 h/jour, 35 h/semaine, repos 12 h, 2 jours consécutifs, pas de nuit, pause à 4 h 30 | ✅ complété |
+
+**Le moteur applique désormais 13 règles** (contre 12), couvertes par
+**74 tests**.
+
+## C-10 — Principe général retenu
+Quand un texte se prête à plusieurs lectures, **l'interprétation la plus
+protectrice pour le salarié l'emporte**, et elle est notée ici. Quand les
+données ne permettent pas de trancher, l'application affiche « à confirmer »
+plutôt que de valider par défaut.

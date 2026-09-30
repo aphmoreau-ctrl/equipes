@@ -227,6 +227,7 @@ export function SectionHorairesTypes() {
           debut: '09:00',
           fin: '16:00',
           pauseMinutes: 20,
+          pauseDebut: '12:00',
         },
       ],
     }))
@@ -248,7 +249,7 @@ export function SectionHorairesTypes() {
         <Depliant
           key={horaire.id}
           titre={horaire.nom}
-          resume={`${horaire.debut} – ${horaire.fin}, pause ${horaire.pauseMinutes} min`}
+          resume={`${horaire.debut} – ${horaire.fin}, pause de ${horaire.pauseMinutes} min à ${horaire.pauseDebut}`}
         >
           <div className="champs">
             <ChampTexte
@@ -272,6 +273,11 @@ export function SectionHorairesTypes() {
               valeur={horaire.pauseMinutes}
               pas={5}
               onChange={(pauseMinutes) => modifierHoraire(horaire.id, { pauseMinutes })}
+            />
+            <ChampHeure
+              libelle="Début de la pause"
+              valeur={horaire.pauseDebut}
+              onChange={(pauseDebut) => modifierHoraire(horaire.id, { pauseDebut })}
             />
           </div>
           <button type="button" className="bouton bouton--discret" onClick={() => retirer(horaire.id)}>

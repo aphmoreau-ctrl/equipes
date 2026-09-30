@@ -353,16 +353,18 @@ function ListeRemplacants({
     enMinutes(vacation.debut),
     enMinutes(vacation.debut) + duree(vacation.debut, vacation.fin),
   )
-  const competences =
-    besoin === null
+  const couverture = besoin === null ? null : calculerCouverture(besoin, presentes, etat.collaborateurs)
+  const surLeCreneau =
+    couverture === null
       ? []
-      : [
-          ...new Set(
-            calculerCouverture(besoin, presentes, etat.collaborateurs)
-              .tranches.filter((tranche) => tranches.includes(tranche.index))
-              .flatMap((tranche) => tranche.competencesManquantes),
-          ),
-        ]
+      : couverture.tranches.filter((tranche) => tranches.includes(tranche.index))
+
+  const competences = [
+    ...new Set(surLeCreneau.flatMap((tranche) => tranche.competencesManquantes)),
+  ]
+  const critiques = [
+    ...new Set(surLeCreneau.flatMap((tranche) => tranche.competencesCritiquesManquantes)),
+  ]
 
   const resultat = chercherDesRemplacants({
     vacation,
@@ -370,6 +372,7 @@ function ListeRemplacants({
     absences: etat.absences,
     vacationsDeLaSemaine: planning(semaine).vacations,
     competencesRequises: competences,
+    competencesCritiques: critiques,
     reposQuotidienMinutes: etat.reglesParametres.reposQuotidienMinutes,
   })
 
@@ -381,7 +384,11 @@ function ListeRemplacants({
       </p>
 
       {resultat.possibles.length === 0 ? (
-        <p>Personne ne peut prendre cette vacation.</p>
+        <p>
+          {resultat.partiels.length === 0
+            ? 'Personne ne peut prendre cette vacation.'
+            : 'Personne ne couvre tout le poste. Un renfort partiel reste possible.'}
+        </p>
       ) : (
         <ul className="liste-simple">
           {resultat.possibles.map((remplacant) => (
@@ -403,6 +410,32 @@ function ListeRemplacants({
             </li>
           ))}
         </ul>
+      )}
+
+      {resultat.partiels.length > 0 && (
+        <>
+          <p className="champ__libelle">
+            Renforts possibles — ils ne couvrent qu’une partie du poste
+          </p>
+          <ul className="liste-simple">
+            {resultat.partiels.map((remplacant) => (
+              <li key={remplacant.collaborateur.id} className="ligne-remplacant">
+                <div>
+                  <p className="ligne-remplacant__nom">{nomAffiche(remplacant.collaborateur)}</p>
+                  <p className="alerte__detail">{remplacant.atouts.join(' · ')}</p>
+                  <p className="ligne-remplacant__reserve">⚠ {remplacant.reserves.join(' · ')}</p>
+                </div>
+                <button
+                  type="button"
+                  className="bouton"
+                  onClick={() => onChoisir(remplacant.collaborateur)}
+                >
+                  Choisir quand même
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {resultat.ecartes.length > 0 && (

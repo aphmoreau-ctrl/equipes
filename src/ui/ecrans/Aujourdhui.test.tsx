@@ -128,7 +128,10 @@ describe('absence imprévue', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Maladie' }))
     fireEvent.click(screen.getByRole('button', { name: 'Trouver un remplaçant' }))
 
-    expect(screen.getAllByRole('button', { name: 'Choisir' }).length).toBeGreaterThan(0)
+    // Personne ne couvre a lui seul toutes les competences du rayon : les
+    // renforts partiels sont proposes a part, clairement signales.
+    expect(screen.getByText(/ne couvrent qu’une partie du poste/)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Choisir quand même' }).length).toBeGreaterThan(0)
     expect(screen.getByText(/Pourquoi les autres sont écartés/)).toBeInTheDocument()
     expect(screen.getAllByText(/n’intervient pas dans ce rayon/).length).toBeGreaterThan(0)
   })
@@ -140,7 +143,7 @@ describe('absence imprévue', () => {
     fireEvent.change(screen.getByLabelText('Qui est absent ?'), { target: { value: 'c-01' } })
     fireEvent.click(screen.getByRole('button', { name: 'Maladie' }))
     fireEvent.click(screen.getByRole('button', { name: 'Trouver un remplaçant' }))
-    fireEvent.click(screen.getAllByRole('button', { name: 'Choisir' })[0] as HTMLElement)
+    fireEvent.click(screen.getAllByRole('button', { name: /^Choisir/ })[0] as HTMLElement)
 
     // Quelqu'un a repris la vacation : on repasse a une personne presente.
     expect(screen.getByText('1 personne')).toBeInTheDocument()

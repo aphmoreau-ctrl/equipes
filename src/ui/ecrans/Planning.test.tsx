@@ -81,7 +81,8 @@ describe('écran Planning', () => {
     }
 
     expect(screen.getByText('Contrôle des règles')).toBeInTheDocument()
-    expect(screen.getByText(/Repos hebdomadaire insuffisant/)).toBeInTheDocument()
+    // Sept jours d'affilee : interdit en soi (L3132-1), constat ferme.
+    expect(screen.getByText(/7 jours travaillés dans la semaine/)).toBeInTheDocument()
     expect(screen.queryByText('Aucune règle enfreinte')).not.toBeInTheDocument()
   })
 

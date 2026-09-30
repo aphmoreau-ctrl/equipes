@@ -102,11 +102,13 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '08:30', fin: '19:30' },
-    competences: ['boucherie'],
+    competences: [],
+    // Au moins un BOUCHER QUALIFIE derriere le comptoir des qu'il est ouvert :
+    // c'est une competence critique, jamais remplacable par quelqu'un d'autre.
+    competencesCritiques: ['boucherie'],
     coefficients: ['evenement', 'promotion'],
     partClientsPourcent: 14,
     minutesParClient: 2.6,
-    // Au moins un boucher qualifie derriere le comptoir des qu'il est ouvert.
     presenceMinimum: 1,
   },
   {
@@ -190,7 +192,8 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6, 7],
     plage: { debut: '08:30', fin: '18:30' },
-    competences: ['marée'],
+    competences: [],
+    competencesCritiques: ['marée'],
     coefficients: ['evenement', 'promotion'],
     partClientsPourcent: 7,
     minutesParClient: 3,
@@ -296,7 +299,12 @@ const BLOCS_CREMERIE: readonly Bloc[] = [
 
 // ---------------------------------------- Charcuterie-traiteur et fromage
 
-function blocsComptoirTraiteur(prefixe: string, partClients: number, plats: boolean): Bloc[] {
+function blocsComptoirTraiteur(
+  prefixe: string,
+  partClients: number,
+  plats: boolean,
+  partageAvecRayon?: string,
+): Bloc[] {
   const blocs: Bloc[] = [
     {
       id: `${prefixe}-comptoir`,
@@ -305,11 +313,15 @@ function blocsComptoirTraiteur(prefixe: string, partClients: number, plats: bool
       actif: true,
       jours: TOUS_LES_JOURS,
       plage: { debut: '08:30', fin: '19:30' },
-      competences: [prefixe === 'ch' ? 'charcuterie' : 'fromage'],
+      competences: [],
+      // La tenue du comptoir exige la competence du rayon : sans elle, le
+      // poste ne peut pas etre tenu, meme par quelqu'un de disponible.
+      competencesCritiques: [prefixe === 'ch' ? 'charcuterie' : 'fromage'],
       coefficients: ['evenement', 'promotion'],
       partClientsPourcent: partClients,
       minutesParClient: 2.4,
       presenceMinimum: 1,
+      ...(partageAvecRayon === undefined ? {} : { partageAvecRayon }),
     },
     {
       id: `${prefixe}-tranchage`,
@@ -498,10 +510,15 @@ export const MODELE_CHARCUTERIE = modele(
   { coefficientsSaison: saisonFetes() },
 )
 
+/*
+ * Le comptoir du fromage est tenu avec celui de la charcuterie, par la meme
+ * personne : il apporte sa charge de travail, mais n'exige personne de plus.
+ * Desactivez « partageAvecRayon » si les deux comptoirs sont tenus separement.
+ */
 export const MODELE_FROMAGE = modele(
   'fromage',
   { metresLineaires: 8, etals: 1, meublesFroids: 2, nombreReferences: 210 },
-  blocsComptoirTraiteur('fr', 9, false),
+  blocsComptoirTraiteur('fr', 9, false, 'charcuterie-traiteur'),
   { coefficientsSaison: saisonFetes() },
 )
 

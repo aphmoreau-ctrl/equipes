@@ -21,6 +21,8 @@ export interface CouvertureTranche {
   readonly ecart: number
   readonly competencesRequises: readonly string[]
   readonly competencesManquantes: readonly string[]
+  /** Competences manquantes SANS LESQUELLES le poste ne peut pas etre tenu. */
+  readonly competencesCritiquesManquantes: readonly string[]
 }
 
 export interface CouvertureJour {
@@ -38,13 +40,33 @@ export interface CouvertureJour {
   readonly trous: readonly CouvertureTranche[]
 }
 
-/** Vrai si la vacation couvre la tranche indiquee. */
+/**
+ * Vrai si la vacation couvre la tranche indiquee.
+ *
+ * Une personne EN PAUSE ne couvre pas le rayon. Une pause qui occupe la moitie
+ * de la tranche ou plus la rend non couverte ; en dessous, la personne reste
+ * comptee. Ce seuil evite qu'une pause de 20 minutes a cheval sur deux
+ * tranches n'en fasse perdre soixante.
+ *
+ * Une pause dont l'heure n'est pas renseignee est deduite du temps de travail,
+ * mais ne creuse pas la couverture : on ne sait pas quand elle tombe.
+ */
 export function couvreLaTranche(vacation: Vacation, index: number): boolean {
   const debut = enMinutes(vacation.debut)
   const fin = debut + duree(vacation.debut, vacation.fin)
   const debutTranche = index * TRANCHE_MINUTES
   const finTranche = debutTranche + TRANCHE_MINUTES
-  return debut < finTranche && fin > debutTranche
+
+  if (!(debut < finTranche && fin > debutTranche)) return false
+
+  if (vacation.pauseDebut !== undefined && vacation.pauseMinutes > 0) {
+    const pauseDebut = enMinutes(vacation.pauseDebut)
+    const pauseFin = pauseDebut + vacation.pauseMinutes
+    const enPause = Math.min(finTranche, pauseFin) - Math.max(debutTranche, pauseDebut)
+    if (enPause >= TRANCHE_MINUTES / 2) return false
+  }
+
+  return true
 }
 
 /**
@@ -91,6 +113,8 @@ export function calculerCouverture(
     manquant += Math.max(0, attendu - presents)
     presenceCumulee += presents
 
+    const critiques = trancheBesoin?.competencesCritiques ?? []
+
     tranches.push({
       index,
       debutMinutes: index * TRANCHE_MINUTES,
@@ -99,6 +123,9 @@ export function calculerCouverture(
       ecart: presents - attendu,
       competencesRequises: requises,
       competencesManquantes: manquantes,
+      competencesCritiquesManquantes: manquantes.filter((competence) =>
+        critiques.includes(competence),
+      ),
     })
   }
 

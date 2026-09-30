@@ -24,7 +24,8 @@ export const reposQuotidien: Regle = {
         const suivante = ordonnees[index] as Vacation
         const repos = debutDe(suivante) - finDe(precedente)
 
-        // Deux vacations du meme jour (coupure) ne sont pas un repos quotidien.
+        // Deux vacations du meme jour forment une coupure, pas un repos quotidien :
+        // elles relevent des regles du temps partiel.
         if (precedente.jour === suivante.jour) continue
         if (repos >= minimum) continue
 
@@ -48,31 +49,34 @@ export const reposQuotidien: Regle = {
 }
 
 /**
- * Repos hebdomadaire : une coupure d'au moins 35 heures consecutives.
+ * Repos hebdomadaire : 35 heures CONSECUTIVES (24 h de repos hebdomadaire
+ * AUXQUELLES S'AJOUTENT les 11 h de repos quotidien), article L3132-2.
+ * Les moins de 18 ans ont droit a deux jours consecutifs, soit 48 h.
  *
- * Methode retenue, et pourquoi :
- * on cherche, dans la semaine, un repos de 35 h d'affilee. Un repos qui
- * commence dans la semaine et se poursuit au-dela du dimanche soir compte
- * des lors qu'il atteint deja 24 h avant la fin de la semaine : les 11 h de
- * repos quotidien qui suivent sont alors acquises de toute facon.
+ * Methode : on mesure les repos REELS, d'une vacation a la suivante, en
+ * utilisant les semaines voisines. Un repos qui deborde sur la semaine
+ * suivante compte pour sa duree entiere, jamais pour sa partie visible.
  *
- * Cette nuance evite deux erreurs symetriques :
- * - signaler a tort une semaine finie le samedi midi, suivie d'un dimanche
- *   de repos (le repos deborde sur la semaine suivante) ;
- * - laisser passer sept jours travailles d'affilee, ou aucun repos de 24 h
- *   n'apparait nulle part.
+ * Aucun assouplissement : 33 h de repos restent 33 h, meme si elles couvrent
+ * un dimanche entier. Quand la semaine voisine n'est pas renseignee, la duree
+ * du repos est inconnue : le constat est alors « a confirmer », ni validation
+ * ni accusation.
  */
 export const reposHebdomadaire: Regle = {
   id: 'repos-hebdomadaire',
   nom: 'Repos hebdomadaire',
   reference: 'Code du travail, article L3132-2',
 
-  verifier({ vacations, vacationsAnterieures, parametres }) {
+  verifier({ vacations, vacationsAnterieures, parametres, collaborateurs }) {
     const infractions: Infraction[] = []
     const toutes = [...vacationsAnterieures, ...vacations]
-    const REPOS_QUOTIDIEN_ACQUIS = 24 * 60
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
+      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const minimum = mineur
+        ? parametres.reposHebdomadaireJeuneMinutes
+        : parametres.reposHebdomadaireMinutes
+
       const ordonnees = vacationsDe(toutes, collaborateurId)
       const semaines = [
         ...new Set(
@@ -86,65 +90,119 @@ export const reposHebdomadaire: Regle = {
         const debutSemaine = instant(lundi, '00:00')
         const finSemaine = instant(ajouterJours(lundi, 7), '00:00')
 
-        const dedans = ordonnees.filter(
-          (v) => finDe(v) > debutSemaine && debutDe(v) < finSemaine,
+        const dansLaSemaine = ordonnees.filter(
+          (vacation) => finDe(vacation) > debutSemaine && debutDe(vacation) < finSemaine,
         )
-        if (dedans.length === 0) continue
+        if (dansLaSemaine.length === 0) continue
 
-        const avant = ordonnees.filter((v) => finDe(v) <= debutSemaine)
-        const apres = ordonnees.filter((v) => debutDe(v) >= finSemaine)
-        const derniereAvant = avant[avant.length - 1]
+        const derniere = dansLaSemaine[dansLaSemaine.length - 1] as Vacation
+
+        /*
+         * Un repos est rattache a la semaine ou il COMMENCE. Le repos qui
+         * precede le premier jour travaille appartient a la semaine d'avant :
+         * le compter ici masquerait une vraie infraction derriere une
+         * incertitude sur des donnees qui ne concernent pas cette semaine.
+         */
+        const reposMesures: number[] = []
+        let reposIndetermine = false
+
+        for (let index = 1; index < dansLaSemaine.length; index += 1) {
+          reposMesures.push(
+            debutDe(dansLaSemaine[index] as Vacation) - finDe(dansLaSemaine[index - 1] as Vacation),
+          )
+        }
+
+        // Repos ouvert par la derniere vacation de la semaine : sa duree n'est
+        // connue que si l'on sait quand le travail reprend.
+        const apres = ordonnees.filter((vacation) => debutDe(vacation) >= finDe(derniere))
         const premiereApres = apres[0]
-
-        /** Repos candidats : debut et fin de chaque intervalle sans travail. */
-        const repos: { debut: number; fin: number; finConnue: boolean }[] = []
-
-        // Repos en tete de semaine, seulement si l'on sait ce qui precede.
-        const premiere = dedans[0] as Vacation
-        if (derniereAvant !== undefined) {
-          repos.push({ debut: finDe(derniereAvant), fin: debutDe(premiere), finConnue: true })
+        if (premiereApres !== undefined) {
+          reposMesures.push(debutDe(premiereApres) - finDe(derniere))
+        } else {
+          reposIndetermine = true
         }
 
-        for (let index = 1; index < dedans.length; index += 1) {
-          repos.push({
-            debut: finDe(dedans[index - 1] as Vacation),
-            fin: debutDe(dedans[index] as Vacation),
-            finConnue: true,
-          })
-        }
+        const plusLongMesure = reposMesures.length === 0 ? 0 : Math.max(...reposMesures)
+        if (plusLongMesure >= minimum) continue
 
-        // Repos en fin de semaine : sa fin n'est connue que si l'on sait ce qui suit.
-        const derniere = dedans[dedans.length - 1] as Vacation
-        repos.push({
-          debut: finDe(derniere),
-          fin: premiereApres === undefined ? finSemaine : debutDe(premiereApres),
-          finConnue: premiereApres !== undefined,
-        })
-
-        let meilleur = 0
-        let suffisant = false
-        for (const intervalle of repos) {
-          const duree = Math.max(0, intervalle.fin - intervalle.debut)
-          meilleur = Math.max(meilleur, duree)
-          if (duree >= parametres.reposHebdomadaireMinutes) suffisant = true
-          // Repos qui deborde sur la semaine suivante : 24 h visibles suffisent.
-          if (!intervalle.finConnue && duree >= REPOS_QUOTIDIEN_ACQUIS) suffisant = true
-        }
-
-        if (!suffisant) {
+        if (reposIndetermine) {
           infractions.push({
             regle: 'repos-hebdomadaire',
-            severite: parametres.severites['repos-hebdomadaire'],
+            severite: 'a-confirmer',
             collaborateurId,
             jour: lundi,
-            libelle: `Repos hebdomadaire insuffisant : ${dureeEnTexte(meilleur)}`,
+            libelle: 'Repos hebdomadaire à confirmer',
             explication:
-              `Le plus long repos de la semaine du ${lundi} dure ` +
-              `${dureeEnTexte(meilleur)}, au lieu des ` +
-              `${dureeEnTexte(parametres.reposHebdomadaireMinutes)} consécutives exigées ` +
-              `(24 h de repos hebdomadaire plus les 11 h de repos quotidien).`,
+              `Semaine du ${lundi} : le plus long repos connu dure ` +
+              `${dureeEnTexte(plusLongMesure)}, et il se poursuit au-delà des semaines ` +
+              `renseignées. Les ${dureeEnTexte(minimum)} consécutives ne pourront être ` +
+              `vérifiées qu’une fois la semaine voisine construite.`,
           })
+          continue
         }
+
+        infractions.push({
+          regle: 'repos-hebdomadaire',
+          severite: parametres.severites['repos-hebdomadaire'],
+          collaborateurId,
+          jour: lundi,
+          libelle: `Repos hebdomadaire insuffisant : ${dureeEnTexte(plusLongMesure)}`,
+          explication:
+            `Semaine du ${lundi} : le plus long repos consécutif dure ` +
+            `${dureeEnTexte(plusLongMesure)}, au lieu des ${dureeEnTexte(minimum)} exigées ` +
+            (mineur
+              ? '(deux jours consécutifs pour un salarié de moins de 18 ans).'
+              : '(24 h de repos hebdomadaire auxquelles s’ajoutent les 11 h de repos quotidien).'),
+        })
+      }
+    }
+
+    return infractions
+  },
+}
+
+/**
+ * Six jours de travail au maximum par semaine civile (L3132-1).
+ *
+ * Ce controle est independant du precedent : travailler les sept jours d'une
+ * semaine est interdit en soi, quelle que soit la duree des repos.
+ */
+export const joursMaximumParSemaine: Regle = {
+  id: 'jours-maximum-par-semaine',
+  nom: 'Nombre de jours travaillés par semaine',
+  reference: 'Code du travail, article L3132-1',
+
+  verifier({ vacations, parametres, collaborateurs }) {
+    const infractions: Infraction[] = []
+
+    for (const collaborateurId of collaborateursConcernes(vacations)) {
+      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const maximum = mineur
+        ? parametres.joursMaximumParSemaineJeune
+        : parametres.joursMaximumParSemaine
+
+      const parSemaine = new Map<string, Set<string>>()
+      for (const vacation of vacationsDe(vacations, collaborateurId)) {
+        const lundi = lundiDeLaSemaine(vacation.jour)
+        const jours = parSemaine.get(lundi)
+        if (jours === undefined) parSemaine.set(lundi, new Set([vacation.jour]))
+        else jours.add(vacation.jour)
+      }
+
+      for (const [lundi, jours] of [...parSemaine].sort(([a], [b]) => a.localeCompare(b))) {
+        if (jours.size <= maximum) continue
+
+        infractions.push({
+          regle: 'jours-maximum-par-semaine',
+          severite: parametres.severites['jours-maximum-par-semaine'],
+          collaborateurId,
+          jour: lundi,
+          libelle: `${jours.size} jours travaillés dans la semaine`,
+          explication:
+            `Semaine du ${lundi} : ${jours.size} jours de travail, alors que le maximum ` +
+            `est de ${maximum}` +
+            (mineur ? ' pour un salarié de moins de 18 ans.' : '.'),
+        })
       }
     }
 

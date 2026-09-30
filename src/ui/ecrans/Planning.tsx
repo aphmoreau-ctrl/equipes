@@ -78,6 +78,7 @@ export function Planning() {
 
   const bloquantes = infractions.filter((infraction) => infraction.severite === 'bloquante')
   const avertissements = infractions.filter((infraction) => infraction.severite === 'avertissement')
+  const aConfirmer = infractions.filter((infraction) => infraction.severite === 'a-confirmer')
 
   // ------------------------------------------------------- Couverture
   const couvertures = useMemo(() => {
@@ -109,6 +110,7 @@ export function Planning() {
     debut: string,
     fin: string,
     pauseMinutes: number,
+    pauseDebut: string,
     rayonId: string,
   ): void {
     const vacation: Vacation = {
@@ -119,6 +121,7 @@ export function Planning() {
       debut,
       fin,
       pauseMinutes,
+      pauseDebut,
     }
     modifierPlanning(semaine, (precedent) => ({
       ...precedent,
@@ -211,6 +214,11 @@ export function Planning() {
                 {avertissements.length} avertissement{avertissements.length > 1 ? 's' : ''}
               </span>
             )}
+            {aConfirmer.length > 0 && (
+              <span className="verdict verdict--discret">
+                {aConfirmer.length} à confirmer
+              </span>
+            )}
           </dd>
 
           <dt>Couverture du besoin</dt>
@@ -271,6 +279,7 @@ export function Planning() {
                       horaire.debut,
                       horaire.fin,
                       horaire.pauseMinutes,
+                      horaire.pauseDebut,
                       rayonId,
                     )
                   }}
@@ -451,7 +460,15 @@ function LigneInfraction({
   readonly nom: string
 }) {
   return (
-    <li className={infraction.severite === 'bloquante' ? 'alerte alerte--urgent' : 'alerte alerte--attention'}>
+    <li
+      className={
+        infraction.severite === 'bloquante'
+          ? 'alerte alerte--urgent'
+          : infraction.severite === 'a-confirmer'
+            ? 'alerte alerte--discret'
+            : 'alerte alerte--attention'
+      }
+    >
       <p className="alerte__titre">
         {nom} — {infraction.libelle}
       </p>

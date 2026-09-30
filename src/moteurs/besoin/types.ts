@@ -52,6 +52,12 @@ export interface BlocCommun {
   readonly plage: PlageBloc
   /** Competences necessaires pour ce travail. */
   readonly competences: readonly string[]
+  /**
+   * Competences CRITIQUES : sans elles, le poste ne peut pas etre tenu.
+   * Un boucher qualifie au comptoir, un titulaire du CAP a la maree.
+   * Un remplacant qui ne les a pas est ecarte, sans discussion.
+   */
+  readonly competencesCritiques?: readonly string[]
   /** Coefficients qui font varier ce bloc. */
   readonly coefficients: readonly NatureCoefficient[]
   /**
@@ -132,6 +138,12 @@ export interface BlocComptoir extends BlocCommun {
   /** Part des clients du magasin qui passent a ce comptoir, en pourcentage. */
   readonly partClientsPourcent: number
   readonly minutesParClient: Minutes
+  /**
+   * Comptoir tenu avec celui d'un autre rayon, par la meme personne.
+   * La presence minimum est alors assuree la-bas : ce comptoir apporte sa
+   * charge de travail, mais n'exige personne de plus.
+   */
+  readonly partageAvecRayon?: string
 }
 
 export interface BlocPlanCuisson extends BlocCommun {
@@ -225,6 +237,8 @@ export interface TrancheBesoin {
   readonly minutesTotal: Minutes
   readonly personnes: number
   readonly competences: readonly string[]
+  /** Competences sans lesquelles le poste ne peut pas etre tenu. */
+  readonly competencesCritiques: readonly string[]
 }
 
 export interface BesoinJour {

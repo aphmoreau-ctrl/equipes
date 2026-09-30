@@ -8,8 +8,15 @@ import type { Minutes } from '../../domaine/temps'
  * PARAMETRES modifiables (voir parametres.ts) ; aucune n'est ecrite en dur.
  */
 
-/** Une regle est soit bloquante (jamais violee), soit un simple avertissement. */
-export type Severite = 'bloquante' | 'avertissement'
+/**
+ * Gravite d'un constat.
+ * - « bloquante » : la regle est enfreinte, le planning ne doit pas partir ainsi.
+ * - « avertissement » : a surveiller, sans interdiction.
+ * - « a-confirmer » : les donnees connues ne permettent PAS de se prononcer.
+ *   On ne valide pas a la legere, mais on n'accuse pas non plus : la mention
+ *   reste discrete jusqu'a ce que la semaine voisine soit renseignee.
+ */
+export type Severite = 'bloquante' | 'avertissement' | 'a-confirmer'
 
 /**
  * Identifiants de toutes les regles prevues au cahier des charges (§8).
@@ -22,6 +29,7 @@ export type IdentifiantRegle =
   | 'duree-moyenne-12-semaines'
   | 'repos-quotidien'
   | 'repos-hebdomadaire'
+  | 'jours-maximum-par-semaine'
   | 'pause-obligatoire'
   | 'temps-partiel-coupures'
   | 'heures-complementaires'
@@ -44,6 +52,11 @@ export interface Vacation {
   readonly fin: string
   /** Pause non travaillee, deduite de l'amplitude. */
   readonly pauseMinutes: Minutes
+  /**
+   * Heure de debut de la pause. Absente = pause non positionnee : elle est
+   * alors deduite du temps de travail sans creuser la couverture.
+   */
+  readonly pauseDebut?: string
   /** Jour couvert par une derogation exceptionnelle (inventaire, etc.). */
   readonly derogation?: boolean
 }
@@ -79,14 +92,26 @@ export interface ParametresRegles {
   readonly dureeMaximaleQuotidienneDerogationMinutes: Minutes
   /** Plafond quotidien applicable aux moins de 18 ans. */
   readonly dureeMaximaleQuotidienneJeuneMinutes: Minutes
+  /** Plafond hebdomadaire applicable aux moins de 18 ans. */
+  readonly dureeMaximaleHebdomadaireJeuneMinutes: Minutes
   readonly dureeMaximaleHebdomadaireMinutes: Minutes
   readonly dureeMoyenneMaximaleSur12SemainesMinutes: Minutes
   readonly reposQuotidienMinutes: Minutes
   /** Repos quotidien renforce pour les moins de 18 ans. */
   readonly reposQuotidienJeuneMinutes: Minutes
   readonly reposHebdomadaireMinutes: Minutes
+  /** Repos hebdomadaire des moins de 18 ans : deux jours consecutifs. */
+  readonly reposHebdomadaireJeuneMinutes: Minutes
+  /** Nombre maximal de jours travailles dans une semaine civile. */
+  readonly joursMaximumParSemaine: number
+  /** Idem pour les moins de 18 ans. */
+  readonly joursMaximumParSemaineJeune: number
   readonly seuilDeclenchantLaPauseMinutes: Minutes
   readonly dureeMinimaleDeLaPauseMinutes: Minutes
+  /** Seuil de pause renforce pour les moins de 18 ans. */
+  readonly seuilDeclenchantLaPauseJeuneMinutes: Minutes
+  /** Duree de pause due aux moins de 18 ans. */
+  readonly dureeMinimaleDeLaPauseJeuneMinutes: Minutes
   readonly delaiDePrevenanceJoursOuvres: number
   readonly contingentHeuresSupplementairesAnnuel: number
   /** Duree hebdomadaire au-dela de laquelle les heures sont supplementaires. */

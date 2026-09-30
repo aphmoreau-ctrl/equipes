@@ -4,7 +4,14 @@ import { JOURS_SEMAINE } from '../domaine/calendrier'
 import { clientsParTranche, tranchesOuvertes } from '../domaine/magasin'
 import { calculerBesoin, pointeDeLaJournee, type ConfigurationRayon } from '../moteurs/besoin'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
-import { MODELE_BOUCHERIE, MODELE_BOULANGERIE, MODELE_MAREE, MODELES_AUTRES_RAYONS } from './modeles-rayons'
+import {
+  MODELE_BOUCHERIE,
+  MODELE_BOULANGERIE,
+  MODELE_CHARCUTERIE,
+  MODELE_FROMAGE,
+  MODELE_MAREE,
+  MODELES_AUTRES_RAYONS,
+} from './modeles-rayons'
 
 /** Donnees FICTIVES uniquement. */
 
@@ -73,10 +80,23 @@ describe('specificites annoncees au cahier des charges', () => {
     expect(types.has('nettoyage')).toBe(true)
   })
 
-  it('boucherie : au moins un boucher derriere le comptoir quand il est ouvert', () => {
+  it('boucherie : au moins un boucher QUALIFIE derriere le comptoir', () => {
     const comptoir = MODELE_BOUCHERIE.blocs.find((bloc) => bloc.type === 'comptoir')
     expect(comptoir?.presenceMinimum).toBeGreaterThanOrEqual(1)
-    expect(comptoir?.competences).toContain('boucherie')
+    // La competence est CRITIQUE : personne d'autre ne peut tenir le poste.
+    expect(comptoir?.competencesCritiques).toContain('boucherie')
+  })
+
+  it('fromage : comptoir tenu avec celui de la charcuterie', () => {
+    const comptoir = MODELE_FROMAGE.blocs.find((bloc) => bloc.type === 'comptoir')
+    expect(comptoir?.type === 'comptoir' && comptoir.partageAvecRayon).toBe('charcuterie-traiteur')
+  })
+
+  it('un comptoir partage n exige personne de plus', () => {
+    const seul = calculerBesoin(MODELE_CHARCUTERIE, contexteDemo('2026-11-06', 'charcuterie-traiteur'))
+    const partage = calculerBesoin(MODELE_FROMAGE, contexteDemo('2026-11-06', 'fromage'))
+    // La charcuterie impose sa presence minimum toute la journee, pas le fromage.
+    expect(seul.heuresPresence).toBeGreaterThan(partage.heuresPresence)
   })
 
   it('maree : mise en glace le matin et demontage le soir', () => {

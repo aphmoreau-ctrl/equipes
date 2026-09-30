@@ -75,6 +75,7 @@ function besoinDemo(): BesoinJour {
       minutesTotal: personnes * 30,
       personnes,
       competences,
+      competencesCritiques: [],
     }
   })
 

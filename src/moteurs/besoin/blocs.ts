@@ -203,6 +203,8 @@ export function presenceMinimumDuBloc(
   index: number,
 ): number {
   if (bloc.presenceMinimum === undefined || !bloc.actif) return 0
+  // Comptoir partage : la personne est deja comptee dans l'autre rayon.
+  if (bloc.type === 'comptoir' && bloc.partageAvecRayon !== undefined) return 0
   if (!bloc.jours.includes(jourDeLaSemaine(contexte.date))) return 0
   return tranchesDeLaPlage(bloc.plage).includes(index) ? bloc.presenceMinimum : 0
 }

@@ -3,12 +3,11 @@ import { aujourdhui, dateEnTexte } from '../../domaine/calendrier'
 import {
   EXPLICATIONS_ETAT,
   LIBELLES_ETAT,
-
   etatsSuivants,
   remarquesDuPatron,
   type EtatSuivi,
-  type Planning,
-} from '../../domaine/planning'
+  type Suivi,
+} from '../../domaine/suivi'
 
 /**
  * Circuit de suivi (cahier des charges §9.6).
@@ -17,11 +16,17 @@ import {
  * circuit qu'Arnaud renseigne lui-meme. Tout reste visible UNIQUEMENT ici :
  * ni le statut ni les remarques ne figurent sur un PDF.
  */
+/**
+ * Le circuit est le meme pour tous les documents soumis au patron : plannings,
+ * conges, puis recrutements. Ce composant sert a tous.
+ */
 export function SuiviPlanning({
   planning,
+  titre = 'Suivi',
   onChanger,
 }: {
-  readonly planning: Planning
+  readonly planning: Suivi
+  readonly titre?: string
   readonly onChanger: (etat: EtatSuivi, date: string, remarques: string) => void
 }) {
   const [etatChoisi, setEtatChoisi] = useState<EtatSuivi | null>(null)
@@ -40,7 +45,7 @@ export function SuiviPlanning({
 
   return (
     <section className="carte">
-      <h2>Suivi</h2>
+      <h2>{titre}</h2>
       <p>
         <span className={`etat etat--${planning.etat}`}>{LIBELLES_ETAT[planning.etat]}</span>{' '}
         <span className="champ__aide">version {planning.version}</span>

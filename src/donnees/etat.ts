@@ -1,5 +1,7 @@
 import type { Absence } from '../domaine/absence'
 import type { Collaborateur } from '../domaine/collaborateur'
+import type { DemandeConge, ParametresConges, SoldeConges } from '../domaine/conge'
+import { PARAMETRES_CONGES_PAR_DEFAUT, estAccordee } from '../domaine/conge'
 import type { Mesure } from '../domaine/mesure'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
@@ -28,6 +30,9 @@ export interface EtatApplication {
   readonly configurations: readonly ConfigurationRayon[]
   readonly collaborateurs: readonly Collaborateur[]
   readonly absences: readonly Absence[]
+  readonly demandesConge: readonly DemandeConge[]
+  readonly soldesConges: readonly SoldeConges[]
+  readonly parametresConges: ParametresConges
   /** Mesures du mode chrono (§7.6). */
   readonly mesures: readonly Mesure[]
   /** Plannings, reperes par le lundi de leur semaine. */
@@ -53,6 +58,14 @@ export function etatInitial(): EtatApplication {
     configurations: CONFIGURATIONS_DEMO,
     collaborateurs: COLLABORATEURS_DEMO,
     absences: [],
+    demandesConge: [],
+    soldesConges: COLLABORATEURS_DEMO.map((collaborateur) => ({
+      collaborateurId: collaborateur.id,
+      acquis: 30,
+      pris: 0,
+      ajustement: 0,
+    })),
+    parametresConges: PARAMETRES_CONGES_PAR_DEFAUT,
     mesures: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
@@ -144,4 +157,20 @@ export function vacationsAnterieures(etat: EtatApplication, semaine: string) {
   return Object.values(etat.plannings)
     .filter((planning) => planning.semaine < semaine)
     .flatMap((planning) => planning.vacations)
+}
+
+/**
+ * Absences REELLEMENT opposables au planning : celles saisies a la main, plus
+ * les conges accordes. Un conge non valide ne bloque rien.
+ */
+export function absencesEffectives(etat: EtatApplication): Absence[] {
+  const desConges: Absence[] = etat.demandesConge.filter(estAccordee).map((demande) => ({
+    id: `conge-${demande.id}`,
+    collaborateurId: demande.collaborateurId,
+    debut: demande.debut,
+    fin: demande.fin,
+    type: demande.type,
+    prevue: true,
+  }))
+  return [...etat.absences, ...desConges]
 }

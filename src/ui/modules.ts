@@ -76,7 +76,7 @@ export const MODULES: readonly Module[] = [
     titre: 'Congés',
     resume: 'Demandes, soldes, planning des congés d’été et absences par type.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'competences',

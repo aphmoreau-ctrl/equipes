@@ -13,6 +13,7 @@ import { calculerAlertes } from '../../moteurs/alertes'
 import { calculerCouverture, regrouperLesTrous } from '../../moteurs/indicateurs'
 import { chercherDesRemplacants } from '../../moteurs/planning/remplacants'
 import type { Vacation } from '../../moteurs/regles'
+import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 
 const TYPES: readonly TypeAbsence[] = [
@@ -35,13 +36,14 @@ export function Aujourdhui() {
   const semaine = lundiDeLaSemaine(date)
   const planningCourant = planning(semaine)
   const vacationsDuJour = planningCourant.vacations.filter((vacation) => vacation.jour === date)
-  const absences = absencesDuJour(etat.absences, date)
+  const toutesLesAbsences = absencesEffectives(etat)
+  const absences = absencesDuJour(toutesLesAbsences, date)
 
   const presents = etat.collaborateurs.filter(
     (collaborateur) =>
       collaborateur.actif &&
       vacationsDuJour.some((vacation) => vacation.collaborateurId === collaborateur.id) &&
-      !estAbsent(etat.absences, collaborateur.id, date),
+      !estAbsent(toutesLesAbsences, collaborateur.id, date),
   )
 
   const couvertures = useMemo(
@@ -52,7 +54,7 @@ export function Aujourdhui() {
           if (besoin === null) return null
           // Une personne absente ne couvre rien.
           const presentes = vacationsDuJour.filter(
-            (vacation) => !estAbsent(etat.absences, vacation.collaborateurId, date),
+            (vacation) => !estAbsent(toutesLesAbsences, vacation.collaborateurId, date),
           )
           return { rayon, couverture: calculerCouverture(besoin, presentes, etat.collaborateurs) }
         })
@@ -116,11 +118,11 @@ export function Aujourdhui() {
 
   /** Vacations du jour dont le titulaire est absent. */
   const aCouvrir = vacationsDuJour.filter((vacation) =>
-    estAbsent(etat.absences, vacation.collaborateurId, date),
+    estAbsent(toutesLesAbsences, vacation.collaborateurId, date),
   )
 
   const arrivees = [...vacationsDuJour]
-    .filter((vacation) => !estAbsent(etat.absences, vacation.collaborateurId, date))
+    .filter((vacation) => !estAbsent(toutesLesAbsences, vacation.collaborateurId, date))
     .sort((a, b) => a.debut.localeCompare(b.debut))
 
   return (
@@ -213,7 +215,7 @@ export function Aujourdhui() {
                 {etat.collaborateurs
                   .filter(
                     (collaborateur) =>
-                      collaborateur.actif && !estAbsent(etat.absences, collaborateur.id, date),
+                      collaborateur.actif && !estAbsent(toutesLesAbsences, collaborateur.id, date),
                   )
                   .map((collaborateur) => (
                     <option key={collaborateur.id} value={collaborateur.id}>
@@ -342,12 +344,13 @@ function ListeRemplacants({
    * vraiment sur son creneau, une fois l'absence prise en compte. Exiger
    * toutes les competences du rayon ecarterait presque tout le monde.
    */
+  const absencesDuMoment = absencesEffectives(etat)
   const besoin = besoinDuJour(vacation.jour, vacation.rayonId)
   const presentes = planning(semaine).vacations.filter(
     (autre) =>
       autre.jour === vacation.jour &&
       autre.id !== vacation.id &&
-      !estAbsent(etat.absences, autre.collaborateurId, autre.jour),
+      !estAbsent(absencesDuMoment, autre.collaborateurId, autre.jour),
   )
   const tranches = tranchesCouvertes(
     enMinutes(vacation.debut),
@@ -369,7 +372,7 @@ function ListeRemplacants({
   const resultat = chercherDesRemplacants({
     vacation,
     collaborateurs: etat.collaborateurs,
-    absences: etat.absences,
+    absences: absencesEffectives(etat),
     vacationsDeLaSemaine: planning(semaine).vacations,
     competencesRequises: competences,
     competencesCritiques: critiques,

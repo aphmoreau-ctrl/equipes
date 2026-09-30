@@ -28,6 +28,7 @@ import {
   expliquerLeTrou,
   regrouperLesTrous,
 } from '../../moteurs/indicateurs'
+import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { genererLePlanning } from '../../moteurs/planning/generateur'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
@@ -157,7 +158,7 @@ export function Planning() {
       rayons,
       besoins,
       collaborateurs: etat.collaborateurs,
-      absences: etat.absences,
+      absences: absencesEffectives(etat),
       horairesTypes: etat.magasin.horairesTypes,
       parametres: etat.reglesParametres,
       vacationsAnterieures: historique(semaine),

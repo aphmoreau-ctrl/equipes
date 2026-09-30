@@ -608,3 +608,42 @@ pèse ensuite, parce qu'il a des conséquences en paie. Le reste ajuste.
 **Alternative.** D'autres équilibres — ce sont des réglages, pas des vérités.
 **À relire** : si les plannings proposés ne vous ressemblent pas, c'est ici
 qu'il faut regarder.
+
+## Lot 9 — Congés
+
+### D-49 — Le circuit de suivi est devenu un module à part
+**Décision.** Le circuit Brouillon → Soumis → Validé / À corriger → Publié vit
+désormais dans son propre fichier et sert **à la fois** aux plannings et aux
+congés. Les recrutements l'utiliseront aussi.
+**Raison.** C'est ce que promettait le cahier des charges : « mécanisme
+générique, développé une seule fois ». Le dupliquer aurait garanti que les deux
+copies divergent.
+**Conséquence.** C'est une réécriture interne, signalée ici comme le demandent
+les consignes. L'écran du planning n'a pas changé, et ses tests non plus.
+
+### D-50 — L'ordre des départs ignore la situation de famille
+**Décision.** Le classement proposé repose sur l'**ancienneté** puis sur la
+**date de la demande**. Le critère légal de la situation de famille est
+volontairement absent, et l'écran le dit.
+**Raison.** La situation familiale est une donnée **interdite** dans cette
+application (§3). La collecter pour classer les départs contredirait la règle
+la plus fondamentale du projet.
+**Conséquence.** Le classement est **indicatif**. Vous restez libre d'en tenir
+compte vous-même, hors de l'application.
+**Alternative.** Enregistrer la situation de famille — exclu.
+
+### D-51 — Un congé ne bloque rien tant qu'il n'est pas validé
+**Décision.** Seuls les congés au statut **Validé** ou **Publié** sortent la
+personne du planning et de la proposition automatique.
+**Raison.** Une demande en brouillon est une intention, pas une décision. La
+traiter comme acquise ferait disparaître des gens du planning avant que votre
+patron n'ait dit oui.
+
+### D-52 — Décompte en jours ouvrables, dimanche exclu
+**Décision.** Les congés se comptent en jours ouvrables : le samedi compte, le
+dimanche non.
+**Raison.** C'est le décompte le plus courant, et celui qui correspond aux
+30 jours ouvrables annuels.
+**Alternative.** Le décompte en jours ouvrés (samedi exclu, 25 jours par an).
+**À vérifier** : regardez sur un bulletin de paie lequel des deux votre magasin
+applique. C'est un réglage à ajouter si besoin.

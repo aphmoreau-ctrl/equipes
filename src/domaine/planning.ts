@@ -1,4 +1,11 @@
 import type { Vacation } from '../moteurs/regles'
+import {
+  changerEtatSuivi,
+  dateDuDernier,
+  suiviInitial,
+  type EtatSuivi,
+  type Suivi,
+} from './suivi'
 
 /**
  * Planning d'une semaine et son circuit de suivi (cahier des charges §9.6).
@@ -11,70 +18,22 @@ import type { Vacation } from '../moteurs/regles'
  * circuit qu'Arnaud renseigne lui-meme.
  */
 
-export type EtatSuivi = 'brouillon' | 'soumis' | 'valide' | 'a-corriger' | 'publie'
+/*
+ * Le circuit lui-meme vit dans « suivi.ts » : il est GENERIQUE et sert aussi
+ * aux conges, puis aux recrutements. On le re-expose ici pour que les ecrans
+ * du planning n'aient qu'un seul endroit ou regarder.
+ */
+export type { EtatSuivi, EvenementSuivi, Suivi } from './suivi'
+export { EXPLICATIONS_ETAT, LIBELLES_ETAT, etatsSuivants, remarquesDuPatron } from './suivi'
 
-export const LIBELLES_ETAT: Readonly<Record<EtatSuivi, string>> = {
-  brouillon: 'Brouillon',
-  soumis: 'Soumis',
-  valide: 'Validé',
-  'a-corriger': 'À corriger',
-  publie: 'Publié à l’équipe',
-}
-
-export const EXPLICATIONS_ETAT: Readonly<Record<EtatSuivi, string>> = {
-  brouillon: 'En préparation. Modifiable librement.',
-  soumis: 'Remis au patron pour validation.',
-  valide: 'Accord du patron.',
-  'a-corriger': 'Le patron demande des modifications.',
-  publie: 'Affiché et diffusé aux salariés.',
-}
-
-/** Un changement d'etat, date et conserve pour toujours. */
-export interface EvenementSuivi {
-  readonly id: string
-  readonly etat: EtatSuivi
-  /** Date que l'utilisateur declare (le jour ou il a remis le planning). */
-  readonly date: string
-  /** Horodatage de la saisie, pour l'historique. */
-  readonly horodatage: string
-  /** Remarques du patron, notees par Arnaud. Note de travail INTERNE. */
-  readonly remarques: string
-  /** Version du planning concernee. */
-  readonly version: number
-}
-
-export interface Planning {
+export interface Planning extends Suivi {
   /** Lundi de la semaine : sert d'identifiant. */
   readonly semaine: string
   readonly vacations: readonly Vacation[]
-  readonly etat: EtatSuivi
-  readonly historique: readonly EvenementSuivi[]
-  /** Incrementee a chaque soumission : permet de relier une remarque a une version. */
-  readonly version: number
 }
 
 export function planningVide(semaine: string): Planning {
-  return { semaine, vacations: [], etat: 'brouillon', historique: [], version: 1 }
-}
-
-/**
- * Etats accessibles depuis l'etat courant.
- * Le cycle n'est pas lineaire : « A corriger » ramene au travail, puis a une
- * nouvelle soumission, autant de fois que necessaire.
- */
-export function etatsSuivants(etat: EtatSuivi): EtatSuivi[] {
-  switch (etat) {
-    case 'brouillon':
-      return ['soumis']
-    case 'soumis':
-      return ['valide', 'a-corriger']
-    case 'a-corriger':
-      return ['brouillon', 'soumis']
-    case 'valide':
-      return ['publie', 'a-corriger']
-    case 'publie':
-      return ['a-corriger']
-  }
+  return { semaine, vacations: [], ...suiviInitial() }
 }
 
 /** Enregistre un changement d'etat dans l'historique. Rien n'est jamais ecrase. */
@@ -85,45 +44,20 @@ export function changerEtat(
   remarques = '',
   horodatage: string = new Date().toISOString(),
 ): Planning {
-  // Une nouvelle soumission apres correction cree une nouvelle version.
-  const version =
-    etat === 'soumis' && planning.etat === 'a-corriger' ? planning.version + 1 : planning.version
-
   return {
     ...planning,
-    etat,
-    version,
-    historique: [
-      ...planning.historique,
-      {
-        id: `suivi-${horodatage}-${etat}`,
-        etat,
-        date,
-        horodatage,
-        remarques,
-        version,
-      },
-    ],
+    ...changerEtatSuivi(planning, etat, date, remarques, horodatage),
   }
 }
 
 /** Date a laquelle le planning a ete publie a l'equipe, ou null. */
 export function datePublication(planning: Planning): string | null {
-  const publications = planning.historique.filter((evenement) => evenement.etat === 'publie')
-  return publications[publications.length - 1]?.date ?? null
+  return dateDuDernier(planning, 'publie')
 }
 
 /** Date de la derniere soumission au patron, ou null. */
 export function dateSoumission(planning: Planning): string | null {
-  const soumissions = planning.historique.filter((evenement) => evenement.etat === 'soumis')
-  return soumissions[soumissions.length - 1]?.date ?? null
-}
-
-/** Toutes les remarques du patron, de la plus recente a la plus ancienne. */
-export function remarquesDuPatron(planning: Planning): EvenementSuivi[] {
-  return [...planning.historique]
-    .filter((evenement) => evenement.remarques.trim() !== '')
-    .reverse()
+  return dateDuDernier(planning, 'soumis')
 }
 
 /**

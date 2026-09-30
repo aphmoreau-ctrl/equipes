@@ -156,7 +156,7 @@ describe('navigation, une fois l application ouverte', () => {
   })
 
   it('annonce clairement les ecrans pas encore construits', async () => {
-    fireEvent.click(screen.getByRole('link', { name: /Compétences/ }))
+    fireEvent.click(screen.getByRole('link', { name: /Documents/ }))
     expect(await screen.findByText('Cet écran n’est pas encore construit')).toBeInTheDocument()
   })
 

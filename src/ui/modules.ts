@@ -84,7 +84,7 @@ export const MODULES: readonly Module[] = [
     titre: 'Compétences',
     resume: 'Grille de polyvalence, plan de formation, habilitations et leurs échéances.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'pilotage',

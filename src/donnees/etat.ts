@@ -2,6 +2,7 @@ import type { Absence } from '../domaine/absence'
 import type { Collaborateur } from '../domaine/collaborateur'
 import type { DemandeConge, ParametresConges, SoldeConges } from '../domaine/conge'
 import { PARAMETRES_CONGES_PAR_DEFAUT, estAccordee } from '../domaine/conge'
+import type { Formation } from '../domaine/formation'
 import type { Mesure } from '../domaine/mesure'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
@@ -39,6 +40,7 @@ export interface EtatApplication {
   readonly parametresHeures: ParametresHeures
   /** Mesures du mode chrono (§7.6). */
   readonly mesures: readonly Mesure[]
+  readonly formations: readonly Formation[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -73,6 +75,7 @@ export function etatInitial(): EtatApplication {
     saisiesHeures: [],
     parametresHeures: PARAMETRES_HEURES_PAR_DEFAUT,
     mesures: [],
+    formations: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,

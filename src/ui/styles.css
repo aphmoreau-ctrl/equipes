@@ -1304,6 +1304,52 @@ select.champ__saisie {
   color: var(--avertissement);
 }
 
+/* ----------------------------------------- Grille de polyvalence */
+
+.grille--compacte {
+  min-width: 520px;
+  font-size: 13px;
+}
+
+.grille--compacte td {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 4px;
+}
+
+.grille--compacte thead th {
+  font-size: 10px;
+}
+
+.niveau {
+  width: 34px;
+  min-height: 34px;
+  border: 1px solid var(--bordure);
+  border-radius: 7px;
+  background: var(--fond);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.niveau--0 {
+  color: var(--texte-doux);
+}
+
+.niveau--1 {
+  background: color-mix(in srgb, var(--avertissement) 18%, transparent);
+}
+
+.niveau--2 {
+  background: color-mix(in srgb, var(--succes) 20%, transparent);
+}
+
+.niveau--3 {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-texte);
+}
+
 /* ---------------------------------------------- Documents imprimables */
 
 .apercu-document {

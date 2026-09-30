@@ -58,6 +58,7 @@ describe('carte des modules', () => {
       'alertes',
       'heures',
       'conges',
+      'competences',
       'parametres',
     ])
   })

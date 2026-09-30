@@ -10,6 +10,7 @@ import { Planning } from './ecrans/Planning'
 import { Aujourdhui } from './ecrans/Aujourdhui'
 import { Conges } from './ecrans/Conges'
 import { Heures } from './ecrans/Heures'
+import { Competences } from './ecrans/Competences'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -81,6 +82,8 @@ export function App() {
                     <Conges />
                   ) : module.id === 'heures' ? (
                     <Heures />
+                  ) : module.id === 'competences' ? (
+                    <Competences />
                   ) : (
                     <EcranAVenir module={module} />
                   )

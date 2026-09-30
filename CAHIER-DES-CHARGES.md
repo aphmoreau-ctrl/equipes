@@ -1,8 +1,10 @@
 # Cahier des charges – Application « Équipes »
 
-Version 1.1 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
+Version 1.2 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
 
 > **Révision 1.1 (30 septembre 2026)** — l'application est un **outil strictement personnel** : toute mention d'un accès du patron à l'application est supprimée. Ajout du **circuit de suivi** (§9.6) et de la **règle générale sur les documents sortants / PDF** (§15).
+>
+> **Révision 1.2 (30 septembre 2026)** — **priorisation retenue** pour la prise de poste (§16.1) : socle opérationnel d'abord, planning automatique ensuite. Distinction des **deux familles de PDF** et de leurs conditions d'impression (§15).
 
 ---
 
@@ -182,7 +184,7 @@ Besoins par rayon/tranche/compétence ; collaborateurs (contrats, disponibilité
 - **Explication de chaque trou** (« Crèmerie mardi 8h–10h : manque 1 personne ; personne de disponible avec la compétence réception »).
 - Ajustement manuel (glisser-déposer sur iPad) avec **recontrôle immédiat**.
 - **Scénarios** : comparer deux plannings.
-- **Publication** : versions datées, respect du délai de prévenance, PDF d'affichage par rayon et par personne (conforme à §15, « Documents sortants »), historique des modifications après publication. La publication à l'équipe est la **dernière étape du circuit de suivi** (§9.6).
+- **Publication** : versions datées, respect du délai de prévenance, PDF d'affichage par rayon et par personne (conforme à §15, « Documents sortants »), historique des modifications après publication. La publication à l'équipe est la **dernière étape du circuit de suivi** (§9.6). Le **PDF d'affichage équipe** n'est produit qu'au statut « Publié à l'équipe » ; le **dossier à présenter au patron** est produit à tout moment, y compris en brouillon (§15).
 - **Semaine type** réutilisable.
 
 ### 9.5 Anticipation
@@ -208,6 +210,7 @@ Arnaud n'est **pas le validateur final** : il prépare, puis soumet à son patro
 - L'état ne **bloque** jamais le travail : Arnaud peut modifier un document déjà soumis ou validé ; l'application le signale et l'historique en garde la trace.
 - **Indicateurs de suivi** : en attente de soumission, soumis depuis plus de N jours sans réponse, « à corriger » non repris.
 - Les **remarques du patron** sont des **notes de travail internes** : elles restent dans l'application et ne figurent sur **aucun PDF** (§15).
+- **Impression** : le *dossier à présenter au patron* est imprimable **à tout état** — c'est précisément le document soumis ; le *PDF d'affichage équipe* n'est imprimable qu'au statut **« Publié à l'équipe »** (§15). Aucun des deux ne porte de mention de statut.
 - **RGPD** (§3) : ces remarques portent sur l'organisation du travail, jamais sur une appréciation personnelle d'un salarié.
 
 **Mécanisme générique, développé une seule fois** puis réutilisé : d'abord les **plannings** (§9), ensuite les **congés** (§12), enfin les **recrutements** (§13, module 9).
@@ -271,16 +274,54 @@ Tout PDF produit par l'application est destiné à **quitter** l'application : i
 - avertissements techniques, messages de mise au point, réglages, paramètres de calcul, détail des pénalités du moteur de planning ;
 - toute donnée interdite par le RGPD (§3) : motif d'absence détaillé, situation personnelle, appréciation.
 
-**Conséquences pratiques** :
-- **deux documents distincts selon le destinataire** : *affichage équipe* et *rapport patron* — jamais un export brut des écrans ;
+**Deux familles de documents distinctes — jamais un export brut des écrans** :
+
+| Document | Destinataire | Condition de production | Contenu |
+|---|---|---|---|
+| **Dossier à présenter** | le patron | **imprimable à tout moment**, y compris en brouillon : c'est précisément le document soumis pour validation | planning, horaires, effectifs, couverture, indicateurs utiles ; **aucun statut, aucun commentaire** |
+| **Affichage équipe** | les salariés | **uniquement si le planning est au statut « Publié à l'équipe »** (§9.6) ; sinon l'impression est **indisponible**, avec l'explication affichée à l'écran | planning et horaires, par rayon et par personne |
+
+**Autres conséquences pratiques** :
 - l'**aperçu à l'écran est identique au PDF final** : ce qu'Arnaud voit avant impression est exactement ce que le destinataire recevra ;
-- aucune mention de statut sur un PDF : si un document n'est pas prêt à être diffusé, **il n'est pas produit**.
+- **aucune mention de statut ni filigrane** sur l'un ou l'autre document : le statut se lit **dans l'application**, jamais sur le papier ;
+- le verrouillage de l'affichage équipe est la **seule** protection contre la diffusion d'un planning non validé : il est donc **bloquant**, et non un simple avertissement.
 
 ---
 
 ## 16. Feuille de route
 
 Chaque étape : validation préalable → développement → tests → démo fictive → publication → validation par l'utilisateur.
+
+### 16.1 Priorisation retenue (décidée le 30 septembre 2026)
+
+Le temps disponible avant la prise de poste est court (environ cinq semaines). La priorité n'est donc **pas** de tout construire dans l'ordre du document, mais de disposer d'un outil **réellement utilisable chaque jour** dès le premier jour — quitte à ce que le planning reste construit **à la main** au départ.
+
+**Priorité 1 – à terminer avant la prise de poste (début novembre 2026)**
+
+| Ordre | Lot | Contenu | Origine |
+|---|---|---|---|
+| 1 | **Socle** | PWA installable, structure du projet, Vite + TypeScript + Vitest, déploiement automatique, navigation, thème, verrouillage | Étape 0 |
+| 2 | **Paramétrage et besoin** | magasin, services, rayons, horaires, horaires types, fréquentation, événements ; modèle **fruits et légumes** complet ; **courbe de besoin** par tranche de 30 min décomposée par bloc ; **qualité à la réception** | Étape 1 + §7.3 |
+| 3 | **Équipe** | fiches collaborateurs, contrats, disponibilités, compétences, dates clés et alertes ; modèles des autres rayons | Étape 2 |
+| 4 | **Firebase** | projet dédié, authentification, synchronisation iPad / iPhone / Mac, hors ligne, règles de sécurité, sauvegarde et restauration | Étape 4, avancée |
+| 5 | **Planning manuel contrôlé** | saisie et glisser-déposer ; **règles légales et conventionnelles** (§8) en contrôle immédiat ; **courbe de besoin et couverture affichées en regard du planning** ; explication des trous ; **circuit de suivi** (§9.6) ; **dossier patron** et **affichage équipe** en PDF (§15) | Étape 3, sans le générateur |
+| 6 | **Aujourd'hui** | écran du jour iPhone et iPad : présents, absents, trous en rouge, arrivées et départs, alertes | Étape 5, partie |
+| 7 | **Mode chrono** | démarrage / arrêt d'une tâche sur iPhone, durées réelles enregistrées, cadences réelles du magasin | §7.6, avancé |
+
+**Pourquoi le mode chrono et la qualité à la réception sont avancés** : ce sont les deux sources de **mesure du réel**. Plus elles démarrent tôt, plus le magasin aura accumulé d'observations quand le planning automatique arrivera — ses paramètres seront alors calés sur les **cadences réellement constatées** et non sur des valeurs par défaut.
+
+**Priorité 2 – après la prise de poste**
+
+- **Moteur de planning automatique** (§9.3) : vacations candidates, postes clés, scores, recherche locale, polyvalence entre rayons, déterminisme ; scénarios et comparaison ; batterie de tests légaux complète.
+- Congés et absences (§12) avec le circuit de suivi ; remplacements et intérim (module 8).
+- Heures, majorations, export des éléments variables de paie (§11) ; anticipation 12 semaines (§9.5) ; apprentissage et recalage des paramètres (§7.7).
+- Modules 9 à 15 : recrutement et intégration, compétences et formations, suivi individuel, sécurité, communication, pilotage et rapports, documents, import « Rayons frais ».
+
+**Ce que cette priorisation implique d'accepter** : de la prise de poste jusqu'à la livraison du générateur, les plannings sont **construits à la main**. L'application ne les propose pas, mais elle les **vérifie** (règles légales, couverture du besoin, équité), **explique les trous** et **trace leur circuit de validation**. C'est le compromis assumé de cette priorisation.
+
+### 16.2 Décomposition en étapes (référence du contenu)
+
+La liste ci-dessous est la décomposition d'origine du projet. Elle reste la **référence du contenu** de chaque module ; c'est la **priorisation 16.1 qui fixe l'ordre de réalisation**.
 
 - **Étape 0 – Socle** : PWA installable (manifest, service worker, icônes), structure du projet, Vite + TypeScript + Vitest, déploiement automatique, navigation, thème, verrouillage, données de démo. *Critère : installable sur iPad, fonctionne hors ligne.*
 - **Étape 1 – Paramétrage** (module 1) + **modèle fruits et légumes complet** + **courbe de besoin** du jour/semaine. *Critère : besoin F&L calculé et affiché par tranche, décomposé par bloc, tests du moteur.*
@@ -292,4 +333,4 @@ Chaque étape : validation préalable → développement → tests → démo fic
 - **Étape 7 – Compétences, formations, suivi individuel, recrutement, intégration, sécurité**, avec le **circuit de suivi appliqué aux recrutements** (§9.6).
 - **Étape 8 – Pilotage, rapports PDF à remettre au patron, communication, documents, import Rayons frais.**
 
-Objectif : étapes 0 à 5 opérationnelles avant la prise de poste (début novembre 2026).
+Objectif : la **priorité 1 de §16.1** opérationnelle avant la prise de poste (début novembre 2026) ; la priorité 2 ensuite, sans date imposée.

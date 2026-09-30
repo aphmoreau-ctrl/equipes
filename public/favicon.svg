@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Équipes">
+  <title>Équipes</title>
+  <!-- Fond pleine page : indispensable pour l'icone « maskable » d'Android
+       et pour l'arrondi applique automatiquement par iOS. -->
+  <rect width="512" height="512" fill="#14532d"/>
+  <!-- La lettre « E » et son accent sont traces en formes geometriques
+       (rectangles + polygone), jamais en texte : aucune police n'est requise,
+       le rendu est donc identique partout. -->
+  <g fill="#ffffff">
+    <!-- accent aigu -->
+    <polygon points="210,160 274,108 302,108 238,160"/>
+    <!-- montant vertical -->
+    <rect x="156" y="176" width="52" height="230"/>
+    <!-- barre haute -->
+    <rect x="156" y="176" width="200" height="52"/>
+    <!-- barre mediane (plus courte, comme dans un E dessine) -->
+    <rect x="156" y="266" width="176" height="50"/>
+    <!-- barre basse -->
+    <rect x="156" y="354" width="200" height="52"/>
+  </g>
+</svg>

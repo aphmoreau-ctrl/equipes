@@ -1,1 +1,13 @@
+# Dependances installees (reconstruites par « npm ci »)
+node_modules/
+
+# Resultat de la construction du site
+dist/
+dev-dist/
+
+# Fichiers techniques macOS
 .DS_Store
+
+# Journaux
+*.log
+npm-debug.log*

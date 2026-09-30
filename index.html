@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Équipes</title>
-</head>
-<body>
-  <h1>Équipes – en construction</h1>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>Équipes</title>
+    <meta name="description" content="Gestion des équipes du service Frais" />
+
+    <!-- Couleur de la barre systeme, en clair et en sombre -->
+    <meta name="theme-color" content="#14532d" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b2015" media="(prefers-color-scheme: dark)" />
+
+    <!-- Icones -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+    <!-- Installation sur l'ecran d'accueil iOS / iPadOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Équipes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+  </head>
+  <body>
+    <div id="racine"></div>
+    <noscript>
+      Cette application a besoin de JavaScript pour fonctionner. Merci de l'activer dans Safari.
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

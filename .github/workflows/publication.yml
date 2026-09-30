@@ -1,0 +1,65 @@
+# Verifie puis publie le site a chaque envoi sur la branche « main ».
+#
+# Le site n'est mis a jour QUE si les types sont corrects et si tous les tests
+# passent. Une erreur laisse donc en ligne la derniere version saine : il est
+# impossible de se retrouver avec une application cassee sur l'iPad.
+
+name: Vérification et publication
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication a la fois, sans annuler celle qui est en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verification:
+    name: Tests et construction
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier les types
+        run: npm run types
+
+      - name: Lancer les tests
+        run: npm run test
+
+      - name: Construire le site
+        run: npm run build
+
+      - name: Préparer la mise en ligne
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publication:
+    name: Mise en ligne
+    needs: verification
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - name: Publier sur GitHub Pages
+        id: deploiement
+        uses: actions/deploy-pages@v4

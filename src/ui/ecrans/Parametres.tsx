@@ -1,0 +1,259 @@
+import { useEffect, useState } from 'react'
+import { dureeEnTexte } from '../../domaine/temps'
+import { PARAMETRES_PAR_DEFAUT, REGLES_IMPLEMENTEES } from '../../moteurs/regles'
+import { HORAIRES_TYPES_DEMO, RAYONS_DEMO, SERVICE_DEMO } from '../../donnees/demo'
+import { MODULES } from '../modules'
+
+interface Proprietes {
+  readonly faceIdPossible: boolean
+  readonly faceIdEnregistre: boolean
+  readonly onActiverFaceId: () => Promise<void>
+  readonly onDesactiverFaceId: () => void
+  readonly onChangerCode: () => void
+}
+
+interface EtatAppareil {
+  readonly installee: boolean
+  readonly horsLignePret: boolean
+}
+
+function useEtatAppareil(): EtatAppareil {
+  const [etat, setEtat] = useState<EtatAppareil>({ installee: false, horsLignePret: false })
+
+  useEffect(() => {
+    const enPleinEcran =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches
+    const surIOS = (navigator as { standalone?: boolean }).standalone === true
+    const horsLignePret =
+      'serviceWorker' in navigator && navigator.serviceWorker.controller !== null
+
+    setEtat({ installee: enPleinEcran || surIOS, horsLignePret })
+  }, [])
+
+  return etat
+}
+
+export function Parametres({
+  faceIdPossible,
+  faceIdEnregistre,
+  onActiverFaceId,
+  onDesactiverFaceId,
+  onChangerCode,
+}: Proprietes) {
+  const appareil = useEtatAppareil()
+  const [confirmationDemandee, setConfirmationDemandee] = useState(false)
+  const [erreurFaceId, setErreurFaceId] = useState('')
+  const p = PARAMETRES_PAR_DEFAUT
+
+  async function activerFaceId(): Promise<void> {
+    setErreurFaceId('')
+    try {
+      await onActiverFaceId()
+    } catch (probleme) {
+      setErreurFaceId(
+        probleme instanceof Error
+          ? `Activation impossible : ${probleme.message}`
+          : 'Activation impossible.',
+      )
+    }
+  }
+
+  return (
+    <>
+      <header className="entete">
+        <h1>Paramètres</h1>
+        <p>Magasin, rayons, horaires, règles légales, verrouillage et sauvegarde.</p>
+      </header>
+
+      <section className="carte">
+        <h2>Cette application</h2>
+        <dl className="liste-faits">
+          <dt>Version</dt>
+          <dd>{__VERSION_APP__}</dd>
+
+          <dt>Mode d’ouverture</dt>
+          <dd>
+            {appareil.installee
+              ? 'Installée sur l’écran d’accueil'
+              : 'Ouverte dans le navigateur (non installée)'}
+          </dd>
+
+          <dt>Fonctionnement hors ligne</dt>
+          <dd>{appareil.horsLignePret ? 'Prêt' : 'Pas encore actif sur cet appareil'}</dd>
+        </dl>
+
+        {!appareil.installee && (
+          <p className="avis">
+            Pour installer l’application : ouvrez ce site <strong>dans Safari</strong>, touchez le
+            bouton <strong>Partager</strong>, puis <strong>« Sur l’écran d’accueil »</strong>. Seul
+            Safari sait installer une application sur iPhone et iPad.
+          </p>
+        )}
+      </section>
+
+      <section className="carte">
+        <h2>Face ID</h2>
+        {faceIdPossible ? (
+          <>
+            <p>
+              {faceIdEnregistre
+                ? 'Activé sur cet appareil : l’application s’ouvre d’un regard, sans saisir le code.'
+                : 'Cet appareil sait vous reconnaître. Vous pourrez ouvrir l’application sans saisir votre code.'}{' '}
+              Sur Mac, c’est Touch ID.
+            </p>
+            <p className="avis">
+              Votre visage ne quitte jamais l’appareil : l’application ne reçoit qu’un oui ou un
+              non. Le code reste le secours si la reconnaissance échoue.
+            </p>
+            {faceIdEnregistre ? (
+              <button type="button" className="bouton" onClick={onDesactiverFaceId}>
+                Désactiver Face ID sur cet appareil
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="bouton bouton--principal"
+                onClick={() => void activerFaceId()}
+              >
+                Activer Face ID
+              </button>
+            )}
+            {erreurFaceId !== '' && <p className="verrou__erreur">{erreurFaceId}</p>}
+          </>
+        ) : (
+          <p>
+            Cet appareil ou ce navigateur ne propose pas la reconnaissance du visage ou de
+            l’empreinte. Le code reste le seul moyen d’ouvrir l’application ici. Sur iPhone et
+            iPad, Face ID exige d’ouvrir le site dans Safari.
+          </p>
+        )}
+      </section>
+
+      <section className="carte">
+        <h2>Code de secours</h2>
+        <p>
+          Le code sert quand Face ID échoue, n’est pas disponible, ou n’a pas été activé. Il n’est
+          pas enregistré : seule son empreinte est conservée sur cet appareil, et elle n’est envoyée
+          nulle part.
+        </p>
+        <p className="avis avis--attention">
+          Le code comme Face ID empêchent un curieux d’ouvrir l’application sur un iPad laissé sans
+          surveillance. Ce n’est pas encore une protection des données : celle-ci viendra avec le
+          compte et les règles de sécurité (lot 4).
+        </p>
+
+        {confirmationDemandee ? (
+          <>
+            <p>
+              <strong>Confirmer ?</strong> L’application va se verrouiller et vous devrez choisir un
+              nouveau code tout de suite.
+            </p>
+            <p>
+              <button type="button" className="bouton bouton--principal" onClick={onChangerCode}>
+                Oui, changer le code
+              </button>{' '}
+              <button
+                type="button"
+                className="bouton"
+                onClick={() => setConfirmationDemandee(false)}
+              >
+                Annuler
+              </button>
+            </p>
+          </>
+        ) : (
+          <button type="button" className="bouton" onClick={() => setConfirmationDemandee(true)}>
+            Changer le code de verrouillage
+          </button>
+        )}
+      </section>
+
+      <section className="carte">
+        <h2>Magasin</h2>
+        <p>Service {SERVICE_DEMO}, avec les sept rayons frais prévus par défaut.</p>
+        <p className="avis">
+          <strong>Données de démonstration, entièrement fictives.</strong> Aucune donnée réelle ne
+          figure dans l’application à ce stade. Vous pourrez renommer, activer, désactiver et
+          réordonner ces rayons au lot 2.
+        </p>
+        <ul className="liste-simple">
+          {RAYONS_DEMO.map((rayon) => (
+            <li key={rayon.id}>{rayon.nom}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="carte">
+        <h2>Horaires types</h2>
+        <p>Vacations de départ, toutes modifiables au lot 2.</p>
+        <ul className="liste-simple">
+          {HORAIRES_TYPES_DEMO.map((horaire) => (
+            <li key={horaire.nom}>
+              <strong>{horaire.nom}</strong> — de {horaire.debut} à {horaire.fin}, pause de{' '}
+              {horaire.pause} min
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="carte">
+        <h2>Règles légales et conventionnelles</h2>
+        <p>
+          Valeurs de départ ({REGLES_IMPLEMENTEES.length} règle
+          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} déjà contrôlée
+          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} automatiquement).
+        </p>
+        <dl className="liste-faits">
+          <dt>Durée maximale par jour</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneMinutes)}</dd>
+
+          <dt>Dérogation exceptionnelle</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneDerogationMinutes)}</dd>
+
+          <dt>Durée maximale par semaine</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleHebdomadaireMinutes)}</dd>
+
+          <dt>Moyenne sur 12 semaines</dt>
+          <dd>{dureeEnTexte(p.dureeMoyenneMaximaleSur12SemainesMinutes)}</dd>
+
+          <dt>Repos quotidien</dt>
+          <dd>{dureeEnTexte(p.reposQuotidienMinutes)}</dd>
+
+          <dt>Repos hebdomadaire</dt>
+          <dd>{dureeEnTexte(p.reposHebdomadaireMinutes)}</dd>
+
+          <dt>Pause obligatoire</dt>
+          <dd>
+            {dureeEnTexte(p.dureeMinimaleDeLaPauseMinutes)} dès{' '}
+            {dureeEnTexte(p.seuilDeclenchantLaPauseMinutes)} de travail
+          </dd>
+
+          <dt>Délai de prévenance</dt>
+          <dd>{p.delaiDePrevenanceJoursOuvres} jours ouvrés</dd>
+
+          <dt>Contingent d’heures supplémentaires</dt>
+          <dd>{p.contingentHeuresSupplementairesAnnuel} h par an</dd>
+        </dl>
+        <p className="avis avis--attention">
+          Ce sont des <strong>valeurs de départ</strong>, à vérifier et ajuster selon votre contrat
+          et les accords du magasin. Elles deviendront modifiables ici même au lot 2.
+        </p>
+      </section>
+
+      <section className="carte">
+        <h2>Avancement du projet</h2>
+        <ul className="liste-simple">
+          {MODULES.map((module) => (
+            <li key={module.id}>
+              {module.titre}{' '}
+              <span className={module.pret ? 'etiquette' : 'etiquette etiquette--attente'}>
+                {module.pret ? 'disponible' : module.livraison}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  )
+}

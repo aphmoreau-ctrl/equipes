@@ -1,10 +1,12 @@
 # Cahier des charges – Application « Équipes »
 
-Version 1.2 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
+Version 1.3 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
 
 > **Révision 1.1 (30 septembre 2026)** — l'application est un **outil strictement personnel** : toute mention d'un accès du patron à l'application est supprimée. Ajout du **circuit de suivi** (§9.6) et de la **règle générale sur les documents sortants / PDF** (§15).
 >
-> **Révision 1.2 (30 septembre 2026)** — **priorisation retenue** pour la prise de poste (§16.1) : socle opérationnel d'abord, planning automatique ensuite. Distinction des **deux familles de PDF** et de leurs conditions d'impression (§15).
+> **Révision 1.2 (30 septembre 2026)** — **priorisation retenue** pour la prise de poste (§16.1) : socle opérationnel d'abord, planning automatique ensuite. Distinction des **deux familles de PDF** et de leurs conditions d'impression (§15). Les **rapports** (module 14) ne suivent pas le circuit de suivi : simple liste réimprimable avec un champ interne de remarques.
+>
+> **Révision 1.3 (30 septembre 2026)** — le **déverrouillage par Face ID / Touch ID** (clé d'accès WebAuthn) est retenu et livré **dès l'étape 0**, avec le code comme secours (§2).
 
 ---
 
@@ -39,7 +41,8 @@ Version 1.2 – septembre 2026. Document de référence du projet : toute évolu
 - **Moteurs en code pur, séparés de l'interface** : `moteur-besoin`, `moteur-planning`, `regles` (légales/conventionnelles), `indicateurs`. Tous testés.
 - **Données** : Firebase (projet dédié, à créer avec l'utilisateur, pas celui de « Mes Heures »). Authentification e-mail / mot de passe ; Firestore avec persistance hors ligne ; règles de sécurité : chaque utilisateur n'accède qu'à ses données (`users/{uid}/…`). **Aucun accès tiers, ni maintenant ni plus tard** : pas de compte pour le patron, pas de partage en lecture seule, pas de lien public de consultation (voir §1, « Outil strictement personnel »).
 - Synchronisation temps réel entre iPad, iPhone, Mac ; résolution de conflits « dernière modification gagne » par document, avec historique.
-- **Verrouillage** : code à l'ouverture (et Face ID si réalisable via WebAuthn/passkey).
+- **Verrouillage** : **Face ID** (iPhone, iPad) ou **Touch ID** (Mac) au moyen d'une **clé d'accès** (norme WebAuthn), avec un **code chiffré de secours** choisi sur l'appareil. Le code sert si la reconnaissance échoue, si elle n'a pas été activée, ou sur un appareil qui ne la propose pas ; il est donc toujours défini en premier. Mis en place **dès l'étape 0**.
+  *Portée réelle tant qu'il n'y a pas de serveur* : l'application demande à l'appareil de vérifier l'identité puis fait confiance à sa réponse. C'est un **verrou d'écran**, efficace contre un curieux, insuffisant contre quelqu'un de compétent ayant l'appareil en main. La vérification côté serveur et la vraie protection des données arrivent avec **Firebase (lot 4)**. Le visage ne quitte jamais l'appareil : l'application ne reçoit qu'un oui ou un non.
 - **Sauvegarde** : export complet (JSON + fichiers) et restauration.
 - **Historique des modifications** sur les données sensibles (planning publié, contrats, compteurs).
 - Accessibilité et confort : iPad d'abord (tactile, gros boutons, glisser-déposer dans le planning), iPhone (écran du jour), Mac (clavier/souris). Mode sombre. Interface en français.
@@ -246,6 +249,8 @@ Le **circuit de suivi** (§9.6) s'applique aux congés : Brouillon → Soumis �
 
 - **13 – Communication** : consignes, briefs, réunions et comptes rendus, notes datées (avec niveau d'importance par couleur).
 - **14 – Pilotage, et rapports à remettre au patron** : tableau de bord **personnel, interne à l'application** (productivité CA/heure si CA saisi, heures vs budget, couverture, heures sup et intérim, absentéisme, turnover, polyvalence, formations et entretiens à jour, conformité) ; à partir de ce tableau de bord, production d'un **rapport d'une page par semaine** et d'un **bilan mensuel** **en PDF**, avec plan d'actions — documents **remis au patron hors application** et strictement conformes à §15, « Documents sortants ». Le patron **n'accède pas** au tableau de bord.
+
+  Les rapports ne suivent **pas** le circuit de suivi de §9.6 (un rapport ne se valide pas et ne se publie pas à l'équipe : il se remet). À la place, une simple **liste des rapports produits** : date d'édition, période couverte, **bouton de réimpression à l'identique**, et un champ **facultatif « remarques du patron et suites à donner »**. Ce champ est une **note de travail interne**, visible **uniquement dans l'application**, et ne figure sur **aucun PDF** (§15).
 - **15 – Documents** : modèles, procédures, affichages (stockage chiffré par morceaux dans Firestore si nécessaire, pas de Cloud Storage payant).
 
 ## 15. Transverse
@@ -323,7 +328,7 @@ Le temps disponible avant la prise de poste est court (environ cinq semaines). L
 
 La liste ci-dessous est la décomposition d'origine du projet. Elle reste la **référence du contenu** de chaque module ; c'est la **priorisation 16.1 qui fixe l'ordre de réalisation**.
 
-- **Étape 0 – Socle** : PWA installable (manifest, service worker, icônes), structure du projet, Vite + TypeScript + Vitest, déploiement automatique, navigation, thème, verrouillage, données de démo. *Critère : installable sur iPad, fonctionne hors ligne.*
+- **Étape 0 – Socle** : PWA installable (manifest, service worker, icônes), structure du projet, Vite + TypeScript + Vitest, déploiement automatique, navigation, thème, **verrouillage Face ID / Touch ID avec code de secours**, données de démo. *Critère : installable sur iPad, fonctionne hors ligne.*
 - **Étape 1 – Paramétrage** (module 1) + **modèle fruits et légumes complet** + **courbe de besoin** du jour/semaine. *Critère : besoin F&L calculé et affiché par tranche, décomposé par bloc, tests du moteur.*
 - **Étape 2 – Équipe** (module 2) + modèles des autres rayons.
 - **Étape 3 – Moteur de planning** + règles + vue planning + ajustement manuel + indicateurs + explications + **circuit de suivi des plannings** (§9.6) + **PDF d'affichage équipe** conforme à §15. *Critère : batterie de tests (repos, durées, temps partiels, compétences, équité, cas impossibles) ; zéro infraction sur les jeux de test ; aucune information interne dans le PDF.*

@@ -1,0 +1,510 @@
+/* ==========================================================================
+   Équipes - feuille de style de base
+   Pensee d'abord pour l'iPad : cibles tactiles larges, texte lisible,
+   respect des bords arrondis et de l'encoche, mode sombre automatique.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  --fond: #f5f7f5;
+  --fond-carte: #ffffff;
+  --fond-survol: #eef1ef;
+  --texte: #16201a;
+  --texte-doux: #596a60;
+  --bordure: #dde3df;
+  --accent: #14532d;
+  --accent-texte: #ffffff;
+  --accent-doux: #e6f0ea;
+  --alerte: #b42318;
+  --avertissement: #b54708;
+  --succes: #067647;
+
+  --rayon: 14px;
+  --rayon-petit: 10px;
+  --cible-tactile: 46px;
+  --ombre: 0 1px 2px rgb(16 24 20 / 6%), 0 4px 12px rgb(16 24 20 / 4%);
+
+  --marge-haut: env(safe-area-inset-top, 0px);
+  --marge-bas: env(safe-area-inset-bottom, 0px);
+  --marge-gauche: env(safe-area-inset-left, 0px);
+  --marge-droite: env(safe-area-inset-right, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #0c110e;
+    --fond-carte: #151d18;
+    --fond-survol: #1d2721;
+    --texte: #edf2ee;
+    --texte-doux: #97a89d;
+    --bordure: #253029;
+    --accent: #4aa86c;
+    --accent-texte: #07150d;
+    --accent-doux: #16261c;
+    --alerte: #f97066;
+    --avertissement: #f79009;
+    --succes: #47cd89;
+    --ombre: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 24%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--fond);
+  color: var(--texte);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ----------------------------------------------------- Ossature generale */
+
+.application {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.contenu {
+  flex: 1;
+  min-width: 0;
+  padding: 24px max(24px, var(--marge-droite)) calc(40px + var(--marge-bas))
+    max(24px, var(--marge-gauche));
+}
+
+.contenu__interieur {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------- Navigation */
+
+.navigation {
+  background: var(--fond-carte);
+  border-color: var(--bordure);
+}
+
+.navigation__marque {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.navigation__logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-texte);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.navigation__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navigation__lien {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--cible-tactile);
+  padding: 0 14px;
+  border-radius: var(--rayon-petit);
+  color: var(--texte-doux);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.navigation__lien:hover {
+  background: var(--fond-survol);
+  color: var(--texte);
+}
+
+.navigation__lien--actif {
+  background: var(--accent-doux);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .navigation__lien--actif {
+    color: var(--texte);
+  }
+}
+
+.navigation__pastille {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--fond-survol);
+  color: var(--texte-doux);
+}
+
+/* Grand ecran (iPad paysage, Mac) : colonne laterale fixe */
+@media (min-width: 900px) {
+  .navigation {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    width: 268px;
+    flex: 0 0 268px;
+    height: 100dvh;
+    overflow-y: auto;
+    border-right: 1px solid var(--bordure);
+    padding: calc(20px + var(--marge-haut)) 14px calc(20px + var(--marge-bas))
+      max(14px, var(--marge-gauche));
+  }
+
+  .navigation__marque {
+    padding: 0 10px 18px;
+    font-size: 19px;
+  }
+
+  .navigation__liste {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+/* Petit ecran (iPhone, iPad portrait etroit) : bandeau defilant en haut */
+@media (max-width: 899px) {
+  .application {
+    flex-direction: column;
+  }
+
+  .navigation {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--bordure);
+    padding-top: var(--marge-haut);
+  }
+
+  .navigation__marque {
+    padding: 12px max(16px, var(--marge-gauche));
+    font-size: 18px;
+  }
+
+  .navigation__liste {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 max(12px, var(--marge-gauche)) 10px;
+  }
+
+  .navigation__liste::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navigation__pastille {
+    display: none;
+  }
+
+  .contenu {
+    padding-top: 18px;
+  }
+}
+
+/* ------------------------------------------------------------- Ecrans */
+
+.entete {
+  margin-bottom: 22px;
+}
+
+.entete h1 {
+  margin: 0 0 6px;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.entete p {
+  margin: 0;
+  color: var(--texte-doux);
+}
+
+.carte {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--ombre);
+}
+
+.carte h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.carte h2 + p {
+  margin-top: 0;
+  color: var(--texte-doux);
+}
+
+.etiquette {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-doux);
+  color: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .etiquette {
+    color: var(--texte);
+  }
+}
+
+.etiquette--attente {
+  background: var(--fond-survol);
+  color: var(--texte-doux);
+}
+
+.liste-faits {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, auto) 1fr;
+  gap: 10px 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.liste-faits dt {
+  color: var(--texte-doux);
+}
+
+.liste-faits dd {
+  margin: 0;
+}
+
+.avis {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-doux);
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: var(--texte);
+  font-size: 15px;
+}
+
+.avis--attention {
+  border-left-color: var(--avertissement);
+  background: color-mix(in srgb, var(--avertissement) 10%, transparent);
+}
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--cible-tactile);
+  padding: 0 20px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-carte);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bouton:hover {
+  background: var(--fond-survol);
+}
+
+.bouton--principal {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-texte);
+}
+
+.bouton--principal:hover {
+  filter: brightness(1.1);
+}
+
+.bouton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.liste-simple {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-simple li {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.liste-simple li:last-child {
+  border-bottom: none;
+}
+
+/* ------------------------------------------------------ Verrouillage */
+
+.verrou {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: calc(24px + var(--marge-haut)) 24px calc(24px + var(--marge-bas));
+}
+
+.verrou__boite {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.verrou__logo {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 18px;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--accent-texte);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.verrou__titre {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.verrou__aide {
+  margin: 0 0 24px;
+  color: var(--texte-doux);
+  font-size: 15px;
+  min-height: 44px;
+}
+
+.verrou__points {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 26px;
+  height: 16px;
+}
+
+.verrou__point {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--texte-doux);
+}
+
+.verrou__point--plein {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.verrou__clavier {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.verrou__touche {
+  height: 66px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+  font-size: 26px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.verrou__touche:active {
+  background: var(--fond-survol);
+}
+
+.verrou__touche--texte {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.verrou__bouton-large {
+  width: 100%;
+  min-height: 54px;
+  font-size: 17px;
+}
+
+.verrou__boite .avis {
+  text-align: left;
+}
+
+.verrou__erreur {
+  color: var(--alerte);
+  font-weight: 600;
+  margin: 18px 0 0;
+  min-height: 24px;
+}
+
+/* --------------------------------------------- Bandeau de mise a jour */
+
+.maj {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(18px + var(--marge-bas));
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 14px 12px 18px;
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+  background: var(--fond-carte);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+  font-size: 15px;
+}
+
+@media print {
+  .navigation,
+  .maj {
+    display: none;
+  }
+}

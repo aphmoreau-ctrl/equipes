@@ -17,6 +17,7 @@ Application web installable (PWA) de **gestion complète des équipes**, décrit
 
 ## Règles absolues
 - **Outil strictement personnel** : l'application est utilisée par Arnaud seul. **Aucun accès patron ni tiers** — jamais de compte, de partage en lecture seule ni de lien de consultation, même « plus tard ». Le patron valide **en dehors de l'application** ; Arnaud renseigne lui-même le **circuit de suivi** (§9.6 du cahier des charges : Brouillon → Soumis → Validé / À corriger → Publié à l'équipe, avec historique).
+- **Verrouillage** : Face ID / Touch ID par clé d'accès, avec **code de secours** toujours défini en premier. Tant qu'il n'y a pas de serveur (avant le lot 4), c'est un verrou d'écran, pas une protection des données : ne jamais le présenter autrement.
 - **PDF sortants** (patron ou équipe) : propres, sobres, professionnels. Planning, horaires et **indicateurs utiles uniquement**. **Jamais** de notes personnelles, de commentaires internes (y compris les remarques du patron), de statut de suivi ni d'historique. Voir §15 « Documents sortants » du cahier des charges.
 - **Aucune donnée réelle dans le dépôt** (le dépôt et le site sont publics) : les données vivent uniquement dans Firebase, derrière l'authentification, avec des règles de sécurité strictes par utilisateur. Seules des données **fictives** peuvent figurer dans le code (démo, tests).
 - **RGPD** : prénom + initiale du nom uniquement ; jamais de motif médical, de situation familiale, d'appréciation personnelle ; seulement des faits datés. Voir la section RGPD du cahier des charges.

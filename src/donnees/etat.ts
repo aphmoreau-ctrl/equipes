@@ -1,5 +1,6 @@
 import type { Absence } from '../domaine/absence'
 import type { Collaborateur } from '../domaine/collaborateur'
+import type { Mesure } from '../domaine/mesure'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
 import { planningVide } from '../domaine/planning'
@@ -27,6 +28,8 @@ export interface EtatApplication {
   readonly configurations: readonly ConfigurationRayon[]
   readonly collaborateurs: readonly Collaborateur[]
   readonly absences: readonly Absence[]
+  /** Mesures du mode chrono (§7.6). */
+  readonly mesures: readonly Mesure[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -50,6 +53,7 @@ export function etatInitial(): EtatApplication {
     configurations: CONFIGURATIONS_DEMO,
     collaborateurs: COLLABORATEURS_DEMO,
     absences: [],
+    mesures: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,

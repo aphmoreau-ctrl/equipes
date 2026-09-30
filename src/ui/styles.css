@@ -1214,6 +1214,39 @@ select.champ__saisie {
   }
 }
 
+/* ---------------------------------------------------------- Chrono */
+
+.chrono {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.chrono__tache {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.chrono__compteur {
+  margin: 0 0 18px;
+  font-size: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .chrono__compteur {
+    color: var(--succes);
+  }
+}
+
+.chrono__bouton {
+  width: 100%;
+  min-height: 56px;
+  font-size: 17px;
+}
+
 /* ----------------------------------------------- Ecran du jour */
 
 .ligne-rayon-jour {

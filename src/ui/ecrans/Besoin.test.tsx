@@ -24,6 +24,16 @@ function choisirLeRayon(nom: string): void {
   fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: nom } })
 }
 
+/**
+ * La legende de la courbe. Les noms de blocs apparaissent aussi dans le
+ * selecteur du mode chrono : on limite la recherche a la legende.
+ */
+function legende(): HTMLElement {
+  const element = document.querySelector('.courbe__legende')
+  if (element === null) throw new Error('Légende introuvable.')
+  return element as HTMLElement
+}
+
 beforeEach(() => {
   window.localStorage.clear()
 })
@@ -51,10 +61,11 @@ describe('ecran Besoin', () => {
     await screen.findByText('Courbe du besoin')
 
     // La legende nomme les blocs qui apportent du travail ce jour-la.
-    expect(screen.getByText('Réception et contrôle')).toBeInTheDocument()
-    expect(screen.getByText('Mise en place des étals (vrac)')).toBeInTheDocument()
-    expect(screen.getByText('Réassort en journée')).toBeInTheDocument()
-    expect(screen.getByText('Personnes retenues')).toBeInTheDocument()
+    const noms = legende().textContent ?? ''
+    expect(noms).toContain('Réception et contrôle')
+    expect(noms).toContain('Mise en place des étals (vrac)')
+    expect(noms).toContain('Réassort en journée')
+    expect(noms).toContain('Personnes retenues')
   })
 
   it('calcule aussi les six autres rayons, avec leurs propres blocs', async () => {
@@ -64,9 +75,10 @@ describe('ecran Besoin', () => {
 
     expect(await screen.findByText('Courbe du besoin')).toBeInTheDocument()
     // Blocs propres a la boucherie, absents des fruits et legumes.
-    expect(screen.getByText('Comptoir boucherie')).toBeInTheDocument()
-    expect(screen.getByText('Laboratoire : hachés, brochettes, barquettes')).toBeInTheDocument()
-    expect(screen.queryByText('Réassort en journée')).not.toBeInTheDocument()
+    const noms = legende().textContent ?? ''
+    expect(noms).toContain('Comptoir boucherie')
+    expect(noms).toContain('Laboratoire : hachés, brochettes, barquettes')
+    expect(noms).not.toContain('Réassort en journée')
   })
 
   it('recalcule le besoin quand la meteo change', async () => {

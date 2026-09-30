@@ -6,6 +6,7 @@ import { pointeDeLaJournee, type Meteo, type NiveauQualite } from '../../moteurs
 import { configurationDeRayon, enPromotion, meteoDuJour, saisiesDuJour } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { CourbeBesoin } from '../composants/CourbeBesoin'
+import { Chrono } from '../composants/Chrono'
 
 const METEOS: readonly { valeur: Meteo; libelle: string }[] = [
   { valeur: 'normal', libelle: 'Normal' },
@@ -294,6 +295,8 @@ export function Besoin() {
               </section>
             </>
           )}
+
+          <Chrono configuration={configuration} />
         </>
       )}
     </>

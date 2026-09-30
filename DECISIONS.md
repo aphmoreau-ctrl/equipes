@@ -364,3 +364,41 @@ le rayon, mais sa vacation reste au planning jusqu'à ce qu'un remplaçant soit
 choisi.
 **Raison.** C'est ce qui permet de lister « les vacations à remplacer ». Effacer
 la vacation ferait disparaître le problème au lieu de le montrer.
+
+---
+
+## Lot 7 — Mode chrono
+
+### D-40 — Le chrono ramène les mesures à une qualité normale
+**Décision.** Une mesure prise sur de la marchandise de qualité B ou C est
+divisée par le coefficient de qualité avant d'entrer dans la moyenne.
+**Raison.** Sans cela, chronométrer une semaine de mauvaise marchandise
+dégraderait durablement la cadence de référence, et le modèle surestimerait le
+besoin toute l'année.
+**Alternative.** Ne chronométrer que les jours normaux — peu réaliste au rayon.
+
+### D-41 — Recalage progressif, jamais brutal
+**Décision.** Le paramètre proposé vaut 80 % de l'ancien plus 20 % de la
+mesure, et rien n'est proposé avant **trois mesures** ni pour un écart
+inférieur à **5 %**. Rien n'est appliqué sans votre validation.
+**Raison.** C'est exactement le lissage prévu au §7.7 du cahier des charges.
+Une journée exceptionnelle ne doit pas bouleverser le modèle.
+**Alternative.** Appliquer la mesure telle quelle — le modèle deviendrait
+instable et perdrait votre confiance.
+
+### D-42 — Tous les blocs ne se chronomètrent pas
+**Décision.** Le recalage ne s'applique qu'aux blocs mesurables à l'unité :
+mise en place, réception, tri, facing, contrôle des dates, nettoyage, plan de
+cuisson, format de livraison, tâches fixes. Le réassort, le comptoir, les
+balances et la transformation en sont exclus.
+**Raison.** Leur durée ne dépend pas d'une quantité unique mais du nombre de
+clients présents ou d'une liste de produits. Les chronométrer donnerait un
+chiffre sans signification.
+**Alternative.** Tout chronométrer — des recalages faux.
+
+### D-43 — Le mode chrono est placé sur l'écran Besoin
+**Décision.** Le chrono est en bas de l'écran Besoin, sous la courbe.
+**Raison.** C'est ce qu'il alimente : on mesure, et l'on voit immédiatement
+l'effet sur le besoin. Sur iPhone, l'écran est atteignable en deux touches.
+**Alternative.** Un écran dédié, atteignable en une seule touche depuis
+l'accueil — à envisager si l'usage au rayon le demande.

@@ -163,6 +163,9 @@ describe('effet du reglage sur le besoin calcule', () => {
 
     afficher(<Besoin />)
     fireEvent.change(screen.getByLabelText('Jour'), { target: { value: '2026-11-02' } })
-    expect(screen.queryByText('Réassort en journée')).not.toBeInTheDocument()
+    // Le bloc desactive disparait de la legende de la courbe.
+    const legende = document.querySelector('.courbe__legende')?.textContent ?? ''
+    expect(legende).not.toContain('Réassort en journée')
+    expect(legende).toContain('Réception et contrôle')
   })
 })

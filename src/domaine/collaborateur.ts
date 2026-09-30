@@ -90,6 +90,15 @@ export interface Collaborateur {
   readonly habilitations: readonly Habilitation[]
   readonly compteursEquite: CompteursEquite
 
+  /**
+   * Moins de 18 ans : declenche les regles protectrices des jeunes
+   * travailleurs (repos de 12 h, pas de travail de nuit, 8 h par jour).
+   *
+   * On enregistre un simple oui/non, jamais la date de naissance : c'est la
+   * donnee minimale suffisante pour appliquer la loi (RGPD, §3).
+   */
+  readonly estMineur: boolean
+
   /** Contact pour les remplacements, seulement si la personne l'a accepte. */
   readonly contactAutorise: boolean
   readonly actif: boolean

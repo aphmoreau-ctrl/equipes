@@ -56,6 +56,7 @@ interface Raccourci {
   readonly competences: Readonly<Record<string, NiveauCompetence>>
   readonly habilitations?: readonly Habilitation[]
   readonly equite?: Partial<Collaborateur['compteursEquite']>
+  readonly estMineur?: boolean
   readonly contactAutorise?: boolean
 }
 
@@ -87,6 +88,7 @@ function collaborateur(raccourci: Raccourci): Collaborateur {
       feriesTravailles: 0,
       ...raccourci.equite,
     },
+    estMineur: raccourci.estMineur ?? false,
     contactAutorise: raccourci.contactAutorise ?? false,
     actif: true,
   }
@@ -164,6 +166,7 @@ export const COLLABORATEURS_DEMO: readonly Collaborateur[] = [
   collaborateur({
     id: 'c-09', prenom: 'Noé', initiale: 'F.', rayonPrincipal: 'boucherie',
     poste: 'Apprenti boucher', contrat: 'apprenti', heures: 35, dateEntree: '2025-09-01',
+    estMineur: true,
     competences: { 'boucherie': 1, 'hygiène': 1 },
     equite: { samedisTravailles: 15, dimanchesTravailles: 3 },
   }),

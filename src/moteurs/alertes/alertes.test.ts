@@ -38,6 +38,7 @@ function personne(modifications: Partial<Collaborateur> = {}): Collaborateur {
       fermetures: 0,
       feriesTravailles: 0,
     },
+    estMineur: false,
     contactAutorise: false,
     actif: true,
     ...modifications,

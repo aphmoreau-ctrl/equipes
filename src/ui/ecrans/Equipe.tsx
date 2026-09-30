@@ -87,6 +87,7 @@ export function Equipe() {
             fermetures: 0,
             feriesTravailles: 0,
           },
+          estMineur: false,
           contactAutorise: false,
           actif: true,
         },

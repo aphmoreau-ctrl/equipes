@@ -214,3 +214,64 @@ temps partiels) et des indisponibilités déclarées.
 de tester le moteur de planning sur des cas réalistes.
 **RGPD.** Prénoms courants et initiales tirées au hasard : ils ne désignent
 personne. Aucune donnée réelle.
+
+---
+
+## Lot 5 — Contrôle légal du planning
+
+### D-24 — Un contexte unique pour toutes les règles
+**Décision.** Les règles reçoivent désormais un objet unique contenant les
+vacations, les paramètres, les collaborateurs, l'historique, la date de
+publication et les heures supplémentaires déjà consommées — au lieu des deux
+arguments de départ.
+**Raison.** La moitié des règles du §8 ont besoin du contrat (temps partiel,
+jeunes travailleurs) ou de l'historique (moyenne sur douze semaines). Sans ce
+contexte, il aurait fallu une signature différente par règle.
+**Conséquence.** C'est une réécriture de l'ossature du moteur de règles,
+signalée ici comme le demandent les consignes permanentes. Les 12 règles et
+leurs 62 tests fonctionnent sur ce modèle.
+**Alternative.** Des signatures multiples, plus difficiles à faire évoluer.
+
+### D-25 — « Moins de 18 ans » plutôt que la date de naissance
+**Décision.** La fiche porte un simple oui/non, pas de date de naissance.
+**Raison.** C'est la donnée minimale suffisante pour appliquer les règles
+protectrices (repos de 12 h, 8 h par jour, pas de nuit). Le RGPD impose de ne
+collecter que le nécessaire.
+**Conséquence.** Il faudra décocher la case le jour des 18 ans. Une alerte
+pourra le rappeler plus tard.
+**Alternative.** Enregistrer la date de naissance et calculer — plus pratique,
+mais c'est une donnée personnelle de plus dans un dépôt public.
+
+### D-26 — Repos hebdomadaire : les 24 heures visibles suffisent
+**Décision.** Un repos qui commence dans la semaine et se poursuit après le
+dimanche soir compte comme suffisant dès lors qu'il atteint déjà 24 h avant la
+fin de la semaine.
+**Raison.** Sans cette nuance, une semaine finie le samedi à 13 h avec un
+dimanche de repos serait signalée à tort (34 h 40 visibles au lieu de 35 h),
+alors que le repos réel dépasse 40 h. À l'inverse, sept jours travaillés
+d'affilée restent bien signalés : aucun repos de 24 h n'y apparaît.
+**Alternative.** Une fenêtre glissante de sept jours, plus exacte mais qui
+exige de connaître les semaines voisines.
+
+### D-27 — Une règle ne se déclenche que sur un manquement constaté
+**Décision.** Quand l'application ignore ce qui précède une semaine, elle ne
+suppose pas le pire : elle ne signale rien.
+**Raison.** Un contrôle qui crie au loup sur des données incomplètes finit par
+être ignoré. Mieux vaut manquer un cas limite que discréditer tous les autres.
+**Alternative.** Signaler par précaution — beaucoup de fausses alertes.
+
+### D-28 — Durée minimale du temps partiel : un contrôle de contrat
+**Décision.** Les 24 h hebdomadaires minimales sont vérifiées sur le contrat,
+séparément du planning, et sortent en **avertissement**, pas en blocage.
+**Raison.** C'est une caractéristique du contrat, pas du planning. Et les
+dérogations sont fréquentes et légales (demande écrite du salarié, cumul
+d'emplois, études).
+**Alternative.** Une règle bloquante — elle empêcherait de planifier des
+personnes parfaitement en règle.
+
+### D-29 — Le travail de nuit est signalé, pas interdit
+**Décision.** Le franchissement du seuil de 270 h de nuit par an produit un
+avertissement expliquant que le statut de travailleur de nuit s'applique.
+**Raison.** Travailler la nuit n'est pas illégal. Ce qui compte, c'est que le
+statut, ses majorations et son suivi médical ne soient pas oubliés.
+**Alternative.** Ne rien signaler — le statut passerait inaperçu.

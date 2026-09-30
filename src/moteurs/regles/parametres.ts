@@ -14,12 +14,16 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
   dureeMaximaleQuotidienneMinutes: 10 * 60,
   // Derogation exceptionnelle (inventaire, etc.) : 12 h.
   dureeMaximaleQuotidienneDerogationMinutes: 12 * 60,
+  // Moins de 18 ans : 8 h par jour.
+  dureeMaximaleQuotidienneJeuneMinutes: 8 * 60,
   // Duree maximale sur une semaine isolee : 48 h.
   dureeMaximaleHebdomadaireMinutes: 48 * 60,
   // Moyenne maximale sur 12 semaines consecutives : 44 h.
   dureeMoyenneMaximaleSur12SemainesMinutes: 44 * 60,
   // Repos quotidien : 11 h consecutives entre deux journees.
   reposQuotidienMinutes: 11 * 60,
+  // Moins de 18 ans : 12 h consecutives.
+  reposQuotidienJeuneMinutes: 12 * 60,
   // Repos hebdomadaire : 35 h consecutives (24 h + 11 h).
   reposHebdomadaireMinutes: 35 * 60,
   // Une pause est due des 6 h de travail...
@@ -30,6 +34,23 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
   delaiDePrevenanceJoursOuvres: 7,
   // Contingent annuel d'heures supplementaires (convention 2216).
   contingentHeuresSupplementairesAnnuel: 180,
+  // Duree legale hebdomadaire : au-dela, les heures sont supplementaires.
+  dureeLegaleHebdomadaireMinutes: 35 * 60,
+  // Temps partiel : une seule coupure par jour, de deux heures au plus.
+  coupuresMaximumParJour: 1,
+  dureeMaximaleCoupureMinutes: 2 * 60,
+  // Heures complementaires plafonnees a un dixieme du contrat.
+  plafondHeuresComplementairesPourcent: 10,
+  // Duree minimale d'un temps partiel : 24 h par semaine.
+  dureeMinimaleTempsPartielMinutes: 24 * 60,
+  // Nuit au sens de la convention 2216 : de 21 h a 5 h.
+  nuitDebut: '21:00',
+  nuitFin: '05:00',
+  // Au-dela de 270 h de nuit par an, on devient travailleur de nuit.
+  seuilTravailleurDeNuitHeuresAnnuelles: 270,
+  // Un mineur ne travaille ni apres 22 h, ni avant 6 h.
+  jeuneNuitDebut: '22:00',
+  jeuneNuitFin: '06:00',
   majorations: {
     dimancheHabituelPourcent: 20,
     dimancheExceptionnelPourcent: 100,

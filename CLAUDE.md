@@ -9,11 +9,34 @@
 Application web installable (PWA) de **gestion complète des équipes**, décrite dans `CAHIER-DES-CHARGES.md`. **Lis ce fichier avant toute tâche** et respecte-le. En cas de doute ou de contradiction, pose la question au lieu de supposer.
 
 ## Méthode de travail (obligatoire)
-1. On avance **étape par étape** (voir la feuille de route du cahier des charges). Avant chaque étape : présente ce que tu vas faire en quelques lignes et **attends ma validation**.
-2. Après chaque étape : **tests automatiques** qui passent, **données fictives de démonstration** pour que je puisse tester, publication sur GitHub Pages, puis un résumé clair de ce qui a changé et de ce que je dois tester.
-3. Le **moteur de besoin** et le **moteur de planning** sont du code pur, séparé de l'interface, et **couverts par des tests** (règles légales, cas limites). Aucune étape n'est terminée si un test échoue.
-4. Commits fréquents, messages en français, jamais de travail non publié en fin d'étape.
-5. Ne supprime ou ne réécris jamais une grosse partie sans me l'avoir expliqué et sans mon accord.
+
+**Méthode en vigueur depuis le 30 septembre 2026 : construction continue.**
+Elle remplace l'ancienne méthode « une étape, une validation ».
+
+1. **Construire lot après lot jusqu'au bout de la feuille de route**, sans
+   s'arrêter pour demander une validation entre les lots.
+2. **Après chaque lot** : tests automatiques qui passent, données fictives de
+   démonstration à jour, publication sur GitHub Pages, puis **enchaîner
+   directement sur le lot suivant**.
+3. **Point non précisé** : ne pas attendre. Choisir la solution la plus
+   raisonnable et conforme au cahier des charges, puis la consigner dans
+   `DECISIONS.md` (décision, raison, alternative possible). Arnaud relira tout
+   à la fin.
+4. **Ne s'arrêter que pour ce qui exige réellement son intervention** (créer le
+   projet Firebase, se connecter à un compte). Dans ce cas : préparer tout le
+   reste, expliquer exactement quoi faire, et **continuer les autres lots en
+   attendant**.
+5. Le **moteur de besoin** et le **moteur de planning** restent du code pur,
+   séparé de l'interface, **couvert par des tests** (règles légales, cas
+   limites). Aucun lot n'est terminé si un test échoue.
+6. Commits fréquents, messages en français, jamais de travail non publié.
+7. Ne jamais supprimer ni réécrire une grosse partie sans l'expliquer dans
+   `DECISIONS.md`.
+8. **À la fin** : un résumé clair — ce qui est fait, comment le tester sur iPad
+   et sur iPhone, et la liste des décisions à relire.
+
+Les affinements se feront une fois l'ensemble fonctionnel, avant la mise en
+service.
 
 ## Règles absolues
 - **Outil strictement personnel** : l'application est utilisée par Arnaud seul. **Aucun accès patron ni tiers** — jamais de compte, de partage en lecture seule ni de lien de consultation, même « plus tard ». Le patron valide **en dehors de l'application** ; Arnaud renseigne lui-même le **circuit de suivi** (§9.6 du cahier des charges : Brouillon → Soumis → Validé / À corriger → Publié à l'équipe, avec historique).

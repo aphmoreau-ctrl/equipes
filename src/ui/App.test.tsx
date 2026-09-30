@@ -1,9 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { HashRouter } from 'react-router-dom'
 import { App } from './App'
 import { creerVerrou } from './verrouillage/code'
 import { enBase64Url } from './verrouillage/faceId'
+import { REQUETE_COLONNE } from './useDisposition'
+
+/**
+ * jsdom n'a pas de taille d'ecran : on lui en donne une, pour choisir entre
+ * le menu lateral de l'iPad et la barre d'onglets de l'iPhone.
+ */
+function simulerEcran(disposition: 'colonne' | 'onglets'): void {
+  Object.defineProperty(window, 'matchMedia', {
+    value: (requete: string) => ({
+      matches: requete === REQUETE_COLONNE && disposition === 'colonne',
+      media: requete,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+    configurable: true,
+    writable: true,
+  })
+}
 
 function afficherApplication() {
   return render(
@@ -26,6 +48,7 @@ function valider(): void {
 beforeEach(() => {
   window.localStorage.clear()
   window.location.hash = ''
+  simulerEcran('colonne')
 })
 
 describe('premier lancement', () => {
@@ -297,5 +320,108 @@ describe('proposition de Face ID au premier lancement', () => {
 
     expect(await screen.findByRole('navigation')).toBeInTheDocument()
     expect(window.localStorage.getItem('equipes.cle-acces.v1')).not.toBeNull()
+  })
+})
+
+
+// ------------------------------------------------- Navigation sur iPhone
+
+describe('barre d onglets de l iPhone', () => {
+  beforeEach(async () => {
+    simulerEcran('onglets')
+    window.localStorage.setItem('equipes.verrou.v1', JSON.stringify(await creerVerrou('4242')))
+    afficherApplication()
+    await screen.findByText('Entrez votre code')
+    taperAuClavier('4242')
+    valider()
+    await screen.findByRole('navigation')
+  })
+
+  it('affiche quatre onglets et un bouton « Plus »', () => {
+    const barre = screen.getByRole('navigation')
+    expect(within(barre).getAllByRole('link').map((lien) => lien.textContent)).toEqual([
+      'Aujourd’hui',
+      'Planning',
+      'Équipe',
+      'Besoin',
+    ])
+    expect(within(barre).getByRole('button', { name: 'Plus' })).toBeInTheDocument()
+  })
+
+  it('ne montre pas les autres modules tant que « Plus » n est pas ouvert', () => {
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Paramètres/ })).not.toBeInTheDocument()
+  })
+
+  it('ouvre la liste de tous les autres modules', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
+
+    const panneau = screen.getByRole('dialog', { name: 'Autres modules' })
+    const titres = within(panneau)
+      .getAllByRole('link')
+      .map((lien) => lien.textContent ?? '')
+
+    for (const attendu of [
+      'Alertes',
+      'Heures',
+      'Congés',
+      'Compétences',
+      'Pilotage',
+      'Communication',
+      'Documents',
+      'Paramètres',
+    ]) {
+      expect(titres.some((titre) => titre.startsWith(attendu))).toBe(true)
+    }
+  })
+
+  it('ouvre l ecran choisi et referme le panneau', async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
+    const panneau = screen.getByRole('dialog', { name: 'Autres modules' })
+    fireEvent.click(within(panneau).getByRole('link', { name: /Paramètres/ }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Paramètres' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('referme le panneau avec la touche Échap', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('referme le panneau en touchant a cote', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer le menu' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('n affiche pas le menu lateral', () => {
+    expect(screen.getAllByRole('navigation')).toHaveLength(1)
+    expect(screen.getByRole('navigation')).toHaveClass('onglets')
+  })
+})
+
+describe('menu lateral de l iPad', () => {
+  beforeEach(async () => {
+    simulerEcran('colonne')
+    window.localStorage.setItem('equipes.verrou.v1', JSON.stringify(await creerVerrou('4242')))
+    afficherApplication()
+    await screen.findByText('Entrez votre code')
+    taperAuClavier('4242')
+    valider()
+    await screen.findByRole('navigation')
+  })
+
+  it('affiche les douze modules d un seul coup d oeil', () => {
+    const menu = screen.getByRole('navigation')
+    expect(menu).toHaveClass('menu-lateral')
+    expect(within(menu).getAllByRole('link')).toHaveLength(12)
+  })
+
+  it('n affiche ni barre d onglets ni bouton « Plus »', () => {
+    expect(screen.queryByRole('button', { name: 'Plus' })).not.toBeInTheDocument()
   })
 })

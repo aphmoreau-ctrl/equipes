@@ -95,6 +95,22 @@ export const MODULES: readonly Module[] = [
     pret: false,
   },
   {
+    id: 'communication',
+    titre: 'Communication',
+    chemin: '/communication',
+    resume: 'Consignes, briefs, comptes rendus de réunion et notes datées.',
+    livraison: 'Priorité 2',
+    pret: false,
+  },
+  {
+    id: 'documents',
+    titre: 'Documents',
+    chemin: '/documents',
+    resume: 'Modèles, procédures et affichages obligatoires.',
+    livraison: 'Priorité 2',
+    pret: false,
+  },
+  {
     id: 'parametres',
     chemin: '/parametres',
     titre: 'Paramètres',
@@ -103,6 +119,30 @@ export const MODULES: readonly Module[] = [
     pret: true,
   },
 ]
+
+/**
+ * Les quatre modules du quotidien, places dans la barre d'onglets de l'iPhone.
+ * Tous les autres sont regroupes derriere le bouton « Plus ».
+ * Sur iPad et sur Mac, cette distinction ne s'applique pas : le menu lateral
+ * affiche la totalite des modules.
+ */
+export const IDS_ONGLETS: readonly string[] = ['aujourdhui', 'planning', 'equipe', 'besoin']
+
+/** Modules de la barre d'onglets, dans l'ordre voulu pour l'iPhone. */
+export function modulesPrincipaux(): Module[] {
+  return IDS_ONGLETS.map((identifiant) => {
+    const module = MODULES.find((candidat) => candidat.id === identifiant)
+    if (module === undefined) {
+      throw new Error(`Module « ${identifiant} » absent de la carte des modules.`)
+    }
+    return module
+  })
+}
+
+/** Modules regroupes derriere le bouton « Plus », dans l'ordre du menu. */
+export function modulesSecondaires(): Module[] {
+  return MODULES.filter((module) => !IDS_ONGLETS.includes(module.id))
+}
 
 /** Retrouve un module par son chemin. */
 export function moduleParChemin(chemin: string): Module | undefined {

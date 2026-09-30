@@ -64,6 +64,20 @@ const DESSINS: Record<string, ReactNode> = {
       <path d="M12 18l4.2-5.2" />
     </>
   ),
+  communication: (
+    <>
+      <path d="M20.5 14.5a2 2 0 0 1-2 2H8l-4 3.2V5.5a2 2 0 0 1 2-2h12.5a2 2 0 0 1 2 2z" />
+      <path d="M8 8.5h8M8 12h5" />
+    </>
+  ),
+  documents: (
+    <>
+      <path d="M14 3H7.5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h4.5" />
+      <path d="M9 13h6M9 16.5h4" />
+    </>
+  ),
+  plus: <path d="M4 7h16M4 12h16M4 17h16" />,
   parametres: (
     <>
       <path d="M3 7h12M19 7h2M3 17h4M11 17h10" />

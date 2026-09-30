@@ -1,13 +1,15 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { EcranAVenir } from './EcranAVenir'
-import { Navigation } from './Navigation'
+import { BarreOnglets, EnteteMobile, MenuLateral } from './Navigation'
 import { MODULES } from './modules'
 import { Parametres } from './ecrans/Parametres'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
+import { useDisposition } from './useDisposition'
 
 export function App() {
   const verrouillage = useVerrouillage()
+  const disposition = useDisposition()
 
   // Le temps de lire le stockage de l'appareil : rien, pour eviter que
   // l'ecran de code n'apparaisse puis ne disparaisse aussitot.
@@ -35,9 +37,11 @@ export function App() {
     )
   }
 
+  const enOnglets = disposition === 'onglets'
+
   return (
-    <div className="application">
-      <Navigation />
+    <div className={enOnglets ? 'application application--onglets' : 'application'}>
+      {enOnglets ? <EnteteMobile /> : <MenuLateral />}
       <main className="contenu">
         <div className="contenu__interieur">
           <Routes>
@@ -64,6 +68,7 @@ export function App() {
           </Routes>
         </div>
       </main>
+      {enOnglets && <BarreOnglets />}
     </div>
   )
 }

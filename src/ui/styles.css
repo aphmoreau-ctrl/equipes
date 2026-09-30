@@ -23,6 +23,7 @@
   --rayon: 14px;
   --rayon-petit: 10px;
   --cible-tactile: 46px;
+  --hauteur-onglets: 56px;
   --ombre: 0 1px 2px rgb(16 24 20 / 6%), 0 4px 12px rgb(16 24 20 / 4%);
 
   --marge-haut: env(safe-area-inset-top, 0px);
@@ -104,17 +105,18 @@ button {
 
 /* --------------------------------------------------------- Navigation */
 
-.navigation {
-  background: var(--fond-carte);
-  border-color: var(--bordure);
-}
-
 .navigation__marque {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0;
   font-weight: 650;
+  font-size: 19px;
   letter-spacing: -0.01em;
+}
+
+.navigation__marque--petite {
+  font-size: 17px;
 }
 
 .navigation__logo {
@@ -130,117 +132,217 @@ button {
   font-size: 18px;
 }
 
-.navigation__liste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.navigation__marque--petite .navigation__logo {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  font-size: 15px;
+  border-radius: 8px;
 }
 
-.navigation__lien {
+/* Lien vers un module, utilise par le menu lateral et par le panneau « Plus ». */
+.lien-module {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: var(--cible-tactile);
-  padding: 0 14px;
+  padding: 0 12px;
   border-radius: var(--rayon-petit);
   color: var(--texte-doux);
   text-decoration: none;
   font-weight: 500;
+}
+
+/* L'icone ne doit jamais etre ecrasee par un titre long. */
+.lien-module > svg {
+  flex: 0 0 20px;
+}
+
+/* Le titre cede la place a l'etiquette plutot que de la faire passer a la ligne. */
+.lien-module__titre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.navigation__lien:hover {
+.lien-module:hover {
   background: var(--fond-survol);
   color: var(--texte);
 }
 
-.navigation__lien--actif {
+.lien-module--actif {
   background: var(--accent-doux);
   color: var(--accent);
   font-weight: 600;
 }
 
 @media (prefers-color-scheme: dark) {
-  .navigation__lien--actif {
+  .lien-module--actif {
     color: var(--texte);
   }
 }
 
 .navigation__pastille {
   margin-left: auto;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 7px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 2px 6px;
   border-radius: 999px;
   background: var(--fond-survol);
   color: var(--texte-doux);
 }
 
-/* Grand ecran (iPad paysage, Mac) : colonne laterale fixe */
-@media (min-width: 900px) {
-  .navigation {
-    position: sticky;
-    top: 0;
-    align-self: flex-start;
-    width: 268px;
-    flex: 0 0 268px;
-    height: 100dvh;
-    overflow-y: auto;
-    border-right: 1px solid var(--bordure);
-    padding: calc(20px + var(--marge-haut)) 14px calc(20px + var(--marge-bas))
-      max(14px, var(--marge-gauche));
-  }
+/* ------------------------------------------ iPad et Mac : menu lateral */
 
-  .navigation__marque {
-    padding: 0 10px 18px;
-    font-size: 19px;
-  }
+.menu-lateral {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  width: 292px;
+  flex: 0 0 292px;
+  height: 100dvh;
+  overflow-y: auto;
+  background: var(--fond-carte);
+  border-right: 1px solid var(--bordure);
+  padding: calc(20px + var(--marge-haut)) 14px calc(20px + var(--marge-bas))
+    max(14px, var(--marge-gauche));
+}
 
-  .navigation__liste {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+.menu-lateral .navigation__marque {
+  padding: 0 10px 18px;
+}
+
+.menu-lateral__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ------------------------------- iPhone : en-tete et barre d'onglets */
+
+.application--onglets {
+  flex-direction: column;
+}
+
+/* L'en-tete du haut sert a deux choses : rappeler le nom de l'application,
+   et reserver la place de l'encoche en plein ecran. */
+.entete-mobile {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--fond-carte);
+  border-bottom: 1px solid var(--bordure);
+  padding: calc(9px + var(--marge-haut)) max(16px, var(--marge-gauche)) 9px
+    max(16px, var(--marge-droite));
+}
+
+.onglets {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  background: var(--fond-carte);
+  border-top: 1px solid var(--bordure);
+  /* Laisse passer la barre d'accueil de l'iPhone sous les onglets. */
+  padding-bottom: var(--marge-bas);
+}
+
+.onglets__element {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--hauteur-onglets);
+  padding: 7px 2px;
+  border: none;
+  background: none;
+  color: var(--texte-doux);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+}
+
+.onglets__element span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onglets__element--actif {
+  color: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .onglets__element--actif {
+    color: var(--succes);
   }
 }
 
-/* Petit ecran (iPhone, iPad portrait etroit) : bandeau defilant en haut */
-@media (max-width: 899px) {
-  .application {
-    flex-direction: column;
-  }
+/* Panneau « Plus » : la liste des autres modules, au-dessus des onglets. */
+.voile {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: rgb(0 0 0 / 40%);
+  cursor: pointer;
+}
 
-  .navigation {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-bottom: 1px solid var(--bordure);
-    padding-top: var(--marge-haut);
-  }
+.panneau-plus {
+  position: fixed;
+  z-index: 32;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--hauteur-onglets) + var(--marge-bas));
+  max-height: 62dvh;
+  overflow-y: auto;
+  background: var(--fond-carte);
+  border-top: 1px solid var(--bordure);
+  border-radius: var(--rayon) var(--rayon) 0 0;
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 22%);
+  padding: 10px max(10px, var(--marge-gauche)) 14px max(10px, var(--marge-droite));
+}
 
-  .navigation__marque {
-    padding: 12px max(16px, var(--marge-gauche));
-    font-size: 18px;
-  }
+.panneau-plus__titre {
+  margin: 4px 10px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texte-doux);
+}
 
-  .navigation__liste {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding: 0 max(12px, var(--marge-gauche)) 10px;
-  }
+.panneau-plus__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-  .navigation__liste::-webkit-scrollbar {
-    display: none;
-  }
-
-  .navigation__pastille {
-    display: none;
-  }
-
-  .contenu {
-    padding-top: 18px;
-  }
+/* Le contenu ne doit jamais passer sous la barre d'onglets. */
+.application--onglets .contenu {
+  padding-top: 18px;
+  padding-bottom: calc(var(--hauteur-onglets) + var(--marge-bas) + 28px);
 }
 
 /* ------------------------------------------------------------- Ecrans */
@@ -502,8 +604,54 @@ button {
   font-size: 15px;
 }
 
+@media (max-width: 767px), (max-height: 599px) {
+  .maj {
+    bottom: calc(14px + var(--marge-bas) + var(--hauteur-onglets));
+  }
+}
+
+/* ------------------------------------------- Confort de lecture iPhone */
+
+@media (max-width: 600px) {
+  .contenu {
+    padding-left: max(16px, var(--marge-gauche));
+    padding-right: max(16px, var(--marge-droite));
+  }
+
+  .entete h1 {
+    font-size: 25px;
+  }
+
+  .carte {
+    padding: 16px;
+  }
+
+  /* Deux colonnes seraient illisibles sur 390 points : on empile. */
+  .liste-faits {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .liste-faits dt {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .liste-faits dt:first-child {
+    margin-top: 0;
+  }
+
+  .verrou__touche {
+    height: 60px;
+  }
+}
+
 @media print {
-  .navigation,
+  .menu-lateral,
+  .entete-mobile,
+  .onglets,
+  .panneau-plus,
+  .voile,
   .maj {
     display: none;
   }

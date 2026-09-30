@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react'
 import { dureeEnTexte } from '../../domaine/temps'
 import { PARAMETRES_PAR_DEFAUT, REGLES_IMPLEMENTEES } from '../../moteurs/regles'
-import { HORAIRES_TYPES_DEMO, RAYONS_DEMO, SERVICE_DEMO } from '../../donnees/demo'
+import { useDonnees } from '../DonneesProvider'
 import { MODULES } from '../modules'
+import {
+  SectionBudgets,
+  SectionEvenements,
+  SectionFrequentation,
+  SectionHoraires,
+  SectionHorairesTypes,
+  SectionRayons,
+} from './parametres/SectionsMagasin'
+import { SectionModeleRayon } from './parametres/SectionModeleRayon'
 
 interface Proprietes {
   readonly faceIdPossible: boolean
@@ -42,7 +51,9 @@ export function Parametres({
   onChangerCode,
 }: Proprietes) {
   const appareil = useEtatAppareil()
-  const [confirmationDemandee, setConfirmationDemandee] = useState(false)
+  const { etat, reinitialiser } = useDonnees()
+  const [confirmationCode, setConfirmationCode] = useState(false)
+  const [confirmationDonnees, setConfirmationDonnees] = useState(false)
   const [erreurFaceId, setErreurFaceId] = useState('')
   const p = PARAMETRES_PAR_DEFAUT
 
@@ -66,30 +77,68 @@ export function Parametres({
         <p>Magasin, rayons, horaires, règles légales, verrouillage et sauvegarde.</p>
       </header>
 
-      <section className="carte">
-        <h2>Cette application</h2>
-        <dl className="liste-faits">
-          <dt>Version</dt>
-          <dd>{__VERSION_APP__}</dd>
+      {etat.demonstration && (
+        <p className="avis">
+          <strong>Données de démonstration, entièrement fictives.</strong> Modifiez ce que vous
+          voulez : vos changements restent sur cet appareil, et vous pouvez revenir à la
+          démonstration à tout moment depuis le bas de cet écran.
+        </p>
+      )}
 
-          <dt>Mode d’ouverture</dt>
+      <SectionRayons />
+      <SectionHoraires />
+      <SectionFrequentation />
+      <SectionHorairesTypes />
+      <SectionEvenements />
+      <SectionBudgets />
+
+      {etat.configurations.map((configuration) => (
+        <SectionModeleRayon key={configuration.rayonId} rayonId={configuration.rayonId} />
+      ))}
+
+      <section className="carte">
+        <h2>Règles légales et conventionnelles</h2>
+        <p>
+          Valeurs de départ ({REGLES_IMPLEMENTEES.length} règle
+          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} déjà contrôlée
+          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} automatiquement).
+        </p>
+        <dl className="liste-faits">
+          <dt>Durée maximale par jour</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneMinutes)}</dd>
+
+          <dt>Dérogation exceptionnelle</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneDerogationMinutes)}</dd>
+
+          <dt>Durée maximale par semaine</dt>
+          <dd>{dureeEnTexte(p.dureeMaximaleHebdomadaireMinutes)}</dd>
+
+          <dt>Moyenne sur 12 semaines</dt>
+          <dd>{dureeEnTexte(p.dureeMoyenneMaximaleSur12SemainesMinutes)}</dd>
+
+          <dt>Repos quotidien</dt>
+          <dd>{dureeEnTexte(p.reposQuotidienMinutes)}</dd>
+
+          <dt>Repos hebdomadaire</dt>
+          <dd>{dureeEnTexte(p.reposHebdomadaireMinutes)}</dd>
+
+          <dt>Pause obligatoire</dt>
           <dd>
-            {appareil.installee
-              ? 'Installée sur l’écran d’accueil'
-              : 'Ouverte dans le navigateur (non installée)'}
+            {dureeEnTexte(p.dureeMinimaleDeLaPauseMinutes)} dès{' '}
+            {dureeEnTexte(p.seuilDeclenchantLaPauseMinutes)} de travail
           </dd>
 
-          <dt>Fonctionnement hors ligne</dt>
-          <dd>{appareil.horsLignePret ? 'Prêt' : 'Pas encore actif sur cet appareil'}</dd>
-        </dl>
+          <dt>Délai de prévenance</dt>
+          <dd>{p.delaiDePrevenanceJoursOuvres} jours ouvrés</dd>
 
-        {!appareil.installee && (
-          <p className="avis">
-            Pour installer l’application : ouvrez ce site <strong>dans Safari</strong>, touchez le
-            bouton <strong>Partager</strong>, puis <strong>« Sur l’écran d’accueil »</strong>. Seul
-            Safari sait installer une application sur iPhone et iPad.
-          </p>
-        )}
+          <dt>Contingent d’heures supplémentaires</dt>
+          <dd>{p.contingentHeuresSupplementairesAnnuel} h par an</dd>
+        </dl>
+        <p className="avis avis--attention">
+          Ce sont des <strong>valeurs de départ</strong>, à vérifier et ajuster selon votre contrat
+          et les accords du magasin. Elles deviendront modifiables ici même au lot 5, en même temps
+          que le contrôle du planning.
+        </p>
       </section>
 
       <section className="carte">
@@ -143,7 +192,7 @@ export function Parametres({
           compte et les règles de sécurité (lot 4).
         </p>
 
-        {confirmationDemandee ? (
+        {confirmationCode ? (
           <>
             <p>
               <strong>Confirmer ?</strong> L’application va se verrouiller et vous devrez choisir un
@@ -153,92 +202,78 @@ export function Parametres({
               <button type="button" className="bouton bouton--principal" onClick={onChangerCode}>
                 Oui, changer le code
               </button>{' '}
-              <button
-                type="button"
-                className="bouton"
-                onClick={() => setConfirmationDemandee(false)}
-              >
+              <button type="button" className="bouton" onClick={() => setConfirmationCode(false)}>
                 Annuler
               </button>
             </p>
           </>
         ) : (
-          <button type="button" className="bouton" onClick={() => setConfirmationDemandee(true)}>
+          <button type="button" className="bouton" onClick={() => setConfirmationCode(true)}>
             Changer le code de verrouillage
           </button>
         )}
       </section>
 
       <section className="carte">
-        <h2>Magasin</h2>
-        <p>Service {SERVICE_DEMO}, avec les sept rayons frais prévus par défaut.</p>
-        <p className="avis">
-          <strong>Données de démonstration, entièrement fictives.</strong> Aucune donnée réelle ne
-          figure dans l’application à ce stade. Vous pourrez renommer, activer, désactiver et
-          réordonner ces rayons au lot 2.
-        </p>
-        <ul className="liste-simple">
-          {RAYONS_DEMO.map((rayon) => (
-            <li key={rayon.id}>{rayon.nom}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="carte">
-        <h2>Horaires types</h2>
-        <p>Vacations de départ, toutes modifiables au lot 2.</p>
-        <ul className="liste-simple">
-          {HORAIRES_TYPES_DEMO.map((horaire) => (
-            <li key={horaire.nom}>
-              <strong>{horaire.nom}</strong> — de {horaire.debut} à {horaire.fin}, pause de{' '}
-              {horaire.pause} min
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="carte">
-        <h2>Règles légales et conventionnelles</h2>
-        <p>
-          Valeurs de départ ({REGLES_IMPLEMENTEES.length} règle
-          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} déjà contrôlée
-          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} automatiquement).
-        </p>
+        <h2>Cette application</h2>
         <dl className="liste-faits">
-          <dt>Durée maximale par jour</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneMinutes)}</dd>
+          <dt>Version</dt>
+          <dd>{__VERSION_APP__}</dd>
 
-          <dt>Dérogation exceptionnelle</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneDerogationMinutes)}</dd>
-
-          <dt>Durée maximale par semaine</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleHebdomadaireMinutes)}</dd>
-
-          <dt>Moyenne sur 12 semaines</dt>
-          <dd>{dureeEnTexte(p.dureeMoyenneMaximaleSur12SemainesMinutes)}</dd>
-
-          <dt>Repos quotidien</dt>
-          <dd>{dureeEnTexte(p.reposQuotidienMinutes)}</dd>
-
-          <dt>Repos hebdomadaire</dt>
-          <dd>{dureeEnTexte(p.reposHebdomadaireMinutes)}</dd>
-
-          <dt>Pause obligatoire</dt>
+          <dt>Mode d’ouverture</dt>
           <dd>
-            {dureeEnTexte(p.dureeMinimaleDeLaPauseMinutes)} dès{' '}
-            {dureeEnTexte(p.seuilDeclenchantLaPauseMinutes)} de travail
+            {appareil.installee
+              ? 'Installée sur l’écran d’accueil'
+              : 'Ouverte dans le navigateur (non installée)'}
           </dd>
 
-          <dt>Délai de prévenance</dt>
-          <dd>{p.delaiDePrevenanceJoursOuvres} jours ouvrés</dd>
+          <dt>Fonctionnement hors ligne</dt>
+          <dd>{appareil.horsLignePret ? 'Prêt' : 'Pas encore actif sur cet appareil'}</dd>
 
-          <dt>Contingent d’heures supplémentaires</dt>
-          <dd>{p.contingentHeuresSupplementairesAnnuel} h par an</dd>
+          <dt>Données</dt>
+          <dd>{etat.demonstration ? 'Démonstration (fictives)' : 'Modifiées par vous'}</dd>
         </dl>
+
+        {!appareil.installee && (
+          <p className="avis">
+            Pour installer l’application : ouvrez ce site <strong>dans Safari</strong>, touchez le
+            bouton <strong>Partager</strong>, puis <strong>« Sur l’écran d’accueil »</strong>. Seul
+            Safari sait installer une application sur iPhone et iPad.
+          </p>
+        )}
+
         <p className="avis avis--attention">
-          Ce sont des <strong>valeurs de départ</strong>, à vérifier et ajuster selon votre contrat
-          et les accords du magasin. Elles deviendront modifiables ici même au lot 2.
+          Vos réglages sont pour l’instant enregistrés <strong>sur cet appareil seulement</strong>.
+          La synchronisation entre iPad, iPhone et Mac arrive au lot 4, avec Firebase.
         </p>
+
+        {confirmationDonnees ? (
+          <>
+            <p>
+              <strong>Confirmer ?</strong> Tous vos réglages seront remplacés par ceux de la
+              démonstration. Cette action ne peut pas être annulée.
+            </p>
+            <p>
+              <button
+                type="button"
+                className="bouton bouton--principal"
+                onClick={() => {
+                  reinitialiser()
+                  setConfirmationDonnees(false)
+                }}
+              >
+                Oui, tout réinitialiser
+              </button>{' '}
+              <button type="button" className="bouton" onClick={() => setConfirmationDonnees(false)}>
+                Annuler
+              </button>
+            </p>
+          </>
+        ) : (
+          <button type="button" className="bouton" onClick={() => setConfirmationDonnees(true)}>
+            Revenir aux données de démonstration
+          </button>
+        )}
       </section>
 
       <section className="carte">

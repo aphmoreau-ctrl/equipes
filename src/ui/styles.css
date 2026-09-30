@@ -482,6 +482,275 @@ button {
   border-bottom: none;
 }
 
+/* ------------------------------------------------- Champs de saisie */
+
+.champs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.champ--large {
+  flex: 3 1 220px;
+}
+
+.champ--etroit {
+  flex: 1 1 110px;
+}
+
+.champ__libelle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texte-doux);
+  margin: 16px 0 8px;
+}
+
+.champ .champ__libelle {
+  margin: 0;
+}
+
+.champ__saisie {
+  font: inherit;
+  color: inherit;
+  min-height: var(--cible-tactile);
+  padding: 0 12px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  background: var(--fond);
+  width: 100%;
+}
+
+select.champ__saisie {
+  padding-right: 8px;
+}
+
+.champ__aide {
+  color: var(--texte-doux);
+  font-size: 15px;
+  margin: 8px 0 0;
+}
+
+.groupe-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.groupe-boutons .bouton {
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 16px;
+  line-height: 1.2;
+}
+
+.bouton__aide {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.bouton--discret {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texte-doux);
+}
+
+.ligne-saisie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ------------------------------------------------ Blocs repliables */
+
+.depliant {
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  margin-bottom: 8px;
+  background: var(--fond);
+}
+
+.depliant__titre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-height: var(--cible-tactile);
+  padding: 11px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.depliant__titre::-webkit-details-marker {
+  display: none;
+}
+
+.depliant__titre::before {
+  content: '▸';
+  color: var(--texte-doux);
+  font-size: 13px;
+}
+
+.depliant[open] > .depliant__titre::before {
+  content: '▾';
+}
+
+.depliant__resume {
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--texte-doux);
+}
+
+.depliant__contenu {
+  padding: 0 14px 16px;
+  border-top: 1px solid var(--bordure);
+}
+
+.champ__suffixe {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.champs--serres {
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.ligne-rayon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ligne-rayon .champ__saisie {
+  flex: 1 1 180px;
+  width: auto;
+}
+
+.ligne-rayon__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ligne-horaire {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.ligne-horaire:last-child {
+  border-bottom: none;
+}
+
+.ligne-horaire__jour {
+  flex: 0 0 90px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* ------------------------------------------------- Courbe de besoin */
+
+.courbe__dessin {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 200px;
+  overflow: visible;
+}
+
+.courbe__graduation {
+  stroke: var(--bordure);
+  stroke-width: 1;
+}
+
+.courbe__graduation-texte {
+  fill: var(--texte-doux);
+  font-size: 10px;
+  text-anchor: end;
+}
+
+.courbe__heure {
+  fill: var(--texte-doux);
+  font-size: 9px;
+  text-anchor: middle;
+}
+
+.courbe__marche {
+  fill: none;
+  stroke: var(--texte);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.courbe__vide {
+  color: var(--texte-doux);
+  font-style: italic;
+}
+
+.courbe__legende {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 4px 18px;
+}
+
+.courbe__legende-element {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 3px 0;
+}
+
+.courbe__legende-nom {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.courbe__legende-valeur {
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+}
+
+.courbe__pastille {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 3px;
+}
+
+.courbe__pastille--marche {
+  background: var(--texte);
+  height: 3px;
+  border-radius: 2px;
+}
+
 /* ------------------------------------------------------ Verrouillage */
 
 .verrou {

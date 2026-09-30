@@ -48,8 +48,10 @@ describe('carte des modules', () => {
     expect(MODULES.map((module) => module.id).sort()).toEqual([...attendus].sort())
   })
 
-  it('ne declare pret que ce qui est reellement construit a l etape 0', () => {
+  it('ne declare pret que ce qui est reellement construit', () => {
+    // A mettre a jour a chaque lot livre.
     expect(MODULES.filter((module) => module.pret).map((module) => module.id)).toEqual([
+      'besoin',
       'parametres',
     ])
   })

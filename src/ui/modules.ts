@@ -43,7 +43,7 @@ export const MODULES: readonly Module[] = [
     resume:
       'Combien de personnes et quelles compétences, par rayon et par tranche de 30 minutes.',
     livraison: 'Lot 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'equipe',

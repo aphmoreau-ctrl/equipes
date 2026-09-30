@@ -3,6 +3,8 @@ import { EcranAVenir } from './EcranAVenir'
 import { BarreOnglets, EnteteMobile, MenuLateral } from './Navigation'
 import { MODULES } from './modules'
 import { Parametres } from './ecrans/Parametres'
+import { Besoin } from './ecrans/Besoin'
+import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
 import { useDisposition } from './useDisposition'
@@ -40,6 +42,7 @@ export function App() {
   const enOnglets = disposition === 'onglets'
 
   return (
+    <DonneesProvider>
     <div className={enOnglets ? 'application application--onglets' : 'application'}>
       {enOnglets ? <EnteteMobile /> : <MenuLateral />}
       <main className="contenu">
@@ -58,6 +61,8 @@ export function App() {
                       onDesactiverFaceId={verrouillage.desactiverFaceId}
                       onChangerCode={verrouillage.changerDeCode}
                     />
+                  ) : module.id === 'besoin' ? (
+                    <Besoin />
                   ) : (
                     <EcranAVenir module={module} />
                   )
@@ -70,5 +75,6 @@ export function App() {
       </main>
       {enOnglets && <BarreOnglets />}
     </div>
+    </DonneesProvider>
   )
 }

@@ -79,3 +79,74 @@ l'a demandé tout de suite.
 **Décision.** Impossible d'activer Face ID sans avoir d'abord choisi un code.
 **Raison.** Sans code, un échec de reconnaissance enfermerait dehors.
 **Alternative.** Face ID seul, avec remise à zéro complète en cas d'échec.
+
+---
+
+## Lot 2 — Paramétrage et moteur de besoin
+
+### D-09 — Les données vivent sur l'appareil jusqu'au lot 4
+**Décision.** Réglages, saisies de qualité et météo sont enregistrés dans le
+stockage du navigateur, sur chaque appareil séparément.
+**Raison.** Firebase arrive au lot 4 et demande votre intervention (créer le
+projet). Attendre aurait bloqué tous les lots intermédiaires.
+**Conséquence.** Ce que vous réglez sur l'iPad n'apparaît pas encore sur
+l'iPhone. La structure de données est déjà celle qui partira vers Firebase.
+**Alternative.** Ne rien enregistrer avant le lot 4.
+
+### D-10 — Répartition uniforme du travail dans une plage horaire
+**Décision.** Les minutes d'un bloc sont réparties à parts égales sur sa plage.
+Exemple : 2 h de mise en place sur 05:30–08:30 donnent 20 min par tranche.
+**Raison.** Le cahier des charges ne décrit aucune courbe à l'intérieur d'une
+plage. La répartition uniforme est la plus simple à régler : il suffit de
+resserrer la plage pour concentrer le travail.
+**Alternative.** Une courbe de charge par bloc (début intense puis décroissant),
+plus réaliste mais avec beaucoup plus de réglages à saisir.
+
+### D-11 — Le coefficient de qualité est une moyenne pondérée du jour
+**Décision.** Les qualités saisies à la réception sont moyennées en pondérant
+par les quantités. Sans aucune saisie, la qualité A est supposée.
+**Raison.** Le cahier prévoit un coefficient par produit ; les blocs, eux,
+travaillent sur le rayon entier. La moyenne pondérée est la traduction fidèle.
+**Alternative.** Un coefficient par produit et par bloc — beaucoup plus précis,
+mais il faudrait rattacher chaque produit à un bloc.
+
+### D-12 — Chaque bloc déclare les coefficients qu'il subit
+**Décision.** Un bloc porte la liste des coefficients qui l'affectent (saison,
+météo, événement, promotion, qualité). Le nettoyage du soir ne dépend pas de la
+météo ; la mise en place dépend de la qualité des arrivages.
+**Raison.** Appliquer tous les coefficients à tous les blocs fausserait le
+calcul. C'est réglable bloc par bloc depuis l'écran Paramètres.
+**Alternative.** Un coefficient global pour tout le rayon.
+
+### D-13 — La capacité du laboratoire alerte mais ne limite pas
+**Décision.** Quand un bloc de transformation demande plus de postes qu'il n'en
+existe, l'application le signale mais ne réduit pas le travail.
+**Raison.** Réduire silencieusement le travail cacherait le problème. Vous devez
+voir que la plage est trop courte ou qu'il manque un poste.
+**Alternative.** Étaler automatiquement le travail au-delà de la plage.
+**À revoir** si cela devient gênant à l'usage.
+
+### D-14 — Coefficients de démonstration pour les fruits et légumes
+**Décision.** Qualité A 1,0 / B 1,3 / C 1,8 (valeurs du cahier des charges).
+Météo : très chaud ×1,30, pluie ×0,85. Saison : ×1,30 en juillet-août, ×0,85 en
+janvier-février. Promotion ×1,25.
+**Raison.** Le cahier ne donne que les coefficients de qualité. Les autres sont
+des ordres de grandeur plausibles, à recaler avec le mode chrono.
+**Alternative.** Partir de 1,0 partout et tout mesurer — mais la démonstration
+n'aurait rien montré.
+**À relire en priorité** : ces chiffres vous appartiennent.
+
+### D-15 — Saisie de la qualité placée sur l'écran Besoin
+**Décision.** La saisie « produit, quantité, qualité » est dans l'écran Besoin,
+juste au-dessus de la courbe.
+**Raison.** On voit l'effet immédiatement : c'est ce que demande le cahier
+(« besoin du jour recalculé immédiatement »).
+**Alternative.** Un écran dédié, atteignable en un geste depuis l'accueil de
+l'iPhone — à faire au lot 6 avec le mode chrono.
+
+### D-16 — Les six autres rayons attendent le lot 3
+**Décision.** Seul le rayon fruits et légumes a un modèle complet.
+**Raison.** C'est le rayon pilote désigné par le cahier des charges, et le plus
+détaillé. Les blocs comptoir, plan de cuisson et format de livraison, propres
+aux autres rayons, arrivent au lot 3.
+**Alternative.** Modéliser sommairement les sept rayons d'emblée.

@@ -13,6 +13,12 @@ import {
 import { rayonParId, rayonsActifs } from '../../domaine/magasin'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre, ChampTexte, Depliant, Interrupteur } from '../composants/Champ'
+import {
+  SectionIntegration,
+  SectionRecrutement,
+  SectionSecurite,
+  SectionSuiviIndividuel,
+} from './equipe/SectionsRH'
 
 const COMPETENCES_CONNUES = [
   'réception',
@@ -414,6 +420,11 @@ export function Equipe() {
           Ajouter un collaborateur
         </button>
       </section>
+
+      <SectionSuiviIndividuel />
+      <SectionRecrutement />
+      <SectionIntegration />
+      <SectionSecurite />
     </>
   )
 }

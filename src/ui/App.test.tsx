@@ -155,9 +155,27 @@ describe('navigation, une fois l application ouverte', () => {
     expect(screen.getByText('Absence imprévue')).toBeInTheDocument()
   })
 
-  it('annonce clairement les ecrans pas encore construits', async () => {
-    fireEvent.click(screen.getByRole('link', { name: /Documents/ }))
-    expect(await screen.findByText('Cet écran n’est pas encore construit')).toBeInTheDocument()
+  it('n a plus aucun ecran en attente : tous les modules sont construits', async () => {
+    for (const titre of [
+      'Planning',
+      'Besoin',
+      'Équipe',
+      'Alertes',
+      'Heures',
+      'Congés',
+      'Compétences',
+      'Pilotage',
+      'Communication',
+      'Documents',
+      'Paramètres',
+    ]) {
+      fireEvent.click(screen.getByRole('link', { name: new RegExp(titre) }))
+      expect(
+        await screen.findByRole('heading', { level: 1 }),
+        `l’écran « ${titre} » devrait être construit`,
+      ).toBeInTheDocument()
+      expect(screen.queryByText('Cet écran n’est pas encore construit')).not.toBeInTheDocument()
+    }
   })
 
   it('affiche l ecran Parametres avec la version', async () => {

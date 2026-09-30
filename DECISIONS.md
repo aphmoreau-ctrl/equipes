@@ -714,3 +714,39 @@ absentéisme au-dessus de 8 %, plus de 10 heures supplémentaires.
 devant un patron. Chaque ligne se justifie par un chiffre du même document.
 **Réglable** : les seuils sont dans le code du moteur, à sortir en paramètres
 si vous voulez les ajuster.
+
+## Lot 13 — Communication, documents, recrutement, suivi individuel, sécurité
+
+### D-61 — Recrutement, intégration, entretiens et sécurité sont des sections de l'écran Équipe
+**Décision.** Ces quatre modules n'ont pas leur propre entrée de menu : ils
+vivent au bas de l'écran Équipe.
+**Raison.** Ils parlent tous des mêmes personnes, et y accéder depuis la fiche
+est plus naturel que de chercher dans une liste de dix-sept entrées. Le menu en
+compte douze, ce qui est déjà beaucoup.
+**Alternative.** Des entrées séparées — à faire si l'écran Équipe devient trop
+long à parcourir.
+
+### D-62 — Les objectifs d'entretien, jamais les appréciations
+**Décision.** La fiche d'entretien ne comporte qu'un champ « objectifs de
+travail convenus », et l'écran rappelle la règle sous le champ.
+**Raison.** Le cahier des charges interdit les appréciations personnelles. Un
+champ nommé « appréciation » ou « bilan » appellerait exactement ce qu'il ne
+faut pas écrire.
+
+### D-63 — La sécurité enregistre des dates, jamais des contenus
+**Décision.** Les visites médicales sont enregistrées par leur **date**
+seulement. Aucun champ ne permet de noter ce qui s'y est dit.
+**Raison.** L'état de santé d'un salarié ne regarde pas l'employeur. La date
+suffit à prouver que l'obligation est tenue.
+
+### D-64 — Les accidents du travail alertent sur le délai de déclaration
+**Décision.** Enregistrer un accident déclenche une alerte urgente rappelant
+que la déclaration est due sous 48 heures ouvrables.
+**Raison.** C'est un délai court, à conséquences lourdes, facile à laisser
+passer dans le feu de l'action.
+
+### D-65 — Les documents sont du texte, pas des fichiers
+**Décision.** L'écran Documents enregistre du texte. Pas de PDF, pas de photo.
+**Raison.** Stocker des fichiers demande Firebase (lot 4). L'écran le dit
+clairement plutôt que de laisser croire que c'est possible.
+**À venir** : le stockage de fichiers une fois Firebase en place.

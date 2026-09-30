@@ -48,20 +48,8 @@ describe('carte des modules', () => {
     expect(MODULES.map((module) => module.id).sort()).toEqual([...attendus].sort())
   })
 
-  it('ne declare pret que ce qui est reellement construit', () => {
-    // A mettre a jour a chaque lot livre.
-    expect(MODULES.filter((module) => module.pret).map((module) => module.id)).toEqual([
-      'aujourdhui',
-      'planning',
-      'besoin',
-      'equipe',
-      'alertes',
-      'heures',
-      'conges',
-      'competences',
-      'pilotage',
-      'parametres',
-    ])
+  it('declare tous les modules construits', () => {
+    expect(MODULES.filter((module) => module.pret)).toHaveLength(MODULES.length)
   })
 
   it('retrouve un module par son chemin', () => {

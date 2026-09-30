@@ -1,5 +1,12 @@
 import { ajouterJours, dateEnTexte, estAvant, estDansIntervalle } from '../../domaine/calendrier'
 import {
+  DELAI_DECLARATION_ACCIDENT_JOURS,
+  LIBELLES_ENTRETIEN,
+  PERIODICITE_ENTRETIEN,
+  type ActionSecurite,
+  type Entretien,
+} from '../../domaine/faits'
+import {
   estAutonome,
   nomAffiche,
   type Collaborateur,
@@ -19,6 +26,8 @@ export type CategorieAlerte =
   | 'fin-contrat'
   | 'habilitation'
   | 'competence-unique'
+  | 'entretien'
+  | 'securite'
 
 export interface Alerte {
   readonly id: string
@@ -39,6 +48,8 @@ export interface ReglagesAlertes {
   readonly preavisFinContratJours: number
   /** Jours de preavis avant l'expiration d'une habilitation. */
   readonly preavisHabilitationJours: number
+  /** Jours de preavis avant qu'un entretien obligatoire ne soit du. */
+  readonly preavisEntretienJours: number
   /** Seuil a partir duquel on considere l'echeance urgente. */
   readonly seuilUrgenceJours: number
 }
@@ -47,6 +58,7 @@ export const REGLAGES_ALERTES_PAR_DEFAUT: ReglagesAlertes = {
   preavisPeriodeEssaiJours: 21,
   preavisFinContratJours: 45,
   preavisHabilitationJours: 60,
+  preavisEntretienJours: 60,
   seuilUrgenceJours: 7,
 }
 
@@ -213,4 +225,106 @@ export function resumerAlertes(alertes: readonly Alerte[]): Record<GraviteAlerte
   const resume: Record<GraviteAlerte, number> = { urgent: 0, attention: 0, information: 0 }
   for (const alerte of alertes) resume[alerte.gravite] += 1
   return resume
+}
+
+
+/**
+ * Entretiens obligatoires en retard ou proches (§13, module 11).
+ * L'entretien professionnel est obligatoire tous les deux ans, avec un bilan
+ * a six ans : les oublier expose l'employeur.
+ */
+export function alertesDEntretien(
+  collaborateurs: readonly Collaborateur[],
+  entretiens: readonly Entretien[],
+  date: string,
+  reglages: ReglagesAlertes = REGLAGES_ALERTES_PAR_DEFAUT,
+): Alerte[] {
+  const alertes: Alerte[] = []
+
+  for (const collaborateur of collaborateurs.filter((candidat) => candidat.actif)) {
+    for (const type of ['professionnel', 'bilan-6-ans'] as const) {
+      const realises = entretiens
+        .filter(
+          (entretien) =>
+            entretien.collaborateurId === collaborateur.id &&
+            entretien.type === type &&
+            entretien.realise,
+        )
+        .sort((a, b) => b.date.localeCompare(a.date))
+
+      const dernier = realises[0]?.date ?? collaborateur.dateEntree
+      const echeance = ajouterJours(dernier, PERIODICITE_ENTRETIEN[type] * 30)
+      const jours = joursEntre(date, echeance)
+      if (jours > reglages.preavisEntretienJours) continue
+
+      alertes.push({
+        id: `entretien-${type}-${collaborateur.id}`,
+        categorie: 'entretien',
+        gravite: jours < 0 ? 'urgent' : jours <= reglages.seuilUrgenceJours ? 'urgent' : 'attention',
+        titre: `${LIBELLES_ENTRETIEN[type]} — ${nomAffiche(collaborateur)}`,
+        detail:
+          `Dû au plus tard le ${dateEnTexte(echeance)} ` +
+          (jours < 0 ? `(dépassé depuis ${Math.abs(jours)} jours).` : `(dans ${jours} jours).`) +
+          ` Le dernier remonte au ${dateEnTexte(dernier)}.`,
+        echeance,
+        collaborateurId: collaborateur.id,
+      })
+    }
+  }
+
+  return alertes
+}
+
+/** Echeances de securite : accidents a declarer, visites medicales, affichages. */
+export function alertesDeSecurite(
+  actions: readonly ActionSecurite[],
+  collaborateurs: readonly Collaborateur[],
+  date: string,
+  reglages: ReglagesAlertes = REGLAGES_ALERTES_PAR_DEFAUT,
+): Alerte[] {
+  const alertes: Alerte[] = []
+
+  for (const action of actions) {
+    if (action.faite) continue
+
+    const collaborateur = collaborateurs.find((candidat) => candidat.id === action.collaborateurId)
+    const nom = collaborateur === undefined ? '' : ` — ${nomAffiche(collaborateur)}`
+
+    if (action.type === 'accident') {
+      const limite = ajouterJours(action.date, DELAI_DECLARATION_ACCIDENT_JOURS)
+      const jours = joursEntre(date, limite)
+      alertes.push({
+        id: `securite-${action.id}`,
+        categorie: 'securite',
+        gravite: 'urgent',
+        titre: `Accident du travail à déclarer${nom}`,
+        detail:
+          `Survenu le ${dateEnTexte(action.date)}. La déclaration est due sous ` +
+          `${DELAI_DECLARATION_ACCIDENT_JOURS} jours ouvrables, soit avant le ` +
+          `${dateEnTexte(limite)}` +
+          (jours < 0 ? ` — dépassé depuis ${Math.abs(jours)} jours.` : '.'),
+        echeance: limite,
+        collaborateurId: action.collaborateurId,
+      })
+      continue
+    }
+
+    if (action.echeance === null) continue
+    const jours = joursEntre(date, action.echeance)
+    if (jours > reglages.preavisHabilitationJours) continue
+
+    alertes.push({
+      id: `securite-${action.id}`,
+      categorie: 'securite',
+      gravite: jours < 0 ? 'urgent' : jours <= reglages.seuilUrgenceJours ? 'urgent' : 'attention',
+      titre: `${action.titre}${nom}`,
+      detail:
+        `Échéance le ${dateEnTexte(action.echeance)} ` +
+        (jours < 0 ? `(dépassée depuis ${Math.abs(jours)} jours).` : `(dans ${jours} jours).`),
+      echeance: action.echeance,
+      collaborateurId: action.collaborateurId,
+    })
+  }
+
+  return alertes
 }

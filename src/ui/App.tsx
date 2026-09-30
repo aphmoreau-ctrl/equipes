@@ -12,6 +12,8 @@ import { Conges } from './ecrans/Conges'
 import { Heures } from './ecrans/Heures'
 import { Competences } from './ecrans/Competences'
 import { Pilotage } from './ecrans/Pilotage'
+import { Communication } from './ecrans/Communication'
+import { Documents } from './ecrans/Documents'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -87,6 +89,10 @@ export function App() {
                     <Competences />
                   ) : module.id === 'pilotage' ? (
                     <Pilotage />
+                  ) : module.id === 'communication' ? (
+                    <Communication />
+                  ) : module.id === 'documents' ? (
+                    <Documents />
                   ) : (
                     <EcranAVenir module={module} />
                   )

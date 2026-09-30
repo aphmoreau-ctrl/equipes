@@ -100,7 +100,7 @@ export const MODULES: readonly Module[] = [
     chemin: '/communication',
     resume: 'Consignes, briefs, comptes rendus de réunion et notes datées.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'documents',
@@ -108,7 +108,7 @@ export const MODULES: readonly Module[] = [
     chemin: '/documents',
     resume: 'Modèles, procédures et affichages obligatoires.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'parametres',

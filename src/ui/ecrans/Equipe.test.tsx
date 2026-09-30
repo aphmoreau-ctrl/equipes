@@ -10,8 +10,15 @@ function afficher(contenu: React.ReactNode) {
   return render(<DonneesProvider>{contenu}</DonneesProvider>)
 }
 
+/** La section des fiches : les noms apparaissent aussi ailleurs sur l'ecran. */
+function sectionFiches(): HTMLElement {
+  const element = screen.getByRole('heading', { name: 'Fiches' }).parentElement
+  if (element === null) throw new Error('Section des fiches introuvable.')
+  return element
+}
+
 function fiche(nom: string): HTMLElement {
-  const element = screen.getByText(nom).closest('details')
+  const element = within(sectionFiches()).getByText(nom).closest('details')
   if (element === null) throw new Error(`Fiche « ${nom} » introuvable.`)
   return element
 }
@@ -23,8 +30,8 @@ beforeEach(() => {
 describe('ecran Equipe', () => {
   it('affiche toute l equipe de demonstration', () => {
     afficher(<Equipe />)
-    expect(screen.getByText('Camille D.')).toBeInTheDocument()
-    expect(screen.getByText('Thierry M.')).toBeInTheDocument()
+    expect(within(sectionFiches()).getByText('Camille D.')).toBeInTheDocument()
+    expect(within(sectionFiches()).getByText('Thierry M.')).toBeInTheDocument()
     expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
   })
 
@@ -33,9 +40,10 @@ describe('ecran Equipe', () => {
     fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: 'cremerie' } })
 
     // Julien S. y est rattache, Camille D. y intervient en secondaire.
-    expect(screen.getByText('Julien S.')).toBeInTheDocument()
-    expect(screen.getByText('Camille D.')).toBeInTheDocument()
-    expect(screen.queryByText('Thierry M.')).not.toBeInTheDocument()
+    const fiches = sectionFiches()
+    expect(within(fiches).getByText('Julien S.')).toBeInTheDocument()
+    expect(within(fiches).getByText('Camille D.')).toBeInTheDocument()
+    expect(within(fiches).queryByText('Thierry M.')).not.toBeInTheDocument()
   })
 
   it('compare la capacite du rayon a son budget', () => {
@@ -81,12 +89,12 @@ describe('ecran Equipe', () => {
   it('ajoute puis retire un collaborateur', () => {
     afficher(<Equipe />)
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter un collaborateur' }))
-    expect(screen.getByText('Nouveau X.')).toBeInTheDocument()
+    expect(within(sectionFiches()).getByText('Nouveau X.')).toBeInTheDocument()
     expect(screen.getByText(/21 personnes/)).toBeInTheDocument()
 
     const carte = fiche('Nouveau X.')
     fireEvent.click(within(carte).getByRole('button', { name: 'Retirer de l’effectif' }))
-    expect(screen.queryByText('Nouveau X.')).not.toBeInTheDocument()
+    expect(within(sectionFiches()).queryByText('Nouveau X.')).not.toBeInTheDocument()
     expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
   })
 

@@ -3,6 +3,14 @@ import type { Collaborateur } from '../domaine/collaborateur'
 import type { DemandeConge, ParametresConges, SoldeConges } from '../domaine/conge'
 import { PARAMETRES_CONGES_PAR_DEFAUT, estAccordee } from '../domaine/conge'
 import type { Formation } from '../domaine/formation'
+import type {
+  ActionSecurite,
+  BesoinRecrutement,
+  DocumentInterne,
+  Entretien,
+  EtapeIntegration,
+  Note,
+} from '../domaine/faits'
 import type { Mesure } from '../domaine/mesure'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
@@ -60,6 +68,12 @@ export interface EtatApplication {
   readonly rapportsProduits: readonly RapportProduit[]
   /** Chiffre d'affaires saisi, par semaine. */
   readonly chiffreAffairesParSemaine: Readonly<Record<string, number>>
+  readonly notes: readonly Note[]
+  readonly documents: readonly DocumentInterne[]
+  readonly entretiens: readonly Entretien[]
+  readonly besoinsRecrutement: readonly BesoinRecrutement[]
+  readonly etapesIntegration: readonly EtapeIntegration[]
+  readonly actionsSecurite: readonly ActionSecurite[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -97,6 +111,12 @@ export function etatInitial(): EtatApplication {
     formations: [],
     rapportsProduits: [],
     chiffreAffairesParSemaine: {},
+    notes: [],
+    documents: [],
+    entretiens: [],
+    besoinsRecrutement: [],
+    etapesIntegration: [],
+    actionsSecurite: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,

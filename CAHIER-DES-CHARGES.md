@@ -1,6 +1,8 @@
 # Cahier des charges – Application « Équipes »
 
-Version 1.0 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
+Version 1.1 – septembre 2026. Document de référence du projet : toute évolution doit y être reportée.
+
+> **Révision 1.1 (30 septembre 2026)** — l'application est un **outil strictement personnel** : toute mention d'un accès du patron à l'application est supprimée. Ajout du **circuit de suivi** (§9.6) et de la **règle générale sur les documents sortants / PDF** (§15).
 
 ---
 
@@ -20,9 +22,11 @@ Version 1.0 – septembre 2026. Document de référence du projet : toute évolu
 - **Anticiper** plutôt que subir : alertes avant le problème.
 - **Sécurité juridique** : contrôles automatiques Code du travail + convention 2216.
 - **Équité** entre salariés (samedis, dimanches, fermetures, fériés).
-- **Résultats mesurables** pour le patron (indicateurs, rapports).
+- **Résultats mesurables** à présenter au patron, sous forme de **documents** (indicateurs, rapports PDF).
 - **Humain** : intégration, formation, entretiens – uniquement des faits.
 - Le planning automatique est une **proposition** : l'utilisateur valide et ajuste.
+- **Outil strictement personnel** : l'application est utilisée par Arnaud **seul**. Le patron n'y a **jamais accès**, pas même en lecture. Il reçoit uniquement des **documents PDF**, remis **hors de l'application** (voir §15, « Documents sortants »).
+- **La validation finale est externe à l'application** : Arnaud **prépare** et **soumet**, le patron **valide en dehors de l'app**. L'application ne décide rien et ne transmet rien : elle **garde la trace** de ce circuit, renseigné à la main par Arnaud (voir §9.6).
 
 ---
 
@@ -31,7 +35,7 @@ Version 1.0 – septembre 2026. Document de référence du projet : toute évolu
 - **PWA** installable (manifest, service worker, icônes, fonctionnement hors ligne), hébergée sur **GitHub Pages** (`aphmoreau-ctrl/equipes`).
 - Pile conseillée : **TypeScript + Vite**, déploiement automatique via GitHub Actions ; tests avec **Vitest**. Tout autre choix doit être justifié et validé.
 - **Moteurs en code pur, séparés de l'interface** : `moteur-besoin`, `moteur-planning`, `regles` (légales/conventionnelles), `indicateurs`. Tous testés.
-- **Données** : Firebase (projet dédié, à créer avec l'utilisateur, pas celui de « Mes Heures »). Authentification e-mail / mot de passe ; Firestore avec persistance hors ligne ; règles de sécurité : chaque utilisateur n'accède qu'à ses données (`users/{uid}/…`). Prévoir plus tard un **accès lecture seule** pour le patron.
+- **Données** : Firebase (projet dédié, à créer avec l'utilisateur, pas celui de « Mes Heures »). Authentification e-mail / mot de passe ; Firestore avec persistance hors ligne ; règles de sécurité : chaque utilisateur n'accède qu'à ses données (`users/{uid}/…`). **Aucun accès tiers, ni maintenant ni plus tard** : pas de compte pour le patron, pas de partage en lecture seule, pas de lien public de consultation (voir §1, « Outil strictement personnel »).
 - Synchronisation temps réel entre iPad, iPhone, Mac ; résolution de conflits « dernière modification gagne » par document, avec historique.
 - **Verrouillage** : code à l'ouverture (et Face ID si réalisable via WebAuthn/passkey).
 - **Sauvegarde** : export complet (JSON + fichiers) et restauration.
@@ -178,12 +182,35 @@ Besoins par rayon/tranche/compétence ; collaborateurs (contrats, disponibilité
 - **Explication de chaque trou** (« Crèmerie mardi 8h–10h : manque 1 personne ; personne de disponible avec la compétence réception »).
 - Ajustement manuel (glisser-déposer sur iPad) avec **recontrôle immédiat**.
 - **Scénarios** : comparer deux plannings.
-- **Publication** : versions datées, respect du délai de prévenance, PDF d'affichage par rayon et par personne, historique des modifications après publication.
+- **Publication** : versions datées, respect du délai de prévenance, PDF d'affichage par rayon et par personne (conforme à §15, « Documents sortants »), historique des modifications après publication. La publication à l'équipe est la **dernière étape du circuit de suivi** (§9.6).
 - **Semaine type** réutilisable.
 
 ### 9.5 Anticipation
 - Horizon détaillé : 4 semaines. Horizon prévisionnel : **12 semaines** par rayon : capacité (heures contrats − congés − absences connues − formations) vs besoin → **alertes** (« semaine 51 : manque ~60 h → intérim / CDD / décaler des congés / former »).
 - Prise en compte des fins de CDD, périodes d'essai, congés d'été, fêtes.
+
+### 9.6 Circuit de suivi (préparation → soumission → validation externe)
+
+Arnaud n'est **pas le validateur final** : il prépare, puis soumet à son patron, qui valide **en dehors de l'application**. L'application ne soumet rien, ne notifie personne et ne valide rien : elle **garde la trace** d'un circuit qu'Arnaud renseigne **lui-même**, à la main. Ce suivi est **visible uniquement dans l'application**.
+
+États successifs :
+
+| État | Signification | Renseigné par Arnaud |
+|---|---|---|
+| **Brouillon** | en préparation, modifiable librement | état initial |
+| **Soumis** | remis au patron pour validation | **date de soumission** |
+| **Validé** | accord du patron | **date de validation** |
+| **À corriger** | le patron demande des modifications | **date** + **remarques du patron**, notées par Arnaud |
+| **Publié à l'équipe** | affiché / diffusé aux salariés | **date de publication** |
+
+- Le cycle n'est pas linéaire : « À corriger » ramène au travail, puis à une **nouvelle soumission**, autant de fois que nécessaire.
+- **Historique complet et horodaté** : chaque changement d'état est conservé avec sa date, ses remarques et un lien vers la **version** concernée. Rien n'est écrasé ni supprimé.
+- L'état ne **bloque** jamais le travail : Arnaud peut modifier un document déjà soumis ou validé ; l'application le signale et l'historique en garde la trace.
+- **Indicateurs de suivi** : en attente de soumission, soumis depuis plus de N jours sans réponse, « à corriger » non repris.
+- Les **remarques du patron** sont des **notes de travail internes** : elles restent dans l'application et ne figurent sur **aucun PDF** (§15).
+- **RGPD** (§3) : ces remarques portent sur l'organisation du travail, jamais sur une appréciation personnelle d'un salarié.
+
+**Mécanisme générique, développé une seule fois** puis réutilisé : d'abord les **plannings** (§9), ensuite les **congés** (§12), enfin les **recrutements** (§13, module 9).
 
 ---
 
@@ -200,12 +227,14 @@ Heures prévues / réalisées (saisie ou import d'une badgeuse plus tard) ; heur
 
 ## 12. Module 7 – Congés et absences
 
-Demandes, validation, règles (période légale, ordre des départs, fractionnement), planning des congés d'été, soldes (recalables sur bulletin), absences par type sans motif médical, impact automatique sur la capacité et le planning.
+Demandes, règles (période légale, ordre des départs, fractionnement), planning des congés d'été, soldes (recalables sur bulletin), absences par type sans motif médical, impact automatique sur la capacité et le planning.
+
+Le **circuit de suivi** (§9.6) s'applique aux congés : Brouillon → Soumis → Validé / À corriger → Publié. La validation reste celle du patron, **hors application**.
 
 ## 13. Modules 8 à 12
 
 - **8 – Remplacements et intérim** : vivier (internes polyvalents, intérimaires, étudiants) avec disponibilités, compétences, coûts ; historique.
-- **9 – Recrutement et intégration** : besoins anticipés (issus du module anticipation), fiches de poste, suivi minimal des candidatures (RGPD), **parcours d'intégration** (check-list), suivi de période d'essai.
+- **9 – Recrutement et intégration** : besoins anticipés (issus du module anticipation), fiches de poste, suivi minimal des candidatures (RGPD), **parcours d'intégration** (check-list), suivi de période d'essai. Le **circuit de suivi** (§9.6) s'applique aux **demandes de recrutement** soumises au patron.
 - **10 – Compétences et formations** : **grille de polyvalence** (niveaux 0 à 3 par poste), plan de formation, **habilitations** (hygiène, transpalette électrique, découpe…) avec échéances et alertes ; indicateur de dépendance (« une seule personne sait faire X »).
 - **11 – Suivi individuel** : entretien annuel, **entretien professionnel obligatoire tous les 2 ans**, bilan à 6 ans, objectifs ; faits datés uniquement ; alertes d'échéance.
 - **12 – Sécurité et conformité** : actions de prévention, équipements de protection, accidents du travail (délais de déclaration), affichages obligatoires, dates des visites médicales (sans contenu).
@@ -213,7 +242,7 @@ Demandes, validation, règles (période légale, ordre des départs, fractionnem
 ## 14. Modules 13 à 15
 
 - **13 – Communication** : consignes, briefs, réunions et comptes rendus, notes datées (avec niveau d'importance par couleur).
-- **14 – Pilotage et rapports pour le patron** : tableau de bord (productivité CA/heure si CA saisi, heures vs budget, couverture, heures sup et intérim, absentéisme, turnover, polyvalence, formations et entretiens à jour, conformité) ; **rapport d'une page par semaine** et **bilan mensuel** en PDF, avec plan d'actions.
+- **14 – Pilotage, et rapports à remettre au patron** : tableau de bord **personnel, interne à l'application** (productivité CA/heure si CA saisi, heures vs budget, couverture, heures sup et intérim, absentéisme, turnover, polyvalence, formations et entretiens à jour, conformité) ; à partir de ce tableau de bord, production d'un **rapport d'une page par semaine** et d'un **bilan mensuel** **en PDF**, avec plan d'actions — documents **remis au patron hors application** et strictement conformes à §15, « Documents sortants ». Le patron **n'accède pas** au tableau de bord.
 - **15 – Documents** : modèles, procédures, affichages (stockage chiffré par morceaux dans Firestore si nécessaire, pas de Cloud Storage payant).
 
 ## 15. Transverse
@@ -222,7 +251,30 @@ Demandes, validation, règles (période légale, ordre des départs, fractionnem
 - **Recherche** globale.
 - **Import** des données de l'app « Rayons frais » (équipes, plannings) – format à étudier avec l'utilisateur.
 - **Extension** à d'autres services du magasin par paramétrage.
+- **Circuit de suivi** générique (§9.6), réutilisé par les plannings, les congés et les recrutements.
 - **Données de démonstration** fictives complètes (rayons, 15 à 25 collaborateurs, 4 semaines d'historique) activables/désactivables.
+
+### Documents sortants (PDF) – règle générale
+
+Tout PDF produit par l'application est destiné à **quitter** l'application : il est remis au patron ou affiché à l'équipe. Il doit être **propre, sobre et professionnel**.
+
+**Ce qui figure dans un PDF** — uniquement ce qui est utile à son destinataire :
+- planning (par rayon, par personne, par semaine, par jour), horaires, pauses ;
+- effectifs et couverture ;
+- **indicateurs utiles seulement**, choisis en fonction du document et immédiatement compréhensibles ;
+- en-tête neutre : titre, rayon ou service, période, date d'édition, numéro de version.
+
+**Ce qui n'y figure jamais** :
+- notes personnelles et notes de travail d'Arnaud ;
+- commentaires internes, **y compris les remarques du patron** saisies dans le circuit de suivi ;
+- **statut de suivi** (Brouillon, Soumis, À corriger, Validé…) et **historique** des modifications ou des états ;
+- avertissements techniques, messages de mise au point, réglages, paramètres de calcul, détail des pénalités du moteur de planning ;
+- toute donnée interdite par le RGPD (§3) : motif d'absence détaillé, situation personnelle, appréciation.
+
+**Conséquences pratiques** :
+- **deux documents distincts selon le destinataire** : *affichage équipe* et *rapport patron* — jamais un export brut des écrans ;
+- l'**aperçu à l'écran est identique au PDF final** : ce qu'Arnaud voit avant impression est exactement ce que le destinataire recevra ;
+- aucune mention de statut sur un PDF : si un document n'est pas prêt à être diffusé, **il n'est pas produit**.
 
 ---
 
@@ -233,11 +285,11 @@ Chaque étape : validation préalable → développement → tests → démo fic
 - **Étape 0 – Socle** : PWA installable (manifest, service worker, icônes), structure du projet, Vite + TypeScript + Vitest, déploiement automatique, navigation, thème, verrouillage, données de démo. *Critère : installable sur iPad, fonctionne hors ligne.*
 - **Étape 1 – Paramétrage** (module 1) + **modèle fruits et légumes complet** + **courbe de besoin** du jour/semaine. *Critère : besoin F&L calculé et affiché par tranche, décomposé par bloc, tests du moteur.*
 - **Étape 2 – Équipe** (module 2) + modèles des autres rayons.
-- **Étape 3 – Moteur de planning** + règles + vue planning + ajustement manuel + indicateurs + explications. *Critère : batterie de tests (repos, durées, temps partiels, compétences, équité, cas impossibles) ; zéro infraction sur les jeux de test.*
+- **Étape 3 – Moteur de planning** + règles + vue planning + ajustement manuel + indicateurs + explications + **circuit de suivi des plannings** (§9.6) + **PDF d'affichage équipe** conforme à §15. *Critère : batterie de tests (repos, durées, temps partiels, compétences, équité, cas impossibles) ; zéro infraction sur les jeux de test ; aucune information interne dans le PDF.*
 - **Étape 4 – Firebase** (compte, synchro iPad/iPhone/Mac, hors ligne, règles de sécurité) + sauvegarde/restauration.
-- **Étape 5 – Aujourd'hui + absences imprévues / remplacements + congés et absences.**
+- **Étape 5 – Aujourd'hui + absences imprévues / remplacements + congés et absences**, avec le **circuit de suivi appliqué aux congés** (§9.6).
 - **Étape 6 – Heures + export paie + anticipation 12 semaines + mode chrono + qualité réception.**
-- **Étape 7 – Compétences, formations, suivi individuel, recrutement, intégration, sécurité.**
-- **Étape 8 – Pilotage, rapports patron, communication, documents, import Rayons frais.**
+- **Étape 7 – Compétences, formations, suivi individuel, recrutement, intégration, sécurité**, avec le **circuit de suivi appliqué aux recrutements** (§9.6).
+- **Étape 8 – Pilotage, rapports PDF à remettre au patron, communication, documents, import Rayons frais.**
 
 Objectif : étapes 0 à 5 opérationnelles avant la prise de poste (début novembre 2026).

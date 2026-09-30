@@ -688,3 +688,29 @@ mois prochain tiendra. Séparer les deux écrans, c'est garantir que personne ne
 regarde le second.
 **Méthode** : capacité = heures des contrats, diminuées à proportion des jours
 d'absence connus, nulles avant l'entrée et après la fin de contrat.
+
+## Lot 12 — Pilotage et rapports
+
+### D-58 — Le tableau de bord est personnel, le rapport est public
+**Décision.** Deux objets distincts, dans le même écran : un tableau de bord
+détaillé **pour vous**, et un rapport PDF **pour le patron**, rendu par un
+composant séparé.
+**Raison.** C'est la règle absolue du projet. Les séparer dans le code, c'est
+rendre impossible la fuite d'un indicateur interne dans un document remis.
+**Vérifié par un test** : le rapport ne contient aucun statut, aucune remarque,
+aucun historique, aucun réglage technique — même après saisie d'une remarque.
+
+### D-59 — La productivité n'apparaît que si vous saisissez le chiffre d'affaires
+**Décision.** Le champ « chiffre d'affaires de la semaine » est facultatif.
+Sans lui, la ligne productivité n'existe pas.
+**Raison.** Afficher « 0 € par heure » serait faux et inquiétant. Mieux vaut
+ne rien dire que dire faux.
+
+### D-60 — Le plan d'actions est déduit, jamais inventé
+**Décision.** Chaque action proposée découle d'un indicateur franchi :
+règle enfreinte, couverture sous 90 %, budget dépassé, poste fragile,
+absentéisme au-dessus de 8 %, plus de 10 heures supplémentaires.
+**Raison.** Un plan d'actions qui ne dit pas d'où il vient n'est pas défendable
+devant un patron. Chaque ligne se justifie par un chiffre du même document.
+**Réglable** : les seuils sont dans le code du moteur, à sortir en paramètres
+si vous voulez les ajuster.

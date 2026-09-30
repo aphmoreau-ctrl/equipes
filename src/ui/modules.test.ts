@@ -59,6 +59,7 @@ describe('carte des modules', () => {
       'heures',
       'conges',
       'competences',
+      'pilotage',
       'parametres',
     ])
   })

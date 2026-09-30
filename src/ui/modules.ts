@@ -92,7 +92,7 @@ export const MODULES: readonly Module[] = [
     titre: 'Pilotage',
     resume: 'Tableau de bord personnel et rapports PDF à remettre au patron.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'communication',

@@ -11,6 +11,7 @@ import { Aujourdhui } from './ecrans/Aujourdhui'
 import { Conges } from './ecrans/Conges'
 import { Heures } from './ecrans/Heures'
 import { Competences } from './ecrans/Competences'
+import { Pilotage } from './ecrans/Pilotage'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -84,6 +85,8 @@ export function App() {
                     <Heures />
                   ) : module.id === 'competences' ? (
                     <Competences />
+                  ) : module.id === 'pilotage' ? (
+                    <Pilotage />
                   ) : (
                     <EcranAVenir module={module} />
                   )

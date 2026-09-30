@@ -25,6 +25,21 @@ import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
  * structure servira alors de format d'echange.
  */
 
+/**
+ * Un rapport remis au patron. Il ne suit PAS le circuit de validation : un
+ * rapport ne se valide pas, il se remet. On en garde la trace pour pouvoir le
+ * reimprimer a l'identique, avec un champ de remarques INTERNE.
+ */
+export interface RapportProduit {
+  readonly id: string
+  readonly type: 'hebdomadaire' | 'mensuel'
+  /** Semaine ou mois couvert. */
+  readonly periode: string
+  readonly edite: string
+  /** Remarques du patron et suites a donner. Visible UNIQUEMENT dans l'app. */
+  readonly remarques: string
+}
+
 export const VERSION_ETAT = 1
 
 export interface EtatApplication {
@@ -41,6 +56,10 @@ export interface EtatApplication {
   /** Mesures du mode chrono (§7.6). */
   readonly mesures: readonly Mesure[]
   readonly formations: readonly Formation[]
+  /** Rapports deja remis au patron. Simple liste : pas de circuit de suivi. */
+  readonly rapportsProduits: readonly RapportProduit[]
+  /** Chiffre d'affaires saisi, par semaine. */
+  readonly chiffreAffairesParSemaine: Readonly<Record<string, number>>
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -76,6 +95,8 @@ export function etatInitial(): EtatApplication {
     parametresHeures: PARAMETRES_HEURES_PAR_DEFAUT,
     mesures: [],
     formations: [],
+    rapportsProduits: [],
+    chiffreAffairesParSemaine: {},
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,

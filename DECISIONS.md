@@ -556,3 +556,55 @@ Quand un texte se prête à plusieurs lectures, **l'interprétation la plus
 protectrice pour le salarié l'emporte**, et elle est notée ici. Quand les
 données ne permettent pas de trancher, l'application affiche « à confirmer »
 plutôt que de valider par défaut.
+
+---
+
+# Priorité 2
+
+## Lot 8 — Moteur de planning automatique
+
+### D-44 — Le générateur ne peut pas produire un planning illégal
+**Décision.** Chaque affectation envisagée est repassée au crible des treize
+règles avant d'être retenue. Une affectation qui produirait une infraction
+bloquante est rejetée, quel que soit son intérêt par ailleurs.
+**Raison.** C'est la garantie centrale demandée par le cahier des charges :
+« zéro infraction sur les jeux de test ». Elle est tenue **par construction**,
+pas par vérification après coup, et testée sur les sept rayons.
+**Conséquence.** Le générateur préfère laisser un trou plutôt que de violer une
+règle — et il explique alors pourquoi.
+
+### D-45 — Une seule vacation par personne et par jour
+**Décision.** La proposition ne crée jamais de journée coupée.
+**Raison.** Une coupure se décide, elle ne se subit pas : c'est une contrainte
+lourde pour le salarié, qui relève d'un accord et non d'un calcul.
+**Alternative.** Autoriser les coupures pour mieux coller aux pics de midi —
+à activer plus tard si vous le souhaitez, jamais par défaut.
+
+### D-46 — Contrôle légal uniquement sur les meilleurs candidats
+**Décision.** Tous les candidats sont d'abord classés par intérêt avec des
+calculs bon marché ; le contrôle légal, coûteux, n'est lancé que sur les
+meilleurs, jusqu'à en trouver un qui passe.
+**Raison.** La première version contrôlait tout le monde : **45 secondes** pour
+une semaine. La version actuelle met **0,3 seconde** pour les sept rayons, avec
+exactement le même résultat.
+**Alternative.** Contrôler tout le monde — correct mais inutilisable.
+
+### D-47 — Ce que le générateur ne couvre pas est expliqué, pas masqué
+**Décision.** Chaque créneau resté découvert produit une phrase en français,
+distinguant « il manque X heures » et « une compétence indispensable reste sans
+titulaire ».
+**Raison.** Un générateur qui rend un planning incomplet sans rien dire laisse
+croire que tout va bien. Sur les données de démonstration, il couvre 64 % du
+besoin — non par faiblesse de l'algorithme, mais parce que **l'équipe fictive
+de 20 personnes est trop petite pour le besoin modélisé**. C'est exactement le
+genre de constat que l'application doit rendre visible.
+
+### D-48 — Poids des contraintes souples
+**Décision.** Manque de personnel 20, compétence critique découverte 15, écart
+au contrat 6 par heure, sureffectif 4, rayon secondaire 2, équité 1,5,
+irrégularité 1, changement par rapport à la semaine précédente 1.
+**Raison.** Couvrir le besoin passe avant tout le reste ; l'écart au contrat
+pèse ensuite, parce qu'il a des conséquences en paie. Le reste ajuste.
+**Alternative.** D'autres équilibres — ce sont des réglages, pas des vérités.
+**À relire** : si les plannings proposés ne vous ressemblent pas, c'est ici
+qu'il faut regarder.

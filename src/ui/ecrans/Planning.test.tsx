@@ -168,3 +168,56 @@ describe('circuit de suivi', () => {
     expect(screen.getAllByText(/^Soumis — /).length).toBeGreaterThan(0)
   })
 })
+
+
+describe('proposition automatique', () => {
+  it('propose un planning qui ne viole aucune règle', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+
+    expect(screen.getByText('Vacations placées')).toBeInTheDocument()
+    expect(within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length).toBeGreaterThan(5)
+    expect(screen.getByText('Aucune règle enfreinte')).toBeInTheDocument()
+  })
+
+  it('demande confirmation avant d’écraser un planning existant', () => {
+    afficher()
+    // Une vacation saisie a la main.
+    const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
+    fireEvent.click(jour)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    expect(screen.getByText(/remplacera/)).toBeInTheDocument()
+    // Rien n'a encore ete genere.
+    expect(screen.queryByText('Vacations placées')).not.toBeInTheDocument()
+  })
+
+  it('remplace le planning après confirmation', () => {
+    afficher()
+    const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
+    fireEvent.click(jour)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Oui, remplacer' }))
+    expect(screen.getByText('Vacations placées')).toBeInTheDocument()
+  })
+
+  it('explique ce qu’elle n’a pas pu couvrir', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    // L'equipe de demonstration est trop petite pour couvrir tout le besoin.
+    expect(screen.getByText(/n’a pas pu couvrir/)).toBeInTheDocument()
+  })
+
+  it('conserve la proposition après rechargement', () => {
+    const premiere = afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    const placees = within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length
+    premiere.unmount()
+
+    afficher()
+    expect(within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length).toBe(placees)
+  })
+})

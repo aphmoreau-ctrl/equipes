@@ -29,6 +29,8 @@ import {
   regrouperLesTrous,
 } from '../../moteurs/indicateurs'
 import { useDonnees } from '../DonneesProvider'
+import { genererLePlanning } from '../../moteurs/planning/generateur'
+import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
 import { DocumentImprimable, type TypeDocument } from '../composants/DocumentImprimable'
@@ -43,6 +45,8 @@ export function Planning() {
     null,
   )
   const [documentAffiche, setDocumentAffiche] = useState<TypeDocument | null>(null)
+  const [proposition, setProposition] = useState<ResultatGeneration | null>(null)
+  const [confirmationGeneration, setConfirmationGeneration] = useState(false)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
   const planningCourant = planning(semaine)
@@ -139,6 +143,33 @@ export function Planning() {
     }))
   }
 
+  function proposerUnPlanning(): void {
+    const besoins = []
+    for (const rayon of rayons) {
+      for (const jour of jours) {
+        const besoin = besoinDuJour(jour, rayon.id)
+        if (besoin !== null) besoins.push(besoin)
+      }
+    }
+
+    const resultat = genererLePlanning({
+      semaine,
+      rayons,
+      besoins,
+      collaborateurs: etat.collaborateurs,
+      absences: etat.absences,
+      horairesTypes: etat.magasin.horairesTypes,
+      parametres: etat.reglesParametres,
+      vacationsAnterieures: historique(semaine),
+      planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
+      dureeMaximaleMs: 5000,
+    })
+
+    modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: resultat.vacations }))
+    setProposition(resultat)
+    setConfirmationGeneration(false)
+  }
+
   function changerLeSuivi(nouvelEtat: EtatSuivi, date: string, remarques: string): void {
     modifierPlanning(semaine, (precedent) => changerEtat(precedent, nouvelEtat, date, remarques))
   }
@@ -227,6 +258,84 @@ export function Planning() {
             {presenceTotale.toFixed(1)} h prévues
           </dd>
         </dl>
+      </section>
+
+      <section className="carte">
+        <h2>Proposition automatique</h2>
+        <p>
+          L’application construit une proposition qui ne viole <strong>aucune</strong> règle
+          légale, couvre le besoin au mieux et répartit équitablement les sujétions. Ce n’est
+          qu’une proposition : vous la corrigez case par case ensuite.
+        </p>
+
+        {confirmationGeneration ? (
+          <>
+            <p className="avis avis--attention">
+              <strong>Attention.</strong> La proposition <strong>remplacera</strong> les{' '}
+              {planningCourant.vacations.length} vacations déjà saisies cette semaine. Cette action
+              ne peut pas être annulée.
+            </p>
+            <p>
+              <button type="button" className="bouton bouton--principal" onClick={proposerUnPlanning}>
+                Oui, remplacer
+              </button>{' '}
+              <button
+                type="button"
+                className="bouton"
+                onClick={() => setConfirmationGeneration(false)}
+              >
+                Annuler
+              </button>
+            </p>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="bouton bouton--principal"
+            onClick={() =>
+              planningCourant.vacations.length === 0
+                ? proposerUnPlanning()
+                : setConfirmationGeneration(true)
+            }
+          >
+            Proposer un planning
+          </button>
+        )}
+
+        {proposition !== null && (
+          <>
+            <dl className="liste-faits">
+              <dt>Vacations placées</dt>
+              <dd>{proposition.vacations.length}</dd>
+              <dt>Temps de calcul</dt>
+              <dd>{(proposition.dureeMs / 1000).toFixed(1)} s</dd>
+              <dt>Échanges retenus</dt>
+              <dd>{proposition.ameliorations}</dd>
+            </dl>
+
+            {proposition.restesAExpliquer.length === 0 ? (
+              <p className="avis">Tout le besoin de la semaine est couvert.</p>
+            ) : (
+              <>
+                <p className="champ__libelle">
+                  Ce que la proposition n’a pas pu couvrir
+                </p>
+                <ul className="liste-alertes">
+                  {proposition.restesAExpliquer.slice(0, 12).map((reste) => (
+                    <li key={reste} className="alerte alerte--attention">
+                      <p className="alerte__detail">{reste}</p>
+                    </li>
+                  ))}
+                </ul>
+                {proposition.restesAExpliquer.length > 12 && (
+                  <p className="champ__aide">
+                    … et {proposition.restesAExpliquer.length - 12} autres créneaux dans le même cas.
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        )}
       </section>
 
       <section className="carte">

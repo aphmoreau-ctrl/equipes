@@ -8,6 +8,8 @@ import type { Planning } from '../domaine/planning'
 import { planningVide } from '../domaine/planning'
 import type { ReglagesAlertes } from '../moteurs/alertes'
 import type { ParametresRegles } from '../moteurs/regles'
+import type { ParametresHeures, SaisieHeures } from '../moteurs/heures'
+import { PARAMETRES_HEURES_PAR_DEFAUT } from '../moteurs/heures'
 import { PARAMETRES_PAR_DEFAUT } from '../moteurs/regles'
 import { REGLAGES_ALERTES_PAR_DEFAUT } from '../moteurs/alertes'
 import type { ConfigurationRayon, Meteo, SaisieQualite } from '../moteurs/besoin'
@@ -33,6 +35,8 @@ export interface EtatApplication {
   readonly demandesConge: readonly DemandeConge[]
   readonly soldesConges: readonly SoldeConges[]
   readonly parametresConges: ParametresConges
+  readonly saisiesHeures: readonly SaisieHeures[]
+  readonly parametresHeures: ParametresHeures
   /** Mesures du mode chrono (§7.6). */
   readonly mesures: readonly Mesure[]
   /** Plannings, reperes par le lundi de leur semaine. */
@@ -66,6 +70,8 @@ export function etatInitial(): EtatApplication {
       ajustement: 0,
     })),
     parametresConges: PARAMETRES_CONGES_PAR_DEFAUT,
+    saisiesHeures: [],
+    parametresHeures: PARAMETRES_HEURES_PAR_DEFAUT,
     mesures: [],
     plannings: {},
     heuresSupplementairesAnnuelles: {},
@@ -173,4 +179,9 @@ export function absencesEffectives(etat: EtatApplication): Absence[] {
     prevue: true,
   }))
   return [...etat.absences, ...desConges]
+}
+
+/** Toutes les vacations connues, tous plannings confondus. */
+export function toutesLesVacations(etat: EtatApplication) {
+  return Object.values(etat.plannings).flatMap((planning) => planning.vacations)
 }

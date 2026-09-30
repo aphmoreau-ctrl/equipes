@@ -28,6 +28,7 @@ import {
   expliquerLeTrou,
   regrouperLesTrous,
 } from '../../moteurs/indicateurs'
+import { alertesDAnticipation, anticiper } from '../../moteurs/indicateurs/anticipation'
 import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { genererLePlanning } from '../../moteurs/planning/generateur'
@@ -174,6 +175,15 @@ export function Planning() {
   function changerLeSuivi(nouvelEtat: EtatSuivi, date: string, remarques: string): void {
     modifierPlanning(semaine, (precedent) => changerEtat(precedent, nouvelEtat, date, remarques))
   }
+
+  const alertesAVenir = useMemo(
+    () =>
+      alertesDAnticipation(
+        anticiper(semaine, 12, rayons, etat.collaborateurs, absencesEffectives(etat), besoinDuJour),
+        rayons,
+      ),
+    [semaine, rayons, etat, besoinDuJour],
+  )
 
   const collaborateurChoisi = etat.collaborateurs.find(
     (collaborateur) => collaborateur.id === caseChoisie?.collaborateurId,
@@ -554,6 +564,27 @@ export function Planning() {
               />
             </div>
           </>
+        )}
+      </section>
+
+      <section className="carte">
+        <h2>Anticipation sur douze semaines</h2>
+        <p>
+          Capacité de l’équipe face au besoin, semaine après semaine. C’est ici qu’on voit venir
+          les manques, assez tôt pour agir.
+        </p>
+        {alertesAVenir.length === 0 ? (
+          <p className="avis">
+            Aucun manque prévisible sur les douze prochaines semaines, au vu des congés connus.
+          </p>
+        ) : (
+          <ul className="liste-alertes">
+            {alertesAVenir.slice(0, 10).map((alerte) => (
+              <li key={`${alerte.rayonId}-${alerte.semaine}`} className="alerte alerte--attention">
+                <p className="alerte__detail">{alerte.message}</p>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

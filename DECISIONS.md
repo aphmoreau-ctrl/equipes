@@ -647,3 +647,44 @@ dimanche non.
 **Alternative.** Le décompte en jours ouvrés (samedi exclu, 25 jours par an).
 **À vérifier** : regardez sur un bulletin de paie lequel des deux votre magasin
 applique. C'est un réglage à ajouter si besoin.
+
+## Lot 10 — Heures et anticipation
+
+### D-53 — Les jours fériés sont calculés, pas saisis
+**Décision.** Les onze jours fériés français sont calculés pour n'importe
+quelle année, y compris les fêtes mobiles (Pâques, Ascension, Pentecôte).
+**Raison.** Les ressaisir chaque année serait une source d'erreur, et une
+erreur sur un férié fausse la paie.
+**Précision.** Seul le 1er mai est obligatoirement chômé par la loi. Pour les
+autres, l'application **signale** qu'ils sont travaillés ; elle ne décide pas
+s'ils devaient l'être.
+
+### D-54 — Les heures supplémentaires se comptent par semaine
+**Décision.** Le décompte se fait **semaine par semaine** : 25 % de 35 h à
+43 h, 50 % au-delà. Pas de lissage sur le mois.
+**Raison.** C'est la règle. Lisser sur le mois ferait disparaître des heures
+majorées, au détriment du salarié.
+**Réglable** : les deux taux et le seuil se modifient depuis l'écran Heures.
+
+### D-55 — Le réalisé reprend le prévu par défaut
+**Décision.** Tant que rien n'est saisi, les heures réalisées valent les heures
+prévues. La saisie ne sert qu'à enregistrer les **écarts**.
+**Raison.** Ressaisir chaque journée conforme au planning serait un travail
+inutile et une source d'oubli.
+**À venir** : l'import d'une badgeuse remplacera la saisie manuelle.
+
+### D-56 — L'export CSV, pas le PDF, pour la paie
+**Décision.** Les éléments variables s'exportent en CSV, avec point-virgule et
+virgule décimale, précédé d'un marqueur d'encodage.
+**Raison.** Le CSV s'ouvre dans un tableur et se transmet au cabinet comptable
+sans ressaisie. Un PDF obligerait à tout retaper.
+**Contenu** : prénom, initiale, heures et compteurs. Rien d'autre.
+
+### D-57 — L'anticipation est sur l'écran Planning
+**Décision.** Les douze semaines à venir s'affichent en bas du planning, pas
+dans un module séparé.
+**Raison.** C'est au moment de construire un planning qu'on veut savoir si le
+mois prochain tiendra. Séparer les deux écrans, c'est garantir que personne ne
+regarde le second.
+**Méthode** : capacité = heures des contrats, diminuées à proportion des jours
+d'absence connus, nulles avant l'entrée et après la fin de contrat.

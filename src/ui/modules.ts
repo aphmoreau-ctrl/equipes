@@ -68,7 +68,7 @@ export const MODULES: readonly Module[] = [
     resume:
       'Heures prévues et réalisées, majorations, compteurs, export des éléments variables de paie.',
     livraison: 'Priorité 2',
-    pret: false,
+    pret: true,
   },
   {
     id: 'conges',

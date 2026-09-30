@@ -4,10 +4,14 @@ Application web installable (PWA) de gestion des équipes du service Frais.
 
 **Adresse du site : https://aphmoreau-ctrl.github.io/equipes/**
 
-Deux documents font référence pour ce projet :
+Trois documents accompagnent ce projet :
 
 - [`CAHIER-DES-CHARGES.md`](CAHIER-DES-CHARGES.md) — ce que l'application doit faire, dans le détail.
 - [`CLAUDE.md`](CLAUDE.md) — les consignes permanentes de travail.
+- [`DECISIONS.md`](DECISIONS.md) — les choix faits sans validation préalable, à relire.
+
+➡️ **[`FIREBASE.md`](FIREBASE.md) — ce que vous devez faire vous-même** pour
+activer la synchronisation entre l'iPad, l'iPhone et le Mac (environ 15 minutes).
 
 ---
 

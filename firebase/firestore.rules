@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Regles de securite de la base « Equipes ».
+//
+// Principe unique, applique sans exception :
+//   chaque utilisateur connecte n'accede QU'A SES PROPRES donnees.
+//
+// Tout le reste est refuse par defaut. Aucun acces anonyme, aucun acces
+// croise entre comptes, aucun acces en lecture seule pour un tiers :
+// l'application est un outil strictement personnel (cahier des charges §1).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Donnees d'un utilisateur : users/{uid}/...
+    match /users/{utilisateurId} {
+
+      // Le document racine de l'utilisateur.
+      allow read, write: if estLeProprietaire(utilisateurId);
+
+      // Toutes les sous-collections : magasin, rayons, collaborateurs,
+      // plannings, heures, conges, documents, historique...
+      match /{document=**} {
+        allow read, write: if estLeProprietaire(utilisateurId);
+      }
+    }
+
+    // Tout chemin non prevu ci-dessus est refuse.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+
+  // Vrai si la requete vient d'un utilisateur connecte, et que c'est bien
+  // le proprietaire des donnees demandees.
+  function estLeProprietaire(utilisateurId) {
+    return request.auth != null && request.auth.uid == utilisateurId;
+  }
+}

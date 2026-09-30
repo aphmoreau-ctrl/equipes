@@ -57,11 +57,16 @@ describe('ecran Besoin', () => {
     expect(screen.getByText('Personnes retenues')).toBeInTheDocument()
   })
 
-  it('annonce clairement les rayons pas encore modelises', async () => {
+  it('calcule aussi les six autres rayons, avec leurs propres blocs', async () => {
     afficher()
+    choisirLeJour(LUNDI)
     choisirLeRayon('boucherie')
-    expect(await screen.findByText('Ce rayon n’a pas encore de modèle')).toBeInTheDocument()
-    expect(screen.queryByText('Courbe du besoin')).not.toBeInTheDocument()
+
+    expect(await screen.findByText('Courbe du besoin')).toBeInTheDocument()
+    // Blocs propres a la boucherie, absents des fruits et legumes.
+    expect(screen.getByText('Comptoir boucherie')).toBeInTheDocument()
+    expect(screen.getByText('Laboratoire : hachés, brochettes, barquettes')).toBeInTheDocument()
+    expect(screen.queryByText('Réassort en journée')).not.toBeInTheDocument()
   })
 
   it('recalcule le besoin quand la meteo change', async () => {

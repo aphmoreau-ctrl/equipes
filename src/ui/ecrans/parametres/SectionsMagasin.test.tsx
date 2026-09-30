@@ -115,8 +115,13 @@ describe('reglage du modele d un rayon', () => {
     expect(screen.getByText('Fruits découpés, salades et jus')).toBeInTheDocument()
   })
 
-  it('n affiche rien pour un rayon sans modele', () => {
-    const { container } = afficher(<SectionModeleRayon rayonId="boucherie" />)
+  it('affiche aussi le modele de la boucherie, avec son comptoir', () => {
+    afficher(<SectionModeleRayon rayonId="boucherie" />)
+    expect(screen.getByText('Comptoir boucherie')).toBeInTheDocument()
+  })
+
+  it('n affiche rien pour un rayon qui n existe pas', () => {
+    const { container } = afficher(<SectionModeleRayon rayonId="rayon-inexistant" />)
     expect(container).toBeEmptyDOMElement()
   })
 

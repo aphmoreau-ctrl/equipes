@@ -751,6 +751,85 @@ select.champ__saisie {
   border-radius: 2px;
 }
 
+/* ----------------------------------------------------------- Alertes */
+
+.liste-alertes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alerte {
+  border-left: 3px solid var(--bordure);
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
+  background: var(--fond);
+  padding: 11px 14px;
+}
+
+.alerte--urgent {
+  border-left-color: var(--alerte);
+}
+
+.alerte--attention {
+  border-left-color: var(--avertissement);
+}
+
+.alerte--information {
+  border-left-color: var(--accent);
+}
+
+.alerte__titre {
+  margin: 0 0 3px;
+  font-weight: 650;
+}
+
+.alerte__detail {
+  margin: 0;
+  color: var(--texte-doux);
+  font-size: 15px;
+}
+
+.alerte__echeance {
+  margin: 5px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texte-doux);
+}
+
+/* ------------------------------------------------------- Competences */
+
+.liste-competences {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ligne-competence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.ligne-competence__nom {
+  font-size: 15px;
+}
+
+.bouton--niveau {
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ------------------------------------------------------ Verrouillage */
 
 .verrou {

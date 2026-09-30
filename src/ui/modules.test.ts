@@ -52,6 +52,8 @@ describe('carte des modules', () => {
     // A mettre a jour a chaque lot livre.
     expect(MODULES.filter((module) => module.pret).map((module) => module.id)).toEqual([
       'besoin',
+      'equipe',
+      'alertes',
       'parametres',
     ])
   })

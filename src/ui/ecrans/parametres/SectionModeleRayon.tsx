@@ -39,6 +39,9 @@ const LIBELLES_TYPE: Readonly<Record<Bloc['type'], string>> = {
   balances: 'Balances',
   transformation: 'Transformation',
   'tache-fixe': 'Tâche fixe',
+  comptoir: 'Comptoir',
+  'plan-cuisson': 'Plan de cuisson',
+  'format-livraison': 'Format de livraison',
 }
 
 export function SectionModeleRayon({ rayonId }: { readonly rayonId: string }) {
@@ -397,6 +400,70 @@ function champsDuBloc(bloc: Bloc, modifier: (changement: Record<string, unknown>
             onChange={(minutes) => modifier({ minutes })}
           />
         </div>
+      )
+
+    case 'comptoir':
+      return (
+        <div className="champs">
+          <ChampNombre
+            libelle="Part des clients"
+            suffixe="%"
+            valeur={bloc.partClientsPourcent}
+            onChange={(partClientsPourcent) => modifier({ partClientsPourcent })}
+            aide="Clients du magasin qui passent à ce comptoir"
+          />
+          <ChampNombre
+            libelle="Temps par client"
+            suffixe="min"
+            valeur={bloc.minutesParClient}
+            pas={0.5}
+            onChange={(minutesParClient) => modifier({ minutesParClient })}
+          />
+          <ChampNombre
+            libelle="Présence minimum"
+            valeur={bloc.presenceMinimum ?? 0}
+            onChange={(presenceMinimum) => modifier({ presenceMinimum })}
+            aide="Personnes derrière le comptoir quand il est ouvert"
+          />
+        </div>
+      )
+
+    case 'plan-cuisson':
+      return (
+        <>
+          <div className="champs">
+            <ChampNombre
+              libelle="Temps par fournée"
+              suffixe="min"
+              valeur={bloc.minutesParFournee}
+              pas={5}
+              onChange={(minutesParFournee) => modifier({ minutesParFournee })}
+            />
+          </div>
+          {parJour('Fournées prévues chaque jour', bloc.fourneesParJour, 'fourneesParJour', 1)}
+        </>
+      )
+
+    case 'format-livraison':
+      return (
+        <>
+          <div className="champs">
+            <ChampTexte
+              libelle="Format reçu"
+              valeur={bloc.format}
+              onChange={(format) => modifier({ format })}
+            />
+            <ChampNombre
+              libelle="Temps par unité"
+              suffixe="min"
+              valeur={bloc.minutesParUnite}
+              pas={0.1}
+              onChange={(minutesParUnite) => modifier({ minutesParUnite })}
+              aide="Par kilo ou par pièce, selon le rayon"
+            />
+          </div>
+          {parJour('Quantité reçue chaque jour', bloc.quantiteParJour, 'quantiteParJour', 5)}
+        </>
       )
 
     case 'transformation':

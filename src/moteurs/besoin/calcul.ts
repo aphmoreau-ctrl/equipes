@@ -1,5 +1,11 @@
 import { TRANCHE_MINUTES, TRANCHES_PAR_JOUR, debutDeTranche } from '../../domaine/temps'
-import { coefficientDuBloc, minutesDuBloc, postesNecessaires, valeurDuCoefficient } from './blocs'
+import {
+  coefficientDuBloc,
+  minutesDuBloc,
+  postesNecessaires,
+  presenceMinimumDuBloc,
+  valeurDuCoefficient,
+} from './blocs'
 import type {
   BesoinJour,
   ConfigurationRayon,
@@ -87,7 +93,13 @@ export function calculerBesoin(
       for (const competence of bloc.competences) competences.add(competence)
     }
 
-    const presenceMinimum = contexte.tranchesOuvertes.has(index) ? configuration.presenceMinimum : 0
+    // La presence minimum est la plus exigeante entre celle du rayon (pendant
+    // l'ouverture) et celles des blocs qui en reclament une (comptoirs).
+    const presenceMinimum = Math.max(
+      contexte.tranchesOuvertes.has(index) ? configuration.presenceMinimum : 0,
+      ...blocsActifs.map((bloc) => presenceMinimumDuBloc(bloc, contexte, index)),
+      0,
+    )
     const personnes = personnesNecessaires(
       minutesDeLaTranche,
       presenceMinimum,

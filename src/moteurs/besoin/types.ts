@@ -25,6 +25,9 @@ export type TypeBloc =
   | 'balances'
   | 'transformation'
   | 'tache-fixe'
+  | 'comptoir'
+  | 'plan-cuisson'
+  | 'format-livraison'
 
 /** Coefficients qu'un bloc accepte de subir. */
 export type NatureCoefficient = 'saison' | 'meteo' | 'evenement' | 'promotion' | 'qualite'
@@ -51,6 +54,12 @@ export interface BlocCommun {
   readonly competences: readonly string[]
   /** Coefficients qui font varier ce bloc. */
   readonly coefficients: readonly NatureCoefficient[]
+  /**
+   * Personnes presentes au minimum pendant la plage de ce bloc, quel que soit
+   * le volume calcule. Un comptoir ouvert exige quelqu'un derriere, meme sans
+   * client. Absent = aucune exigence propre au bloc.
+   */
+  readonly presenceMinimum?: number
 }
 
 export interface BlocReception extends BlocCommun {
@@ -118,6 +127,28 @@ export interface BlocTacheFixe extends BlocCommun {
   readonly minutes: Minutes
 }
 
+export interface BlocComptoir extends BlocCommun {
+  readonly type: 'comptoir'
+  /** Part des clients du magasin qui passent a ce comptoir, en pourcentage. */
+  readonly partClientsPourcent: number
+  readonly minutesParClient: Minutes
+}
+
+export interface BlocPlanCuisson extends BlocCommun {
+  readonly type: 'plan-cuisson'
+  readonly fourneesParJour: Readonly<Record<JourSemaine, number>>
+  readonly minutesParFournee: Minutes
+}
+
+export interface BlocFormatLivraison extends BlocCommun {
+  readonly type: 'format-livraison'
+  /** Carcasse, quartiers, pret a decouper, poisson entier, filets... */
+  readonly format: string
+  /** Quantite receptionnee chaque jour, en kilos ou en pieces. */
+  readonly quantiteParJour: Readonly<Record<JourSemaine, number>>
+  readonly minutesParUnite: Minutes
+}
+
 export type Bloc =
   | BlocReception
   | BlocMiseEnPlace
@@ -129,6 +160,9 @@ export type Bloc =
   | BlocBalances
   | BlocTransformation
   | BlocTacheFixe
+  | BlocComptoir
+  | BlocPlanCuisson
+  | BlocFormatLivraison
 
 /** Dimensions physiques du rayon, utilisees par plusieurs blocs. */
 export interface TailleRayon {

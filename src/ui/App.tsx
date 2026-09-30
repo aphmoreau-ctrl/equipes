@@ -4,6 +4,8 @@ import { BarreOnglets, EnteteMobile, MenuLateral } from './Navigation'
 import { MODULES } from './modules'
 import { Parametres } from './ecrans/Parametres'
 import { Besoin } from './ecrans/Besoin'
+import { Equipe } from './ecrans/Equipe'
+import { Alertes } from './ecrans/Alertes'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -63,6 +65,10 @@ export function App() {
                     />
                   ) : module.id === 'besoin' ? (
                     <Besoin />
+                  ) : module.id === 'equipe' ? (
+                    <Equipe />
+                  ) : module.id === 'alertes' ? (
+                    <Alertes />
                   ) : (
                     <EcranAVenir module={module} />
                   )

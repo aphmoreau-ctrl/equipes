@@ -169,7 +169,42 @@ export function minutesBrutesDuBloc(
 
     case 'tache-fixe':
       return repartirSurLaPlage(bloc.minutes, bloc.plage)
+
+    case 'comptoir': {
+      // Proportionnel a la frequentation, pendant les heures du comptoir.
+      const resultat = new Array<number>(TRANCHES_PAR_JOUR).fill(0)
+      for (const index of tranchesDeLaPlage(bloc.plage)) {
+        const clients = contexte.clientsParTranche[index] ?? 0
+        const clientsAuComptoir = (clients * bloc.partClientsPourcent) / 100
+        resultat[index] = clientsAuComptoir * bloc.minutesParClient
+      }
+      return resultat
+    }
+
+    case 'plan-cuisson': {
+      const fournees = bloc.fourneesParJour[jour]
+      return repartirSurLaPlage(fournees * bloc.minutesParFournee, bloc.plage)
+    }
+
+    case 'format-livraison': {
+      const quantite = bloc.quantiteParJour[jour]
+      return repartirSurLaPlage(quantite * bloc.minutesParUnite, bloc.plage)
+    }
   }
+}
+
+/**
+ * Presence minimum exigee par un bloc sur une tranche donnee.
+ * Un comptoir ouvert reclame quelqu'un derriere, meme sans client.
+ */
+export function presenceMinimumDuBloc(
+  bloc: Bloc,
+  contexte: ContexteJour,
+  index: number,
+): number {
+  if (bloc.presenceMinimum === undefined || !bloc.actif) return 0
+  if (!bloc.jours.includes(jourDeLaSemaine(contexte.date))) return 0
+  return tranchesDeLaPlage(bloc.plage).includes(index) ? bloc.presenceMinimum : 0
 }
 
 /** Minutes apportees par un bloc, coefficients compris. */

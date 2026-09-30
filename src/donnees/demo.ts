@@ -1,6 +1,7 @@
 import type { JourSemaine } from '../domaine/calendrier'
 import type { HorairesSemaine, Magasin } from '../domaine/magasin'
 import type { Bloc, ConfigurationRayon } from '../moteurs/besoin'
+import { MODELES_AUTRES_RAYONS } from './modeles-rayons'
 
 /**
  * DONNEES DE DEMONSTRATION - ENTIEREMENT FICTIVES.
@@ -103,15 +104,16 @@ export const MAGASIN_DEMO: Magasin = {
     },
   ],
 
+  // Budgets cales sur le besoin calcule par les modeles, avec environ dix pour
+  // cent de marge. A remplacer par les budgets reels du magasin.
   budgetHeuresParRayon: {
-    // Environ 4,5 equivalents temps plein : le besoin calcule tourne autour de 168 h.
     'fruits-legumes': 180,
-    boucherie: 120,
-    maree: 60,
-    cremerie: 110,
-    'charcuterie-traiteur': 90,
-    fromage: 60,
-    boulangerie: 70,
+    boucherie: 150,
+    maree: 100,
+    cremerie: 85,
+    'charcuterie-traiteur': 135,
+    fromage: 115,
+    boulangerie: 120,
   },
 }
 
@@ -287,11 +289,11 @@ export const CONFIGURATION_FRUITS_LEGUMES: ConfigurationRayon = {
   coefficientPromotion: 1.25,
 }
 
-/**
- * Configurations disponibles. Les six autres rayons arrivent au lot 3 :
- * d'ici la, seul le rayon fruits et legumes calcule un besoin.
- */
-export const CONFIGURATIONS_DEMO: readonly ConfigurationRayon[] = [CONFIGURATION_FRUITS_LEGUMES]
+/** Les sept rayons frais sont modelises. */
+export const CONFIGURATIONS_DEMO: readonly ConfigurationRayon[] = [
+  CONFIGURATION_FRUITS_LEGUMES,
+  ...MODELES_AUTRES_RAYONS,
+]
 
 export function configurationDuRayon(rayonId: string): ConfigurationRayon | undefined {
   return CONFIGURATIONS_DEMO.find((configuration) => configuration.rayonId === rayonId)

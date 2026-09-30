@@ -1,5 +1,9 @@
+import type { Collaborateur } from '../domaine/collaborateur'
 import type { Magasin } from '../domaine/magasin'
+import type { ReglagesAlertes } from '../moteurs/alertes'
+import { REGLAGES_ALERTES_PAR_DEFAUT } from '../moteurs/alertes'
 import type { ConfigurationRayon, Meteo, SaisieQualite } from '../moteurs/besoin'
+import { COLLABORATEURS_DEMO } from './collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
 
 /**
@@ -16,6 +20,8 @@ export interface EtatApplication {
   readonly version: number
   readonly magasin: Magasin
   readonly configurations: readonly ConfigurationRayon[]
+  readonly collaborateurs: readonly Collaborateur[]
+  readonly reglagesAlertes: ReglagesAlertes
   readonly saisiesQualite: readonly SaisieQualite[]
   /** Meteo constatee, par date. Absente = « normal ». */
   readonly meteoParDate: Readonly<Record<string, Meteo>>
@@ -30,6 +36,8 @@ export function etatInitial(): EtatApplication {
     version: VERSION_ETAT,
     magasin: MAGASIN_DEMO,
     configurations: CONFIGURATIONS_DEMO,
+    collaborateurs: COLLABORATEURS_DEMO,
+    reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,
     saisiesQualite: [],
     meteoParDate: {},
     promotionsParDate: {},

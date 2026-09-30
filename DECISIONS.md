@@ -150,3 +150,67 @@ l'iPhone — à faire au lot 6 avec le mode chrono.
 détaillé. Les blocs comptoir, plan de cuisson et format de livraison, propres
 aux autres rayons, arrivent au lot 3.
 **Alternative.** Modéliser sommairement les sept rayons d'emblée.
+
+---
+
+## Lot 3 — Équipe et modèles des autres rayons
+
+### D-17 — Trois nouveaux types de blocs
+**Décision.** Ajout des blocs **comptoir** (clients × part du rayon × temps par
+client), **plan de cuisson** (fournées × durée) et **format de livraison**
+(quantité reçue × temps unitaire).
+**Raison.** Ce sont les trois formules que le cahier des charges décrit pour la
+boucherie, la marée et la boulangerie, absentes du modèle fruits et légumes.
+**Alternative.** Les représenter avec des tâches fixes — beaucoup moins précis.
+
+### D-18 — Présence minimum portée par le bloc, pas seulement par le rayon
+**Décision.** Un bloc peut exiger sa propre présence minimum. Le comptoir
+boucherie exige un boucher dès qu'il est ouvert, même sans client.
+**Raison.** Le cahier l'exige explicitement (« au moins 1 boucher qualifié
+quand le comptoir est ouvert »). Une présence minimum au niveau du rayon seul
+ne saurait pas l'exprimer.
+**Alternative.** Une présence minimum unique par rayon.
+
+### D-19 — Budgets d'heures calés sur les modèles
+**Décision.** Les budgets de démonstration ont été recalculés d'après le besoin
+que produisent les modèles, avec environ 10 % de marge.
+**Raison.** Des budgets inventés au hasard affichaient des dépassements partout
+et rendaient la démonstration illisible.
+**Alternative.** Garder des budgets arbitraires.
+**À relire en priorité** : ce sont vos vrais budgets qui comptent.
+
+### D-20 — Les comptoirs sont comptés séparément
+**Décision.** Chaque comptoir (boucherie, marée, charcuterie, fromage,
+boulangerie) exige sa propre présence minimum toute la journée d'ouverture.
+**Conséquence.** Le besoin calculé pour le fromage et la charcuterie est élevé
+(plus de 100 h par semaine chacun), car l'application suppose deux comptoirs
+tenus en permanence.
+**En pratique**, ces deux comptoirs partagent souvent la même personne. Le
+moteur de planning saura l'exprimer (polyvalence entre rayons), mais le besoin
+calculé rayon par rayon, lui, ne le peut pas.
+**Alternative.** Regrouper charcuterie et fromage en un seul rayon.
+**À relire** : c'est le point le plus discutable de la modélisation.
+
+### D-21 — Alertes calculées, jamais stockées
+**Décision.** Les alertes sont recalculées à chaque affichage à partir des
+fiches, au lieu d'être enregistrées.
+**Raison.** Impossible d'avoir une alerte périmée ou oubliée : ce qui est
+affiché reflète toujours l'état réel des fiches.
+**Alternative.** Une liste d'alertes enregistrée, qu'on pourrait marquer comme
+lue — utile plus tard, mais source d'incohérences.
+
+### D-22 — Préavis par défaut des alertes
+**Décision.** Période d'essai 21 jours, fin de contrat 45 jours, habilitation
+60 jours, seuil d'urgence 7 jours. Tous réglables depuis l'écran Alertes.
+**Raison.** Le cahier des charges demande des alertes anticipées sans fixer de
+délai. Ces valeurs laissent le temps d'agir.
+**Alternative.** D'autres délais — c'est un simple réglage.
+
+### D-23 — Vingt collaborateurs fictifs
+**Décision.** L'équipe de démonstration compte 20 personnes réparties sur les
+sept rayons, avec des contrats variés (CDI, CDD, apprenti, étudiants,
+temps partiels) et des indisponibilités déclarées.
+**Raison.** Le cahier demande 15 à 25 collaborateurs fictifs. La variété permet
+de tester le moteur de planning sur des cas réalistes.
+**RGPD.** Prénoms courants et initiales tirées au hasard : ils ne désignent
+personne. Aucune donnée réelle.

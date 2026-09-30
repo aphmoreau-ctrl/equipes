@@ -86,7 +86,7 @@ describe('modele du rayon fruits et legumes', () => {
   it('est rattache au bon rayon et retrouvable', () => {
     expect(CONFIGURATION_FRUITS_LEGUMES.rayonId).toBe('fruits-legumes')
     expect(configurationDuRayon('fruits-legumes')).toBe(CONFIGURATION_FRUITS_LEGUMES)
-    expect(configurationDuRayon('boucherie')).toBeUndefined()
+    expect(configurationDuRayon('rayon-inexistant')).toBeUndefined()
   })
 
   it('n utilise aucun identifiant de bloc en double', () => {
@@ -195,7 +195,8 @@ describe('besoin calcule sur les donnees de demonstration', () => {
 })
 
 describe('configurations disponibles', () => {
-  it('ne couvre que le rayon fruits et legumes au lot 2', () => {
-    expect(CONFIGURATIONS_DEMO.map((c) => c.rayonId)).toEqual(['fruits-legumes'])
+  it('couvre les sept rayons frais', () => {
+    expect(CONFIGURATIONS_DEMO).toHaveLength(7)
+    expect(CONFIGURATIONS_DEMO[0]?.rayonId).toBe('fruits-legumes')
   })
 })

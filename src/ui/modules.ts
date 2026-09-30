@@ -51,7 +51,7 @@ export const MODULES: readonly Module[] = [
     titre: 'Équipe',
     resume: 'Fiches des collaborateurs : contrats, disponibilités, compétences, dates clés.',
     livraison: 'Lot 3',
-    pret: false,
+    pret: true,
   },
   {
     id: 'alertes',
@@ -59,7 +59,7 @@ export const MODULES: readonly Module[] = [
     titre: 'Alertes',
     resume: 'Toutes les échéances et anomalies réunies au même endroit.',
     livraison: 'Lot 3',
-    pret: false,
+    pret: true,
   },
   {
     id: 'heures',

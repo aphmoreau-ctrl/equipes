@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { clientsParTranche, tranchesOuvertes } from '../domaine/magasin'
 import { calculerBesoin, type BesoinJour, type ContexteJour } from '../moteurs/besoin'
 import { coefficientEvenements } from '../domaine/magasin'
+import type { Planning } from '../domaine/planning'
 import {
   configurationDeRayon,
   effacerEtat,
@@ -11,7 +12,9 @@ import {
   etatInitial,
   lireEtat,
   meteoDuJour,
+  planningDeLaSemaine,
   saisiesDuJour,
+  vacationsAnterieures,
   type EtatApplication,
 } from '../donnees/etat'
 
@@ -23,6 +26,12 @@ interface ValeurDonnees {
   readonly reinitialiser: () => void
   /** Calcule le besoin d'un rayon pour une date, ou null si le rayon n'a pas de modele. */
   readonly besoinDuJour: (date: string, rayonId: string) => BesoinJour | null
+  /** Planning d'une semaine, cree vide s'il n'existe pas encore. */
+  readonly planning: (semaine: string) => Planning
+  /** Modifie le planning d'une semaine et l'enregistre. */
+  readonly modifierPlanning: (semaine: string, transformation: (planning: Planning) => Planning) => void
+  /** Vacations des semaines precedentes. */
+  readonly historique: (semaine: string) => ReturnType<typeof vacationsAnterieures>
 }
 
 const Contexte = createContext<ValeurDonnees | null>(null)
@@ -69,9 +78,33 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
     [etat],
   )
 
+  const planning = useCallback(
+    (semaine: string): Planning => planningDeLaSemaine(etat, semaine),
+    [etat],
+  )
+
+  const modifierPlanning = useCallback(
+    (semaine: string, transformation: (precedent: Planning) => Planning): void => {
+      modifier((precedent) => ({
+        ...precedent,
+        demonstration: false,
+        plannings: {
+          ...precedent.plannings,
+          [semaine]: transformation(planningDeLaSemaine(precedent, semaine)),
+        },
+      }))
+    },
+    [modifier],
+  )
+
+  const historique = useCallback(
+    (semaine: string) => vacationsAnterieures(etat, semaine),
+    [etat],
+  )
+
   const valeur = useMemo<ValeurDonnees>(
-    () => ({ etat, modifier, reinitialiser, besoinDuJour }),
-    [etat, modifier, reinitialiser, besoinDuJour],
+    () => ({ etat, modifier, reinitialiser, besoinDuJour, planning, modifierPlanning, historique }),
+    [etat, modifier, reinitialiser, besoinDuJour, planning, modifierPlanning, historique],
   )
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>

@@ -275,3 +275,35 @@ avertissement expliquant que le statut de travailleur de nuit s'applique.
 **Raison.** Travailler la nuit n'est pas illégal. Ce qui compte, c'est que le
 statut, ses majorations et son suivi médical ne soient pas oubliés.
 **Alternative.** Ne rien signaler — le statut passerait inaperçu.
+
+### D-30 — Un planning par semaine, pour tout le service
+**Décision.** Le planning est l'objet « semaine », commun aux sept rayons.
+Chaque vacation porte son rayon.
+**Raison.** C'est ce que vous soumettez à votre patron : « le planning de la
+semaine 45 », pas sept documents séparés. Le circuit de suivi porte donc sur la
+semaine entière.
+**Alternative.** Un planning par rayon et par semaine — sept circuits de suivi
+à tenir en parallèle.
+
+### D-31 — Construction au toucher, pas au glisser-déposer
+**Décision.** On touche une case de la grille, puis on choisit un horaire type
+(ou « Repos » pour vider la case).
+**Raison.** Le glisser-déposer est agréable mais fragile au doigt, et
+inutilisable au clavier. Le toucher fonctionne partout, iPad comme Mac.
+**Alternative.** Le glisser-déposer prévu au cahier des charges — à ajouter
+plus tard, en plus du toucher, pas à la place.
+
+### D-32 — La couverture compte la présence, pas le travail effectif
+**Décision.** Une personne présente couvre la tranche entière ; sa pause est
+déduite de son temps de travail, pas de sa présence.
+**Raison.** L'application ne place pas les pauses à la minute près. Compter la
+pause comme une absence creuserait des trous fictifs.
+**Alternative.** Positionner chaque pause — beaucoup de saisie pour peu de gain.
+
+### D-33 — Les règles légales sont enregistrées avec vos données
+**Décision.** Les paramètres des règles font partie de l'état de
+l'application, au même titre que les rayons ou les collaborateurs.
+**Raison.** Le cahier des charges exige qu'ils soient modifiables. Les garder
+dans le code les aurait figés.
+**Conséquence.** Ils partiront vers Firebase avec le reste, et l'écran qui
+permet de les modifier arrive avec le lot suivant.

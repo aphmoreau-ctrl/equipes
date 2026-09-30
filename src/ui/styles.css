@@ -751,6 +751,226 @@ select.champ__saisie {
   border-radius: 2px;
 }
 
+/* ------------------------------------------------- Grille de planning */
+
+.barre-semaine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.barre-semaine__titre {
+  flex: 1;
+  font-weight: 650;
+  font-size: 17px;
+  text-align: center;
+}
+
+.grille-cadre {
+  overflow-x: auto;
+  margin: 0 -6px;
+  padding: 0 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.grille {
+  border-collapse: separate;
+  border-spacing: 3px;
+  width: 100%;
+  min-width: 620px;
+}
+
+.grille th,
+.grille td {
+  padding: 0;
+  text-align: left;
+  font-weight: 400;
+  vertical-align: top;
+}
+
+.grille thead th {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--texte-doux);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-bottom: 4px;
+  text-align: center;
+}
+
+.grille thead th.grille__personne,
+.grille thead th.grille__total {
+  text-align: left;
+}
+
+.grille__jour {
+  display: block;
+}
+
+.grille__date {
+  display: block;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.grille__personne {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--fond-carte);
+  min-width: 132px;
+  padding-right: 8px !important;
+}
+
+.grille__nom {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.grille__contrat {
+  display: block;
+  font-size: 12px;
+  color: var(--texte-doux);
+}
+
+.grille__anomalie {
+  color: var(--alerte);
+  font-weight: 700;
+}
+
+.case {
+  display: block;
+  width: 100%;
+  min-width: 64px;
+  min-height: 46px;
+  padding: 5px 4px;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  background: var(--fond);
+  cursor: pointer;
+  text-align: center;
+}
+
+.case:hover {
+  background: var(--fond-survol);
+}
+
+.case--choisie {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.case__repos {
+  color: var(--texte-doux);
+}
+
+.case__vacation {
+  display: block;
+}
+
+.case__heures {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.case__rayon {
+  display: block;
+  font-size: 10px;
+  color: var(--texte-doux);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grille__total {
+  min-width: 68px;
+  padding-left: 6px !important;
+}
+
+.grille__heures {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.grille__ecart {
+  display: block;
+  font-size: 12px;
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+}
+
+.grille__ecart--haut {
+  color: var(--avertissement);
+}
+
+.editeur-case {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--rayon-petit);
+  background: var(--accent-doux);
+}
+
+@media (prefers-color-scheme: dark) {
+  .editeur-case {
+    background: var(--fond);
+  }
+}
+
+.verdict {
+  display: inline-block;
+  font-weight: 650;
+  margin-right: 10px;
+}
+
+.verdict--bon {
+  color: var(--succes);
+}
+
+.verdict--moyen {
+  color: var(--avertissement);
+}
+
+.verdict--mauvais {
+  color: var(--alerte);
+}
+
+.etat {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--fond-survol);
+  color: var(--texte);
+}
+
+.etat--soumis {
+  background: color-mix(in srgb, var(--avertissement) 18%, transparent);
+}
+
+.etat--valide,
+.etat--publie {
+  background: color-mix(in srgb, var(--succes) 18%, transparent);
+}
+
+.etat--a-corriger {
+  background: color-mix(in srgb, var(--alerte) 18%, transparent);
+}
+
+.champ__saisie--texte {
+  min-height: 80px;
+  padding: 10px 12px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
 /* ----------------------------------------------------------- Alertes */
 
 .liste-alertes {

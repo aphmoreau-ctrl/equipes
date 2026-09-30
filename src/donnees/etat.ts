@@ -1,6 +1,10 @@
 import type { Collaborateur } from '../domaine/collaborateur'
 import type { Magasin } from '../domaine/magasin'
+import type { Planning } from '../domaine/planning'
+import { planningVide } from '../domaine/planning'
 import type { ReglagesAlertes } from '../moteurs/alertes'
+import type { ParametresRegles } from '../moteurs/regles'
+import { PARAMETRES_PAR_DEFAUT } from '../moteurs/regles'
 import { REGLAGES_ALERTES_PAR_DEFAUT } from '../moteurs/alertes'
 import type { ConfigurationRayon, Meteo, SaisieQualite } from '../moteurs/besoin'
 import { COLLABORATEURS_DEMO } from './collaborateurs-demo'
@@ -21,7 +25,13 @@ export interface EtatApplication {
   readonly magasin: Magasin
   readonly configurations: readonly ConfigurationRayon[]
   readonly collaborateurs: readonly Collaborateur[]
+  /** Plannings, reperes par le lundi de leur semaine. */
+  readonly plannings: Readonly<Record<string, Planning>>
+  /** Heures supplementaires deja consommees cette annee, par collaborateur. */
+  readonly heuresSupplementairesAnnuelles: Readonly<Record<string, number>>
   readonly reglagesAlertes: ReglagesAlertes
+  /** Regles legales et conventionnelles, toutes modifiables. */
+  readonly reglesParametres: ParametresRegles
   readonly saisiesQualite: readonly SaisieQualite[]
   /** Meteo constatee, par date. Absente = « normal ». */
   readonly meteoParDate: Readonly<Record<string, Meteo>>
@@ -37,7 +47,10 @@ export function etatInitial(): EtatApplication {
     magasin: MAGASIN_DEMO,
     configurations: CONFIGURATIONS_DEMO,
     collaborateurs: COLLABORATEURS_DEMO,
+    plannings: {},
+    heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,
+    reglesParametres: PARAMETRES_PAR_DEFAUT,
     saisiesQualite: [],
     meteoParDate: {},
     promotionsParDate: {},
@@ -112,4 +125,16 @@ export function saisiesDuJour(
   return etat.saisiesQualite.filter(
     (saisie) => saisie.date === date && saisie.rayonId === rayonId,
   )
+}
+
+/** Planning d'une semaine, cree vide s'il n'existe pas encore. */
+export function planningDeLaSemaine(etat: EtatApplication, semaine: string): Planning {
+  return etat.plannings[semaine] ?? planningVide(semaine)
+}
+
+/** Vacations des semaines precedentes, pour les regles qui regardent l'historique. */
+export function vacationsAnterieures(etat: EtatApplication, semaine: string) {
+  return Object.values(etat.plannings)
+    .filter((planning) => planning.semaine < semaine)
+    .flatMap((planning) => planning.vacations)
 }

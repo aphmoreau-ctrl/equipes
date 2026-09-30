@@ -51,6 +51,7 @@ describe('carte des modules', () => {
   it('ne declare pret que ce qui est reellement construit', () => {
     // A mettre a jour a chaque lot livre.
     expect(MODULES.filter((module) => module.pret).map((module) => module.id)).toEqual([
+      'planning',
       'besoin',
       'equipe',
       'alertes',

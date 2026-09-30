@@ -34,7 +34,7 @@ export const MODULES: readonly Module[] = [
     resume:
       'Construction du planning, contrôle automatique des règles légales, couverture du besoin et circuit de suivi.',
     livraison: 'Lot 5',
-    pret: false,
+    pret: true,
   },
   {
     id: 'besoin',

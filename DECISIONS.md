@@ -307,3 +307,24 @@ l'application, au même titre que les rayons ou les collaborateurs.
 dans le code les aurait figés.
 **Conséquence.** Ils partiront vers Firebase avec le reste, et l'écran qui
 permet de les modifier arrive avec le lot suivant.
+
+### D-34 — Les PDF passent par l'impression du navigateur
+**Décision.** Les documents sont produits par la fenêtre d'impression de
+Safari (« Imprimer » → « PDF »), et non par une bibliothèque PDF embarquée.
+**Raison.** Trois avantages : l'aperçu à l'écran **est** le document final,
+comme l'exige le cahier des charges ; aucune bibliothèque lourde à charger, ce
+qui préserve le fonctionnement hors ligne ; et sur iPad, l'enregistrement en
+PDF et l'envoi par courriel sont déjà intégrés au système.
+**Conséquence.** La mise en page dépend un peu du navigateur. Le format est
+fixé en A4 paysage.
+**Alternative.** Une bibliothèque PDF (jsPDF, pdfmake) : contrôle au millimètre,
+mais plusieurs centaines de kilooctets à charger et un aperçu qui peut différer
+du résultat.
+
+### D-35 — Trois tests garantissent l'étanchéité des documents
+**Décision.** Des tests automatiques vérifient qu'aucun statut de suivi,
+aucune remarque du patron, aucun historique et aucun réglage technique ne
+figure sur un document imprimé — y compris quand une remarque a été saisie
+juste avant.
+**Raison.** C'est une règle absolue du projet. Une règle qui n'est pas testée
+finit toujours par être enfreinte par accident.

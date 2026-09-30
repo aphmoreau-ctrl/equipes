@@ -10,7 +10,12 @@ import {
 } from '../../domaine/calendrier'
 import { estDisponible, nomAffiche, peutTravaillerDans } from '../../domaine/collaborateur'
 import { rayonsActifs } from '../../domaine/magasin'
-import { changerEtat, datePublication, type EtatSuivi } from '../../domaine/planning'
+import {
+  afficheEquipeImprimable,
+  changerEtat,
+  datePublication,
+  type EtatSuivi,
+} from '../../domaine/planning'
 import { enTexte } from '../../domaine/temps'
 import {
   contexteDeVerification,
@@ -26,6 +31,7 @@ import {
 import { useDonnees } from '../DonneesProvider'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
+import { DocumentImprimable, type TypeDocument } from '../composants/DocumentImprimable'
 
 export function Planning() {
   const { etat, planning, modifierPlanning, historique, besoinDuJour } = useDonnees()
@@ -36,6 +42,7 @@ export function Planning() {
   const [caseChoisie, setCaseChoisie] = useState<{ collaborateurId: string; jour: string } | null>(
     null,
   )
+  const [documentAffiche, setDocumentAffiche] = useState<TypeDocument | null>(null)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
   const planningCourant = planning(semaine)
@@ -356,6 +363,78 @@ export function Planning() {
                 )
               })}
           </ul>
+        )}
+      </section>
+
+      <section className="carte">
+        <h2>Documents</h2>
+        <p>
+          Ce que vous voyez à l’écran est exactement ce qui sera imprimé. Ni le statut de suivi,
+          ni les remarques, ni l’historique n’y figurent.
+        </p>
+
+        <div className="groupe-boutons">
+          <button
+            type="button"
+            className={documentAffiche === 'dossier-patron' ? 'bouton bouton--principal' : 'bouton'}
+            onClick={() =>
+              setDocumentAffiche(documentAffiche === 'dossier-patron' ? null : 'dossier-patron')
+            }
+          >
+            Dossier à présenter
+            <span className="bouton__aide">pour le patron</span>
+          </button>
+
+          <button
+            type="button"
+            className={documentAffiche === 'affichage-equipe' ? 'bouton bouton--principal' : 'bouton'}
+            disabled={!afficheEquipeImprimable(planningCourant)}
+            onClick={() =>
+              setDocumentAffiche(documentAffiche === 'affichage-equipe' ? null : 'affichage-equipe')
+            }
+          >
+            Affichage équipe
+            <span className="bouton__aide">pour les salariés</span>
+          </button>
+        </div>
+
+        {!afficheEquipeImprimable(planningCourant) && (
+          <p className="avis avis--attention">
+            L’affichage équipe ne peut être imprimé que lorsque le planning est au statut
+            <strong> « Publié à l’équipe »</strong>. C’est la seule protection contre la diffusion
+            d’un planning non validé.
+          </p>
+        )}
+
+        {documentAffiche !== null && (
+          <>
+            <p>
+              <button
+                type="button"
+                className="bouton bouton--principal"
+                onClick={() => window.print()}
+              >
+                Imprimer ou enregistrer en PDF
+              </button>
+            </p>
+            <p className="champ__aide">
+              Sur iPad : le bouton ouvre la fenêtre d’impression. Choisissez « PDF » pour
+              enregistrer le document.
+            </p>
+
+            <div className="apercu-document">
+              <DocumentImprimable
+                type={documentAffiche}
+                planning={planningCourant}
+                rayons={rayons}
+                collaborateurs={etat.collaborateurs}
+                couvertures={couvertures}
+                budgetHeuresParRayon={etat.magasin.budgetHeuresParRayon}
+                nomDuService={etat.magasin.services[0]?.nom ?? 'Frais'}
+                edite={aujourdhui()}
+              />
+            </div>
+          </>
         )}
       </section>
 

@@ -1214,7 +1214,132 @@ select.champ__saisie {
   }
 }
 
+/* ---------------------------------------------- Documents imprimables */
+
+.apercu-document {
+  margin-top: 16px;
+  padding: 22px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  background: #ffffff;
+  color: #111111;
+  overflow-x: auto;
+}
+
+.document {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #111111;
+  background: #ffffff;
+}
+
+.document__entete {
+  border-bottom: 1.5px solid #111111;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.document__titre {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: #111111;
+}
+
+.document__sous-titre {
+  margin: 3px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.document__reperes {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #555555;
+}
+
+.document__rayon {
+  margin-bottom: 18px;
+  break-inside: avoid;
+}
+
+.document__rayon-titre {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #111111;
+}
+
+.document__tableau {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.document__tableau th,
+.document__tableau td {
+  border: 0.5px solid #999999;
+  padding: 4px 6px;
+  text-align: center;
+  font-weight: 400;
+}
+
+.document__tableau thead th {
+  background: #eeeeee;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.document__tableau tbody th {
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.document__total {
+  font-weight: 700;
+}
+
+.document__vide {
+  font-style: italic;
+  color: #555555;
+}
+
+.document__pied {
+  margin-top: 14px;
+  padding-top: 6px;
+  border-top: 0.5px solid #999999;
+  font-size: 10px;
+  color: #555555;
+  text-align: center;
+}
+
 @media print {
+  /* Seul le document sort sur le papier : tout le reste est masque. */
+  body * {
+    visibility: hidden;
+  }
+
+  .document,
+  .document * {
+    visibility: visible;
+  }
+
+  .document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .apercu-document {
+    border: none;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+  }
+
   .menu-lateral,
   .entete-mobile,
   .onglets,
@@ -1222,5 +1347,10 @@ select.champ__saisie {
   .voile,
   .maj {
     display: none;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
   }
 }

@@ -840,3 +840,29 @@ données **réelles** déjà enregistrées la reçoivent **vide** ; seules les
 données de démonstration reçoivent les exemples fictifs.
 **Raison.** Sans cette précaution, une mise à jour aurait glissé quatre
 intérimaires imaginaires dans votre vraie équipe. Vérifié par un test.
+
+## Lot 16 — Scénarios
+
+### D-75 — Le planning en cours est toujours dans la comparaison
+**Décision.** Le tableau des scénarios compare les versions enregistrées **et**
+le planning en cours, sous le nom « En cours ». Il n'a pas besoin d'être
+enregistré pour figurer au tableau.
+**Raison.** On compare toujours à ce qu'on a sous la main. Obliger à
+l'enregistrer d'abord ajouterait une étape sans intérêt.
+
+### D-76 — Un scénario illégal ne peut jamais être « le mieux placé »
+**Décision.** Le classement trie d'abord sur le nombre de règles enfreintes,
+puis seulement sur la pénalité globale. Un scénario qui couvre mieux le besoin
+mais viole le Code du travail passe derrière un scénario conforme.
+**Raison.** La conformité n'est pas un indicateur parmi d'autres : c'est une
+condition. Un classement qui mettrait un planning illégal en tête inviterait à
+le choisir.
+
+### D-77 — « Retenir » remplace sans filet
+**Décision.** Retenir un scénario remplace le planning de la semaine. L'écran
+prévient et rappelle d'enregistrer d'abord le planning en cours si l'on veut
+pouvoir y revenir.
+**Raison.** Un historique complet des plannings alourdirait beaucoup la
+structure de données pour un besoin rare. L'enregistrement en scénario joue ce
+rôle, explicitement.
+**Alternative.** Une annulation générale, à envisager plus tard si cela manque.

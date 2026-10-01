@@ -5,9 +5,14 @@ import { Planning } from './Planning'
 
 /** Donnees FICTIVES uniquement. */
 
-/** La grille seule : les boutons d'horaire affichent aussi les memes heures. */
+/**
+ * La grille du planning seule : les boutons d'horaire affichent les memes
+ * heures, et le tableau des scenarios est aussi un « table ».
+ */
 function grille(): HTMLElement {
-  return screen.getByRole('table')
+  const element = document.querySelector('table.grille:not(.grille--compacte)')
+  if (element === null) throw new Error('Grille du planning introuvable.')
+  return element as HTMLElement
 }
 
 function afficher() {
@@ -219,5 +224,79 @@ describe('proposition automatique', () => {
 
     afficher()
     expect(within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length).toBe(placees)
+  })
+})
+
+describe('scénarios', () => {
+  it('invite d’abord à construire un planning', () => {
+    afficher()
+    expect(screen.getByText('Scénarios')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Enregistrer le planning actuel/ }),
+    ).toBeDisabled()
+  })
+
+  it('enregistre un scénario et le compare au planning en cours', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+
+    fireEvent.change(screen.getByLabelText('Nom du scénario'), {
+      target: { value: 'Proposition automatique' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+
+    expect(screen.getAllByText('Proposition automatique').length).toBeGreaterThan(0)
+    expect(screen.getByText('En cours')).toBeInTheDocument()
+    expect(screen.getByText('Couverture')).toBeInTheDocument()
+  })
+
+  it('explique ce qui distingue un scénario du planning en cours', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+
+    // Le scenario vient d'etre copie : il est identique au planning en cours.
+    expect(screen.getByText(/Identique au planning en cours/)).toBeInTheDocument()
+  })
+
+  it('prévient que retenir un scénario remplace le planning', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+    // Le texte est coupe par une balise : on lit le contenu de l'avertissement.
+    const avertissement = [...document.querySelectorAll('.avis')].find((element) =>
+      (element.textContent ?? '').includes('Retenir'),
+    )
+    expect(avertissement?.textContent).toContain('remplace')
+    expect(avertissement?.textContent).toContain('planning de la semaine')
+  })
+
+  it('retient un scénario et remplace le planning', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+
+    const placees = within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length
+    fireEvent.click(screen.getByRole('button', { name: 'Retenir ce scénario' }))
+    expect(within(grille()).getAllByText(/\d\d:\d\d–\d\d:\d\d/).length).toBe(placees)
+  })
+
+  it('supprime un scénario', () => {
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }))
+    expect(screen.queryByText('En cours')).not.toBeInTheDocument()
+  })
+
+  it('conserve les scénarios après rechargement', () => {
+    const premiere = afficher()
+    fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
+    fireEvent.change(screen.getByLabelText('Nom du scénario'), { target: { value: 'Version A' } })
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le planning actuel/ }))
+    premiere.unmount()
+
+    afficher()
+    expect(screen.getAllByText('Version A').length).toBeGreaterThan(0)
   })
 })

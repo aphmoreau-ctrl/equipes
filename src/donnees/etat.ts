@@ -15,6 +15,7 @@ import type { Mesure } from '../domaine/mesure'
 import type { Mission, Renfort } from '../domaine/vivier'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
+import type { Scenario } from '../moteurs/planning/scenarios'
 import { planningVide } from '../domaine/planning'
 import type { ReglagesAlertes } from '../moteurs/alertes'
 import type { ParametresRegles } from '../moteurs/regles'
@@ -82,6 +83,8 @@ export interface EtatApplication {
   readonly missions: readonly Mission[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
+  /** Scenarios conserves pour comparaison, par semaine (§9.4). */
+  readonly scenariosParSemaine: Readonly<Record<string, readonly Scenario[]>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
   readonly heuresSupplementairesAnnuelles: Readonly<Record<string, number>>
   readonly reglagesAlertes: ReglagesAlertes
@@ -126,6 +129,7 @@ export function etatInitial(): EtatApplication {
     renforts: RENFORTS_DEMO,
     missions: MISSIONS_DEMO,
     plannings: {},
+    scenariosParSemaine: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,
     reglesParametres: PARAMETRES_PAR_DEFAUT,

@@ -35,6 +35,7 @@ import { genererLePlanning } from '../../moteurs/planning/generateur'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
+import { Scenarios } from '../composants/Scenarios'
 import { DocumentImprimable, type TypeDocument } from '../composants/DocumentImprimable'
 
 export function Planning() {
@@ -146,18 +147,10 @@ export function Planning() {
   }
 
   function proposerUnPlanning(): void {
-    const besoins = []
-    for (const rayon of rayons) {
-      for (const jour of jours) {
-        const besoin = besoinDuJour(jour, rayon.id)
-        if (besoin !== null) besoins.push(besoin)
-      }
-    }
-
     const resultat = genererLePlanning({
       semaine,
       rayons,
-      besoins,
+      besoins: besoinsDeLaSemaine,
       collaborateurs: etat.collaborateurs,
       absences: absencesEffectives(etat),
       horairesTypes: etat.magasin.horairesTypes,
@@ -175,6 +168,17 @@ export function Planning() {
   function changerLeSuivi(nouvelEtat: EtatSuivi, date: string, remarques: string): void {
     modifierPlanning(semaine, (precedent) => changerEtat(precedent, nouvelEtat, date, remarques))
   }
+
+  const besoinsDeLaSemaine = useMemo(() => {
+    const resultat = []
+    for (const rayon of rayons) {
+      for (const jour of jours) {
+        const besoin = besoinDuJour(jour, rayon.id)
+        if (besoin !== null) resultat.push(besoin)
+      }
+    }
+    return resultat
+  }, [rayons, jours, besoinDuJour])
 
   const alertesAVenir = useMemo(
     () =>
@@ -566,6 +570,15 @@ export function Planning() {
           </>
         )}
       </section>
+
+      <Scenarios
+        semaine={semaine}
+        vacationsEnCours={planningCourant.vacations}
+        besoins={besoinsDeLaSemaine}
+        onRetenir={(vacations) =>
+          modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: [...vacations] }))
+        }
+      />
 
       <section className="carte">
         <h2>Anticipation sur douze semaines</h2>

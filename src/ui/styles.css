@@ -1527,6 +1527,13 @@ select.champ__saisie {
   margin: 0;
   font-size: 10px;
   padding: 1px 5px;
+  /*
+   * Les libelles d'onglets sont tronques pour tenir dans 75 points de large.
+   * La pastille, elle, ne doit jamais l'etre : « 25 » devenait « 2.. ».
+   */
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 /* ------------------------------------------------- Lot 14 : recherche */

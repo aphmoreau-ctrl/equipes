@@ -866,3 +866,42 @@ pouvoir y revenir.
 structure de données pour un besoin rare. L'enregistrement en scénario joue ce
 rôle, explicitement.
 **Alternative.** Une annulation générale, à envisager plus tard si cela manque.
+
+## Corrections de finition (1er octobre 2026)
+
+### C-11 — La pastille d'alertes était tronquée
+**Ce qui n'allait pas.** « 25 » s'affichait « 2.. » sur la barre d'onglets : la
+règle qui raccourcit les libellés pour tenir dans 75 points s'appliquait aussi
+à la pastille.
+**Corrigé.** La pastille est exclue du raccourcissement, et plafonnée à « 99+ »
+au-delà de 99 — au-delà, elle deviendrait plus large que l'onglet.
+
+### C-12 — « Entretien dépassé depuis 4 659 jours » ❗
+**Ce qui n'allait pas.** Quand aucun entretien n'était enregistré, l'échéance
+était calculée depuis la date d'entrée. Pour quelqu'un entré en 2012, cela
+donnait « dépassé depuis 4 659 jours », en rouge, pour toute l'équipe
+ancienne. C'était **faux** — l'application ne peut pas savoir ce qui s'est
+passé avant qu'elle existe — et surtout, ce bruit aurait fait ignorer toutes
+les alertes dès le premier jour.
+
+**Corrigé.** Sans entretien enregistré, l'alerte dit ce qu'elle sait :
+« Entretien professionnel à programmer — aucun n'est enregistré depuis l'entrée
+du 9 janvier 2012. S'il a déjà eu lieu, enregistrez-le ; sinon, programmez-le. »
+En **orange**, pas en rouge. Le compte à rebours en jours ne réapparaît
+qu'une fois un premier entretien enregistré.
+
+### C-13 — Les échéances se comptent en mois, pas en paquets de 30 jours
+**Ce qui n'allait pas.** Vingt-quatre mois étaient calculés comme 24 × 30 jours,
+soit 720 jours au lieu de 730 : une dérive de dix jours, qui s'aggrave sur le
+bilan à six ans.
+**Corrigé.** Calcul en calendrier réel, avec la règle habituelle : le 31 janvier
+plus un mois donne le 28 février, et non le 3 mars.
+
+### C-14 — Mémoire des courbes de besoin
+**Ce qui n'allait pas.** L'écran Planning recalculait les 49 courbes de besoin
+(7 rayons × 7 jours) à **chaque clic**. Sur le serveur de publication, un test
+dépassait même le temps accordé, ce qui bloquait trois publications de suite.
+**Corrigé.** Les courbes calculées sont gardées en mémoire, et cette mémoire
+n'est vidée que si change une donnée dont le besoin dépend — jamais quand vous
+posez une vacation. Le test est passé de 3,5 s à 1,4 s, et l'iPad en profite
+autant.

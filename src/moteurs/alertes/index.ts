@@ -1,4 +1,10 @@
-import { ajouterJours, dateEnTexte, estAvant, estDansIntervalle } from '../../domaine/calendrier'
+import {
+  ajouterJours,
+  ajouterMois,
+  dateEnTexte,
+  estAvant,
+  estDansIntervalle,
+} from '../../domaine/calendrier'
 import {
   DELAI_DECLARATION_ACCIDENT_JOURS,
   LIBELLES_ENTRETIEN,
@@ -258,10 +264,39 @@ export function alertesDEntretien(
         )
         .sort((a, b) => b.date.localeCompare(a.date))
 
-      const dernier = realises[0]?.date ?? collaborateur.dateEntree
-      const echeance = ajouterJours(dernier, PERIODICITE_ENTRETIEN[type] * 30)
+      const dernier = realises[0]?.date
+      /*
+       * Calcul en mois reels, et non en multiples de trente jours : vingt-
+       * quatre mois comptes en jours derivaient de plus d'une semaine.
+       */
+      const echeance = ajouterMois(
+        dernier ?? collaborateur.dateEntree,
+        PERIODICITE_ENTRETIEN[type],
+      )
       const jours = joursEntre(date, echeance)
       if (jours > reglages.preavisEntretienJours) continue
+
+      /*
+       * Aucun entretien enregistre : l'application ne sait pas si l'entretien
+       * a eu lieu avant qu'elle existe. Annoncer « depasse depuis 4 659 jours »
+       * a quelqu'un entre en 2012 serait faux ET noierait les vraies alertes.
+       * On dit ce qu'on sait, et ce qu'il y a a faire.
+       */
+      if (dernier === undefined) {
+        alertes.push({
+          id: `entretien-${type}-${collaborateur.id}`,
+          categorie: 'entretien',
+          gravite: 'attention',
+          titre: `${LIBELLES_ENTRETIEN[type]} à programmer — ${nomAffiche(collaborateur)}`,
+          detail:
+            `Aucun ${LIBELLES_ENTRETIEN[type].toLowerCase()} n’est enregistré dans ` +
+            `l’application depuis l’entrée du ${dateEnTexte(collaborateur.dateEntree)}. ` +
+            `S’il a déjà eu lieu, enregistrez-le ; sinon, programmez-le.`,
+          echeance,
+          collaborateurId: collaborateur.id,
+        })
+        continue
+      }
 
       alertes.push({
         id: `entretien-${type}-${collaborateur.id}`,

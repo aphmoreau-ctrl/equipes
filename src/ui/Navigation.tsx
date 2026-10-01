@@ -44,9 +44,10 @@ export function useNombreUrgences(): number {
 
 function PastilleUrgences({ nombre }: { readonly nombre: number }) {
   if (nombre === 0) return null
+  // Au-dela de 99, la pastille deviendrait plus large que l'onglet.
   return (
     <span className="navigation__pastille navigation__pastille--urgent" aria-hidden="true">
-      {nombre}
+      {nombre > 99 ? '99+' : nombre}
     </span>
   )
 }

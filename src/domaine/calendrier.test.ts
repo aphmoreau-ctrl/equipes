@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ajouterJours,
+  ajouterMois,
   dateEnTexte,
   estAvant,
   estDansIntervalle,
@@ -101,5 +102,28 @@ describe('comparaisons', () => {
     expect(estDansIntervalle('2026-11-02', '2026-11-02', '2026-11-08')).toBe(true)
     expect(estDansIntervalle('2026-11-08', '2026-11-02', '2026-11-08')).toBe(true)
     expect(estDansIntervalle('2026-11-09', '2026-11-02', '2026-11-08')).toBe(false)
+  })
+})
+
+describe('ajout de mois', () => {
+  it('ajoute des mois en calendrier réel', () => {
+    expect(ajouterMois('2026-01-15', 1)).toBe('2026-02-15')
+    expect(ajouterMois('2024-10-01', 24)).toBe('2026-10-01')
+  })
+
+  it('ne déborde pas sur le mois suivant', () => {
+    // Le 31 janvier plus un mois donne le 28 février, pas le 3 mars.
+    expect(ajouterMois('2026-01-31', 1)).toBe('2026-02-28')
+    expect(ajouterMois('2024-01-31', 1)).toBe('2024-02-29')
+  })
+
+  it('traverse les années', () => {
+    expect(ajouterMois('2026-11-15', 3)).toBe('2027-02-15')
+    expect(ajouterMois('2026-02-15', -3)).toBe('2025-11-15')
+  })
+
+  it('reste exact là où le calcul en jours dérivait', () => {
+    // 24 mois valent 730 jours ici, pas 24 x 30 = 720.
+    expect(ajouterMois('2024-10-01', 24)).not.toBe(ajouterJours('2024-10-01', 24 * 30))
   })
 })

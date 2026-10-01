@@ -88,6 +88,22 @@ export function ajouterJours(date: string, nombre: number): string {
   return instant.toISOString().slice(0, 10)
 }
 
+/**
+ * Ajoute des mois a une date, en calendrier reel.
+ * Le 31 janvier plus un mois donne le 28 (ou 29) fevrier, et non le 3 mars.
+ */
+export function ajouterMois(date: string, nombre: number): string {
+  const instant = enInstant(date)
+  const jourVoulu = instant.getUTCDate()
+  instant.setUTCDate(1)
+  instant.setUTCMonth(instant.getUTCMonth() + nombre)
+  const dernierJourDuMois = new Date(
+    Date.UTC(instant.getUTCFullYear(), instant.getUTCMonth() + 1, 0),
+  ).getUTCDate()
+  instant.setUTCDate(Math.min(jourVoulu, dernierJourDuMois))
+  return instant.toISOString().slice(0, 10)
+}
+
 /** Le lundi de la semaine contenant cette date. */
 export function lundiDeLaSemaine(date: string): string {
   return ajouterJours(date, 1 - jourDeLaSemaine(date))

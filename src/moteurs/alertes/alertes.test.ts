@@ -3,6 +3,7 @@ import type { Collaborateur } from '../../domaine/collaborateur'
 import { COLLABORATEURS_DEMO } from '../../donnees/collaborateurs-demo'
 import {
   alertesCentralisees,
+  alertesDEntretien,
   alertesDeDependance,
   alertesProchaines,
   calculerAlertes,
@@ -289,5 +290,47 @@ describe('alertes centralisees', () => {
       date,
     )
     expect(alertes).toHaveLength(0)
+  })
+})
+
+describe('entretiens jamais enregistrés', () => {
+  it('ne prétend pas qu’un entretien est en retard de douze ans', () => {
+    const ancien = personne({ id: 'ancien', dateEntree: '2012-01-09' })
+    const alertes = alertesDEntretien([ancien], [], '2026-10-01')
+
+    expect(alertes.length).toBeGreaterThan(0)
+    for (const alerte of alertes) {
+      expect(alerte.titre).toContain('à programmer')
+      expect(alerte.detail).toContain('Aucun')
+      expect(alerte.detail).not.toMatch(/dépassé depuis \d{4,} jours/)
+      // Rien d'urgent : on ne sait pas si l'entretien a eu lieu avant l'app.
+      expect(alerte.gravite).toBe('attention')
+    }
+  })
+
+  it('invite à enregistrer l’entretien s’il a déjà eu lieu', () => {
+    const alertes = alertesDEntretien(
+      [personne({ dateEntree: '2012-01-09' })],
+      [],
+      '2026-10-01',
+    )
+    expect(alertes[0]?.detail).toContain('enregistrez-le')
+  })
+
+  it('compte en mois réels dès qu’un entretien est enregistré', () => {
+    const entretien = {
+      id: 'e1',
+      collaborateurId: 'demo-1',
+      type: 'professionnel' as const,
+      date: '2024-10-01',
+      realise: true,
+      objectifs: '',
+    }
+    const alertes = alertesDEntretien([personne()], [entretien], '2026-10-01')
+    const professionnel = alertes.find((alerte) => alerte.id.includes('professionnel'))
+
+    // Deux ans jour pour jour, et non 24 x 30 jours.
+    expect(professionnel?.echeance).toBe('2026-10-01')
+    expect(professionnel?.detail).toContain('Le dernier remonte au')
   })
 })

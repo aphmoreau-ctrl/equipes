@@ -7,15 +7,11 @@ import type { Planning } from '../domaine/planning'
 import { aujourdhui } from '../domaine/calendrier'
 import { alertesCentralisees, type Alerte } from '../moteurs/alertes'
 import {
-  configurationDeRayon,
   effacerEtat,
-  enPromotion,
   enregistrerEtat,
   etatInitial,
   lireEtat,
-  meteoDuJour,
   planningDeLaSemaine,
-  saisiesDuJour,
   vacationsAnterieures,
   type EtatApplication,
 } from '../donnees/etat'
@@ -84,23 +80,66 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
     [etat.collaborateurs, etat.entretiens, etat.actionsSecurite, etat.reglagesAlertes],
   )
 
+  /*
+   * Memoire des besoins deja calcules.
+   *
+   * L'ecran Planning demande le besoin de sept rayons sur sept jours, soit
+   * quarante-neuf courbes, a chaque affichage. Sans cette memoire, poser une
+   * vacation relancait les quarante-neuf calculs : l'iPad ramait et un test
+   * depassait meme le temps accorde sur le serveur de publication.
+   *
+   * La memoire est videe des que change l'une des donnees dont le besoin
+   * depend — et SEULEMENT celles-la. Modifier un planning ne la vide donc pas.
+   */
+  const memoireDesBesoins = useMemo(
+    () => new Map<string, BesoinJour | null>(),
+    [
+      etat.magasin,
+      etat.configurations,
+      etat.saisiesQualite,
+      etat.meteoParDate,
+      etat.promotionsParDate,
+    ],
+  )
+
   const besoinDuJour = useCallback(
     (date: string, rayonId: string): BesoinJour | null => {
-      const configuration = configurationDeRayon(etat, rayonId)
-      if (configuration === undefined) return null
+      const cle = `${rayonId}|${date}`
+      const deja = memoireDesBesoins.get(cle)
+      if (deja !== undefined) return deja
+
+      const configuration = etat.configurations.find(
+        (candidate) => candidate.rayonId === rayonId,
+      )
+      if (configuration === undefined) {
+        memoireDesBesoins.set(cle, null)
+        return null
+      }
 
       const contexte: ContexteJour = {
         date,
         clientsParTranche: clientsParTranche(etat.magasin, date),
         tranchesOuvertes: tranchesOuvertes(etat.magasin, date, rayonId),
-        meteo: meteoDuJour(etat, date),
+        meteo: etat.meteoParDate[date] ?? 'normal',
         coefficientEvenements: coefficientEvenements(etat.magasin, date, rayonId),
-        enPromotion: enPromotion(etat, date, rayonId),
-        saisiesQualite: saisiesDuJour(etat, date, rayonId),
+        enPromotion: (etat.promotionsParDate[date] ?? []).includes(rayonId),
+        saisiesQualite: etat.saisiesQualite.filter(
+          (saisie) => saisie.date === date && saisie.rayonId === rayonId,
+        ),
       }
-      return calculerBesoin(configuration, contexte)
+
+      const besoin = calculerBesoin(configuration, contexte)
+      memoireDesBesoins.set(cle, besoin)
+      return besoin
     },
-    [etat],
+    [
+      memoireDesBesoins,
+      etat.magasin,
+      etat.configurations,
+      etat.saisiesQualite,
+      etat.meteoParDate,
+      etat.promotionsParDate,
+    ],
   )
 
   const planning = useCallback(

@@ -15,6 +15,15 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    /*
+     * Le serveur de publication de GitHub est environ trois fois plus lent que
+     * le Mac. Les tests qui construisent un planning complet y frolaient la
+     * limite de cinq secondes et echouaient sans qu'il y ait de vrai probleme.
+     * Vingt secondes laissent de la marge sans masquer une lenteur reelle :
+     * en local, le plus lourd tient en une seconde et demie.
+     */
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     setupFiles: ['./src/tests/preparation.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,

@@ -7,6 +7,7 @@ import {
   proposerDesActions,
 } from '../../moteurs/indicateurs/pilotage'
 import { absencesEffectives } from '../../donnees/etat'
+import { bilanDesMissions } from '../../moteurs/vivier'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre } from '../composants/Champ'
 import { RapportImprimable, type TypeRapport } from '../composants/RapportImprimable'
@@ -55,8 +56,14 @@ export function Pilotage() {
         budgetHeuresParRayon: etat.magasin.budgetHeuresParRayon,
         dureeLegaleHebdomadaireMinutes: etat.reglesParametres.dureeLegaleHebdomadaireMinutes,
         chiffreAffaires: etat.chiffreAffairesParSemaine[semaine] ?? null,
+        renfortsExterieurs: bilanDesMissions(
+          etat.missions,
+          etat.renforts,
+          semaine,
+          jours[jours.length - 1] ?? semaine,
+        ),
       }),
-    [semaine, rayons, planningCourant.vacations, etat, besoins, infractions],
+    [semaine, jours, rayons, planningCourant.vacations, etat, besoins, infractions],
   )
 
   const actions = proposerDesActions(tableau)
@@ -156,6 +163,13 @@ export function Pilotage() {
 
           <dt>Heures supplémentaires</dt>
           <dd>{tableau.heuresSupplementaires.toFixed(1)} h</dd>
+
+          <dt>Renforts extérieurs</dt>
+          <dd>
+            {tableau.heuresRenforts === 0
+              ? 'aucun'
+              : `${tableau.heuresRenforts.toFixed(1)} h, ${tableau.coutRenforts.toFixed(2).replace('.', ',')} €`}
+          </dd>
 
           <dt>Absentéisme</dt>
           <dd>{pourcent(tableau.absenteisme)}</dd>

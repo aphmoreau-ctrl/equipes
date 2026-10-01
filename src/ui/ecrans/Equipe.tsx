@@ -19,6 +19,7 @@ import {
   SectionSecurite,
   SectionSuiviIndividuel,
 } from './equipe/SectionsRH'
+import { SectionVivier } from './equipe/SectionVivier'
 
 const COMPETENCES_CONNUES = [
   'réception',
@@ -116,7 +117,7 @@ export function Equipe() {
       <section className="carte">
         <div className="champs">
           <label className="champ">
-            <span className="champ__libelle">Rayon</span>
+            <span className="champ__libelle">Filtrer par rayon</span>
             <select
               className="champ__saisie"
               value={filtre}
@@ -422,6 +423,7 @@ export function Equipe() {
       </section>
 
       <SectionSuiviIndividuel />
+      <SectionVivier />
       <SectionRecrutement />
       <SectionIntegration />
       <SectionSecurite />

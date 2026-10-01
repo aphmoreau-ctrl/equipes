@@ -1,4 +1,4 @@
-import { etatInitial, VERSION_ETAT, type EtatApplication } from './etat'
+import { completerEtat, VERSION_ETAT, type EtatApplication } from './etat'
 
 /**
  * Sauvegarde et restauration sur fichier (§16.2, etape 4 : « sauvegarde et
@@ -88,7 +88,7 @@ export function lireSauvegarde(texte: string): LectureSauvegarde {
 
   return {
     ok: true,
-    etat: { ...etatInitial(), ...donnees, version: VERSION_ETAT },
+    etat: completerEtat(donnees),
     exporteLe: typeof fichier.exporteLe === 'string' ? fichier.exporteLe : '',
   }
 }

@@ -37,7 +37,7 @@ describe('ecran Equipe', () => {
 
   it('filtre par rayon, en tenant compte des rayons secondaires', () => {
     afficher(<Equipe />)
-    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: 'cremerie' } })
+    fireEvent.change(screen.getByLabelText('Filtrer par rayon'), { target: { value: 'cremerie' } })
 
     // Julien S. y est rattache, Camille D. y intervient en secondaire.
     const fiches = sectionFiches()
@@ -48,7 +48,7 @@ describe('ecran Equipe', () => {
 
   it('compare la capacite du rayon a son budget', () => {
     afficher(<Equipe />)
-    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: 'fruits-legumes' } })
+    fireEvent.change(screen.getByLabelText('Filtrer par rayon'), { target: { value: 'fruits-legumes' } })
     expect(screen.getByText('Capacité du rayon')).toBeInTheDocument()
     expect(screen.getByText(/147 h — budget 180 h/)).toBeInTheDocument()
   })

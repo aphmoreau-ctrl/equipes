@@ -161,4 +161,21 @@ describe('absence imprévue', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
     expect(screen.getByText('1 personne')).toBeInTheDocument()
   })
+
+  it('propose le vivier exterieur et compte le renfort appele', () => {
+    preparerPlanning()
+    afficher()
+    choisirLeJour()
+    fireEvent.change(screen.getByLabelText('Qui est absent ?'), { target: { value: 'c-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Maladie' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Trouver un remplaçant' }))
+
+    expect(screen.getByText(/Vivier extérieur/)).toBeInTheDocument()
+    // Yanis T. (fictif) travaille le lundi en fruits et legumes.
+    expect(screen.getByText(/Yanis T\./)).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Appeler/ })[0] as HTMLElement)
+
+    expect(screen.getByText('Renforts extérieurs du jour')).toBeInTheDocument()
+    expect(screen.queryByText('Vacations à remplacer')).not.toBeInTheDocument()
+  })
 })

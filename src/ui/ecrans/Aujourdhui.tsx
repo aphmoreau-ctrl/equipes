@@ -9,7 +9,14 @@ import { aujourdhui, dateEnTexte, jourDeLaSemaine, lundiDeLaSemaine } from '../.
 import { nomAffiche, type Collaborateur } from '../../domaine/collaborateur'
 import { rayonsActifs } from '../../domaine/magasin'
 import { duree, enMinutes, enTexte, tranchesCouvertes } from '../../domaine/temps'
-import { calculerAlertes } from '../../moteurs/alertes'
+import {
+  LIBELLES_ORIGINE,
+  nomRenfort,
+  presenceDeRenfort,
+  vacationDeMission,
+  type Renfort,
+} from '../../domaine/vivier'
+import { classerRenforts } from '../../moteurs/vivier'
 import { calculerCouverture, regrouperLesTrous } from '../../moteurs/indicateurs'
 import { chercherDesRemplacants } from '../../moteurs/planning/remplacants'
 import type { Vacation } from '../../moteurs/regles'
@@ -27,7 +34,7 @@ const TYPES: readonly TypeAbsence[] = [
 ]
 
 export function Aujourdhui() {
-  const { etat, modifier, planning, besoinDuJour } = useDonnees()
+  const { etat, modifier, planning, besoinDuJour, alertes: toutesLesAlertes } = useDonnees()
   const [date, setDate] = useState(aujourdhui)
   const [aRemplacer, setARemplacer] = useState<Vacation | null>(null)
   const [declaration, setDeclaration] = useState<string | null>(null)
@@ -46,25 +53,34 @@ export function Aujourdhui() {
       !estAbsent(toutesLesAbsences, collaborateur.id, date),
   )
 
+  /** Renforts exterieurs en mission ce jour-la : ils comptent dans la couverture. */
+  const missionsDuJour = etat.missions.filter((mission) => mission.date === date)
+  const renfortsDuJour = etat.renforts.filter((renfort) =>
+    missionsDuJour.some((mission) => mission.renfortId === renfort.id),
+  )
+
   const couvertures = useMemo(
     () =>
       rayons
         .map((rayon) => {
           const besoin = besoinDuJour(date, rayon.id)
           if (besoin === null) return null
-          // Une personne absente ne couvre rien.
-          const presentes = vacationsDuJour.filter(
-            (vacation) => !estAbsent(toutesLesAbsences, vacation.collaborateurId, date),
-          )
-          return { rayon, couverture: calculerCouverture(besoin, presentes, etat.collaborateurs) }
+          // Une personne absente ne couvre rien ; un renfort en mission, si.
+          const presentes = [
+            ...vacationsDuJour.filter(
+              (vacation) => !estAbsent(toutesLesAbsences, vacation.collaborateurId, date),
+            ),
+            ...missionsDuJour.map(vacationDeMission),
+          ]
+          const personnes = [...etat.collaborateurs, ...renfortsDuJour.map(presenceDeRenfort)]
+          return { rayon, couverture: calculerCouverture(besoin, presentes, personnes) }
         })
         .filter((element): element is NonNullable<typeof element> => element !== null),
-    [rayons, date, besoinDuJour, vacationsDuJour, etat.absences, etat.collaborateurs],
+    [rayons, date, besoinDuJour, vacationsDuJour, etat.absences, etat.collaborateurs, etat.missions, etat.renforts],
   )
 
-  const alertes = calculerAlertes(etat.collaborateurs, date, etat.reglagesAlertes).filter(
-    (alerte) => alerte.gravite === 'urgent',
-  )
+  // Seules les urgences, deja calculees pour le menu (§15) : rien de plus a l'ecran du jour.
+  const alertes = toutesLesAlertes.filter((alerte) => alerte.gravite === 'urgent')
 
   function declarerAbsence(collaborateurId: string, type: TypeAbsence): void {
     modifier((precedent) => ({
@@ -116,9 +132,46 @@ export function Aujourdhui() {
     setARemplacer(null)
   }
 
-  /** Vacations du jour dont le titulaire est absent. */
-  const aCouvrir = vacationsDuJour.filter((vacation) =>
+  function appelerRenfort(vacation: Vacation, renfort: Renfort): void {
+    modifier((precedent) => ({
+      ...precedent,
+      demonstration: false,
+      missions: [
+        ...precedent.missions,
+        {
+          id: `m-${Date.now()}`,
+          renfortId: renfort.id,
+          date: vacation.jour,
+          rayonId: vacation.rayonId,
+          debut: vacation.debut,
+          fin: vacation.fin,
+          pauseMinutes: vacation.pauseMinutes,
+          motif: 'remplacement',
+          vacationCouverte: vacation.id,
+        },
+      ],
+    }))
+    setARemplacer(null)
+  }
+
+  function annulerMission(identifiant: string): void {
+    modifier((precedent) => ({
+      ...precedent,
+      missions: precedent.missions.filter((mission) => mission.id !== identifiant),
+    }))
+  }
+
+  /** Vacations du jour dont le titulaire est absent et que personne ne couvre encore. */
+  const absentes = vacationsDuJour.filter((vacation) =>
     estAbsent(toutesLesAbsences, vacation.collaborateurId, date),
+  )
+  const couvertesParRenfort = absentes.flatMap((vacation) => {
+    const mission = missionsDuJour.find((candidate) => candidate.vacationCouverte === vacation.id)
+    const renfort = etat.renforts.find((candidat) => candidat.id === mission?.renfortId)
+    return mission === undefined || renfort === undefined ? [] : [{ vacation, mission, renfort }]
+  })
+  const aCouvrir = absentes.filter(
+    (vacation) => !couvertesParRenfort.some((couverte) => couverte.vacation.id === vacation.id),
   )
 
   const arrivees = [...vacationsDuJour]
@@ -251,6 +304,30 @@ export function Aujourdhui() {
         )}
       </section>
 
+      {couvertesParRenfort.length > 0 && (
+        <section className="carte">
+          <h2>Renforts extérieurs du jour</h2>
+          <ul className="liste-simple">
+            {couvertesParRenfort.map(({ vacation, mission, renfort }) => (
+              <li key={mission.id} className="ligne-saisie">
+                <span>
+                  <strong>{nomRenfort(renfort)}</strong>{' '}
+                  <span className="etiquette">{LIBELLES_ORIGINE[renfort.origine]}</span> remplace{' '}
+                  {nom(vacation.collaborateurId)}, {vacation.debut}–{vacation.fin}
+                </span>
+                <button
+                  type="button"
+                  className="bouton bouton--discret"
+                  onClick={() => annulerMission(mission.id)}
+                >
+                  Annuler
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {aCouvrir.length > 0 && (
         <section className="carte">
           <h2>Vacations à remplacer</h2>
@@ -280,6 +357,7 @@ export function Aujourdhui() {
             <ListeRemplacants
               vacation={aRemplacer}
               onChoisir={(collaborateur) => remplacer(aRemplacer, collaborateur)}
+              onAppeler={(renfort) => appelerRenfort(aRemplacer, renfort)}
             />
           )}
         </section>
@@ -332,9 +410,11 @@ export function Aujourdhui() {
 function ListeRemplacants({
   vacation,
   onChoisir,
+  onAppeler,
 }: {
   readonly vacation: Vacation
   readonly onChoisir: (collaborateur: Collaborateur) => void
+  readonly onAppeler: (renfort: Renfort) => void
 }) {
   const { etat, planning, besoinDuJour } = useDonnees()
   const semaine = lundiDeLaSemaine(vacation.jour)
@@ -441,6 +521,13 @@ function ListeRemplacants({
         </>
       )}
 
+      <VivierExterieur
+        vacation={vacation}
+        competencesRequises={competences}
+        competencesCritiques={critiques}
+        onAppeler={onAppeler}
+      />
+
       {resultat.ecartes.length > 0 && (
         <details className="depliant">
           <summary className="depliant__titre">
@@ -457,5 +544,75 @@ function ListeRemplacants({
         </details>
       )}
     </div>
+  )
+}
+
+/**
+ * Vivier exterieur (module 8) : propose APRES l'equipe. Un renfort appele
+ * est enregistre comme mission, et compte aussitot dans la couverture.
+ */
+function VivierExterieur({
+  vacation,
+  competencesRequises,
+  competencesCritiques,
+  onAppeler,
+}: {
+  readonly vacation: Vacation
+  readonly competencesRequises: readonly string[]
+  readonly competencesCritiques: readonly string[]
+  readonly onAppeler: (renfort: Renfort) => void
+}) {
+  const { etat } = useDonnees()
+  if (etat.renforts.length === 0) return null
+
+  const classement = classerRenforts(
+    {
+      date: vacation.jour,
+      rayonId: vacation.rayonId,
+      debut: vacation.debut,
+      fin: vacation.fin,
+      pauseMinutes: vacation.pauseMinutes,
+      competencesRequises,
+      competencesCritiques,
+    },
+    etat.renforts,
+    etat.missions,
+  )
+  const propositions = [...classement.possibles, ...classement.partiels]
+
+  return (
+    <>
+      <p className="champ__libelle">Vivier extérieur — intérimaires, étudiants, anciens</p>
+      {propositions.length === 0 ? (
+        <p>Personne dans le vivier ne peut tenir ce poste ce jour-là.</p>
+      ) : (
+        <ul className="liste-simple">
+          {propositions.map((proposition) => {
+            const complet = classement.possibles.includes(proposition)
+            return (
+              <li key={proposition.renfort.id} className="ligne-remplacant">
+                <div>
+                  <p className="ligne-remplacant__nom">
+                    {nomRenfort(proposition.renfort)}{' '}
+                    <span className="etiquette">{LIBELLES_ORIGINE[proposition.renfort.origine]}</span>
+                  </p>
+                  <p className="alerte__detail">{proposition.atouts.join(' · ')}</p>
+                  {proposition.reserves.length > 0 && (
+                    <p className="ligne-remplacant__reserve">⚠ {proposition.reserves.join(' · ')}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className={complet ? 'bouton bouton--principal' : 'bouton'}
+                  onClick={() => onAppeler(proposition.renfort)}
+                >
+                  {complet ? 'Appeler' : 'Appeler quand même'}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </>
   )
 }

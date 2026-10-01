@@ -795,3 +795,48 @@ récente, endommagé ou étranger est refusé avec une explication ; une ancienn
 sauvegarde est complétée par les valeurs par défaut des modules apparus depuis.
 **Attention.** Ce fichier n'est **pas chiffré** : il doit rester dans un
 endroit protégé (Fichiers, iCloud de l'appareil).
+
+## Lot 15 — Vivier de remplaçants et intérim (module 8)
+
+### D-70 — Le vivier est séparé de l'équipe
+**Décision.** Intérimaires, étudiants et anciens salariés rappelés ponctuellement
+forment un **vivier** distinct des fiches collaborateurs, en section de
+l'écran Équipe.
+**Raison.** Ils ne sont pas salariés du magasin au sens du planning : ni
+contrat hebdomadaire, ni compteurs d'équité, ni congés. Les mêler à l'équipe
+fausserait la capacité, l'anticipation, les heures et la paie.
+**Contenu (RGPD).** Prénom, initiale, origine, agence, rayons, compétences,
+jours habituellement possibles, coût horaire, accord pour être recontacté.
+**Aucun téléphone ni adresse** : le contact se fait hors application.
+
+### D-71 — L'équipe d'abord, le vivier ensuite
+**Décision.** Sur l'écran du jour, « Trouver un remplaçant » montre d'abord
+les collaborateurs internes, puis le vivier extérieur.
+**Classement du vivier** : compétences (critère principal), connaissance du
+rayon (missions passées), coût (le moins cher à compétence égale), accord
+pour être recontacté. Les **compétences critiques** restent sans aucune
+tolérance (C-04). Le coût estimé de la vacation est affiché.
+
+### D-72 — Appeler un renfort enregistre une mission
+**Décision.** « Appeler » crée une mission datée, reliée à la vacation de
+l'absent. La vacation disparaît des « Vacations à remplacer » et le renfort
+**compte dans la couverture du jour**. « Annuler » retire la mission.
+**Limite assumée.** Le renfort n'entre **pas** dans le contrôle des règles
+légales : son employeur (l'agence) en est responsable. Il n'apparaît pas non
+plus dans la grille du planning de la semaine — seulement sur l'écran du jour
+et dans l'historique des missions.
+**Alternative.** L'afficher aussi dans la grille du planning, en grisé.
+
+### D-73 — L'intérim entre au tableau de bord et au rapport
+**Décision.** Le tableau de bord affiche les heures et le coût des renforts
+extérieurs de la semaine ; le rapport au patron les reprend **seulement s'il
+y en a eu** (une ligne à zéro n'apporte rien).
+**Raison.** Le cahier des charges cite « heures sup et intérim » parmi les
+indicateurs, et c'est un chiffre qu'un patron regarde.
+
+### D-74 — Données réelles : jamais de personne fictive ajoutée en douce
+**Décision.** Quand une nouvelle collection apparaît (ici le vivier), des
+données **réelles** déjà enregistrées la reçoivent **vide** ; seules les
+données de démonstration reçoivent les exemples fictifs.
+**Raison.** Sans cette précaution, une mise à jour aurait glissé quatre
+intérimaires imaginaires dans votre vraie équipe. Vérifié par un test.

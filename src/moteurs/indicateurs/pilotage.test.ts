@@ -56,6 +56,15 @@ describe('tableau de bord', () => {
     expect(construireLeTableauDeBord(entrees()).heuresPrevues).toBeCloseTo(35, 6)
   })
 
+  it('reprend les heures et le cout des renforts exterieurs, nuls par defaut', () => {
+    expect(construireLeTableauDeBord(entrees()).heuresRenforts).toBe(0)
+    const tableau = construireLeTableauDeBord(
+      entrees({ renfortsExterieurs: { heures: 13.5, cout: 330.75 } }),
+    )
+    expect(tableau.heuresRenforts).toBe(13.5)
+    expect(tableau.coutRenforts).toBe(330.75)
+  })
+
   it('compare au budget du service', () => {
     const tableau = construireLeTableauDeBord(entrees())
     expect(tableau.heuresBudget).toBe(40)

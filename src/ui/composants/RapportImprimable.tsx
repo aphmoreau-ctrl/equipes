@@ -70,6 +70,14 @@ export function RapportImprimable({
               <th scope="row">Heures supplémentaires</th>
               <td>{heures(tableau.heuresSupplementaires)}</td>
             </tr>
+            {tableau.heuresRenforts > 0 && (
+              <tr>
+                <th scope="row">Renforts extérieurs</th>
+                <td>{heures(tableau.heuresRenforts)}</td>
+                <th scope="row">Coût des renforts</th>
+                <td>{`${Math.round(tableau.coutRenforts).toLocaleString('fr-FR')} €`}</td>
+              </tr>
+            )}
             <tr>
               <th scope="row">Absentéisme</th>
               <td>{pourcent(tableau.absenteisme)}</td>

@@ -23,6 +23,10 @@ export interface TableauDeBord {
   /** Part du besoin couverte, de 0 a 1. */
   readonly couverture: number
   readonly heuresSupplementaires: number
+  /** Heures faites par des renforts exterieurs (interim, etudiants...). */
+  readonly heuresRenforts: number
+  /** Cout de ces renforts, en euros. */
+  readonly coutRenforts: number
   /** Part des jours-personnes perdus pour absence, de 0 a 1. */
   readonly absenteisme: number
   /** Nombre moyen de competences tenues en autonomie, par personne. */
@@ -49,6 +53,8 @@ export interface EntreesTableauDeBord {
   readonly budgetHeuresParRayon: Readonly<Record<string, number>>
   readonly dureeLegaleHebdomadaireMinutes: number
   readonly chiffreAffaires?: number | null
+  /** Bilan des missions du vivier exterieur sur la semaine (module 8). */
+  readonly renfortsExterieurs?: { readonly heures: number; readonly cout: number }
 }
 
 export function construireLeTableauDeBord(entrees: EntreesTableauDeBord): TableauDeBord {
@@ -113,6 +119,8 @@ export function construireLeTableauDeBord(entrees: EntreesTableauDeBord): Tablea
     ecartAuBudget: heuresPrevues - heuresBudget,
     couverture: besoinTotal === 0 ? 1 : 1 - manqueTotal / besoinTotal,
     heuresSupplementaires: supplementaires,
+    heuresRenforts: entrees.renfortsExterieurs?.heures ?? 0,
+    coutRenforts: entrees.renfortsExterieurs?.cout ?? 0,
     absenteisme: possibles === 0 ? 0 : perdus / possibles,
     polyvalenceMoyenne:
       polyvalence.length === 0

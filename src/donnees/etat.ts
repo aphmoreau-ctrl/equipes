@@ -12,6 +12,7 @@ import type {
   Note,
 } from '../domaine/faits'
 import type { Mesure } from '../domaine/mesure'
+import type { Mission, Renfort } from '../domaine/vivier'
 import type { Magasin } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
 import { planningVide } from '../domaine/planning'
@@ -24,6 +25,7 @@ import { REGLAGES_ALERTES_PAR_DEFAUT } from '../moteurs/alertes'
 import type { ConfigurationRayon, Meteo, SaisieQualite } from '../moteurs/besoin'
 import { COLLABORATEURS_DEMO } from './collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
+import { MISSIONS_DEMO, RENFORTS_DEMO } from './vivier-demo'
 
 /**
  * Etat complet de l'application, conserve sur l'appareil.
@@ -74,6 +76,10 @@ export interface EtatApplication {
   readonly besoinsRecrutement: readonly BesoinRecrutement[]
   readonly etapesIntegration: readonly EtapeIntegration[]
   readonly actionsSecurite: readonly ActionSecurite[]
+  /** Vivier de remplacants exterieurs (module 8). */
+  readonly renforts: readonly Renfort[]
+  /** Historique des missions des renforts exterieurs. */
+  readonly missions: readonly Mission[]
   /** Plannings, reperes par le lundi de leur semaine. */
   readonly plannings: Readonly<Record<string, Planning>>
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
@@ -117,6 +123,8 @@ export function etatInitial(): EtatApplication {
     besoinsRecrutement: [],
     etapesIntegration: [],
     actionsSecurite: [],
+    renforts: RENFORTS_DEMO,
+    missions: MISSIONS_DEMO,
     plannings: {},
     heuresSupplementairesAnnuelles: {},
     reglagesAlertes: REGLAGES_ALERTES_PAR_DEFAUT,
@@ -125,6 +133,27 @@ export function etatInitial(): EtatApplication {
     meteoParDate: {},
     promotionsParDate: {},
     demonstration: true,
+  }
+}
+
+/**
+ * Collections apparues apres la premiere version et pre-remplies en
+ * demonstration. Pour des donnees REELLES qui ne les connaissaient pas encore,
+ * elles partent VIDES : on ne melange jamais des personnes fictives a la
+ * vraie equipe.
+ */
+const AJOUTS_VIDES: Partial<EtatApplication> = {
+  renforts: [],
+  missions: [],
+}
+
+/** Complete un etat enregistre (ou restaure) avec les champs apparus depuis. */
+export function completerEtat(partiel: Partial<EtatApplication>): EtatApplication {
+  return {
+    ...etatInitial(),
+    ...(partiel.demonstration === false ? AJOUTS_VIDES : {}),
+    ...partiel,
+    version: VERSION_ETAT,
   }
 }
 
@@ -147,7 +176,7 @@ export function lireEtat(): EtatApplication {
     ) {
       return etatInitial()
     }
-    return { ...etatInitial(), ...(valeur as EtatApplication) }
+    return completerEtat(valeur as Partial<EtatApplication>)
   } catch {
     return etatInitial()
   }

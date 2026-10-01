@@ -72,3 +72,25 @@ describe('sauvegarde sur fichier', () => {
     expect(resumerSauvegarde(etatInitial())).toMatch(/^20 collaborateurs, 0 semaine de planning/)
   })
 })
+
+describe('donnees reelles et ajouts de la demonstration', () => {
+  it('ne glisse jamais de renfort fictif dans des donnees reelles', () => {
+    const { renforts: _renforts, missions: _missions, ...ancien } = {
+      ...etatInitial(),
+      demonstration: false,
+    }
+    const texte = JSON.stringify({ format: FORMAT_SAUVEGARDE, version: VERSION_ETAT, donnees: ancien })
+    const lecture = lireSauvegarde(texte)
+    expect(lecture.ok).toBe(true)
+    if (!lecture.ok) return
+    expect(lecture.etat.renforts).toEqual([])
+    expect(lecture.etat.missions).toEqual([])
+  })
+
+  it('garde le vivier fictif pour des donnees de demonstration', () => {
+    const { renforts: _renforts, ...ancien } = etatInitial()
+    const texte = JSON.stringify({ format: FORMAT_SAUVEGARDE, version: VERSION_ETAT, donnees: ancien })
+    const lecture = lireSauvegarde(texte)
+    expect(lecture.ok && lecture.etat.renforts.length).toBeGreaterThan(0)
+  })
+})

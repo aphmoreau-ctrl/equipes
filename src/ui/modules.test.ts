@@ -37,6 +37,7 @@ describe('carte des modules', () => {
       'besoin',
       'equipe',
       'alertes',
+      'recherche',
       'heures',
       'conges',
       'competences',

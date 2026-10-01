@@ -1,5 +1,5 @@
 import { aujourdhui, dateEnTexte } from '../../domaine/calendrier'
-import { calculerAlertes, resumerAlertes, type Alerte, type GraviteAlerte } from '../../moteurs/alertes'
+import { resumerAlertes, type Alerte, type GraviteAlerte } from '../../moteurs/alertes'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre } from '../composants/Champ'
 
@@ -22,9 +22,8 @@ function LigneAlerte({ alerte }: { readonly alerte: Alerte }) {
 }
 
 export function Alertes() {
-  const { etat, modifier } = useDonnees()
+  const { etat, modifier, alertes } = useDonnees()
   const date = aujourdhui()
-  const alertes = calculerAlertes(etat.collaborateurs, date, etat.reglagesAlertes)
   const resume = resumerAlertes(alertes)
   const reglages = etat.reglagesAlertes
 
@@ -41,7 +40,10 @@ export function Alertes() {
     <>
       <header className="entete">
         <h1>Alertes</h1>
-        <p>Toutes les échéances et anomalies réunies au même endroit.</p>
+        <p>
+          Toutes les échéances et anomalies réunies au même endroit : contrats, périodes d’essai,
+          habilitations, postes fragiles, entretiens obligatoires et sécurité.
+        </p>
       </header>
 
       <section className="carte">
@@ -97,6 +99,12 @@ export function Alertes() {
             suffixe="jours"
             valeur={reglages.preavisHabilitationJours}
             onChange={(valeur) => modifierReglage('preavisHabilitationJours', valeur)}
+          />
+          <ChampNombre
+            libelle="Entretien obligatoire"
+            suffixe="jours"
+            valeur={reglages.preavisEntretienJours}
+            onChange={(valeur) => modifierReglage('preavisEntretienJours', valeur)}
           />
           <ChampNombre
             libelle="Seuil d’urgence"

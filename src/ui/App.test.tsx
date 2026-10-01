@@ -435,10 +435,34 @@ describe('menu lateral de l iPad', () => {
     await screen.findByRole('navigation')
   })
 
-  it('affiche les douze modules d un seul coup d oeil', () => {
+  it('affiche les treize modules d un seul coup d oeil', () => {
     const menu = screen.getByRole('navigation')
     expect(menu).toHaveClass('menu-lateral')
-    expect(within(menu).getAllByRole('link')).toHaveLength(12)
+    expect(within(menu).getAllByRole('link')).toHaveLength(13)
+  })
+
+  it('signale les alertes urgentes par une pastille sur le menu', () => {
+    // Les entretiens professionnels de la demonstration sont en retard.
+    const lien = screen.getByRole('link', { name: /Alertes/ })
+    expect(lien).toHaveTextContent(/à traiter tout de suite/)
+    expect(lien.querySelector('.navigation__pastille--urgent')).not.toBeNull()
+  })
+
+  it('retrouve un collaborateur depuis la recherche globale', async () => {
+    fireEvent.click(screen.getByRole('link', { name: /Rechercher/ }))
+    const champ = await screen.findByLabelText('Texte à rechercher')
+    fireEvent.change(champ, { target: { value: 'CAMILLE' } })
+    expect(await screen.findByText('Camille D.')).toBeInTheDocument()
+  })
+
+  it('refuse de restaurer un fichier qui n est pas une sauvegarde', async () => {
+    fireEvent.click(screen.getByRole('link', { name: /Paramètres/ }))
+    await screen.findByRole('heading', { level: 1, name: 'Paramètres' })
+    const fichier = new File(['{"autre":1}'], 'autre.json', { type: 'application/json' })
+    fireEvent.change(screen.getByLabelText('Fichier de sauvegarde à restaurer'), {
+      target: { files: [fichier] },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent(/n’est pas une sauvegarde/)
   })
 
   it('n affiche ni barre d onglets ni bouton « Plus »', () => {

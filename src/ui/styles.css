@@ -1490,3 +1490,89 @@ select.champ__saisie {
     margin: 12mm;
   }
 }
+
+/* ------------------------------------------ Lot 14 : pastille d'urgences */
+
+.navigation__pastille--urgent {
+  background: var(--alerte);
+  color: #ffffff;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Lu par VoiceOver, invisible a l'ecran. */
+.visuellement-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Sur iPhone, la pastille se pose sur le coin de l'icone « Plus ». */
+.onglets__element .onglets__icone {
+  position: relative;
+  display: inline-flex;
+  overflow: visible;
+}
+
+.onglets__icone .navigation__pastille--urgent {
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  margin: 0;
+  font-size: 10px;
+  padding: 1px 5px;
+}
+
+/* ------------------------------------------------- Lot 14 : recherche */
+
+.champ-recherche {
+  width: 100%;
+  min-height: var(--cible-tactile);
+  font: inherit;
+  font-size: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-carte);
+  color: var(--texte);
+}
+
+.resultats-recherche {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resultat-recherche {
+  display: block;
+  padding: 12px;
+  min-height: var(--cible-tactile);
+  border-radius: var(--rayon-petit);
+  color: var(--texte);
+  text-decoration: none;
+}
+
+.resultat-recherche:hover {
+  background: var(--fond-survol);
+}
+
+.resultat-recherche__titre {
+  display: block;
+  font-weight: 600;
+}
+
+.resultat-recherche__detail {
+  display: block;
+  color: var(--texte-doux);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}

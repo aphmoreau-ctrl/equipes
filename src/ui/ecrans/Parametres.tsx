@@ -12,6 +12,7 @@ import {
   SectionRayons,
 } from './parametres/SectionsMagasin'
 import { SectionModeleRayon } from './parametres/SectionModeleRayon'
+import { SectionSauvegarde } from './parametres/SectionSauvegarde'
 
 interface Proprietes {
   readonly faceIdPossible: boolean
@@ -275,6 +276,8 @@ export function Parametres({
           </button>
         )}
       </section>
+
+      <SectionSauvegarde />
 
       <section className="carte">
         <h2>Avancement du projet</h2>

@@ -77,6 +77,12 @@ const DESSINS: Record<string, ReactNode> = {
       <path d="M9 13h6M9 16.5h4" />
     </>
   ),
+  recherche: (
+    <>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15.5 15.5L21 21" />
+    </>
+  ),
   plus: <path d="M4 7h16M4 12h16M4 17h16" />,
   parametres: (
     <>

@@ -14,6 +14,7 @@ import { Competences } from './ecrans/Competences'
 import { Pilotage } from './ecrans/Pilotage'
 import { Communication } from './ecrans/Communication'
 import { Documents } from './ecrans/Documents'
+import { Recherche } from './ecrans/Recherche'
 import { DonneesProvider } from './DonneesProvider'
 import { EcranVerrouillage } from './verrouillage/EcranVerrouillage'
 import { useVerrouillage } from './verrouillage/useVerrouillage'
@@ -93,6 +94,8 @@ export function App() {
                     <Communication />
                   ) : module.id === 'documents' ? (
                     <Documents />
+                  ) : module.id === 'recherche' ? (
+                    <Recherche />
                   ) : (
                     <EcranAVenir module={module} />
                   )

@@ -62,6 +62,14 @@ export const MODULES: readonly Module[] = [
     pret: true,
   },
   {
+    id: 'recherche',
+    chemin: '/recherche',
+    titre: 'Rechercher',
+    resume: 'Retrouver une personne, un rayon, une note, un document ou une formation.',
+    livraison: 'Lot 14',
+    pret: true,
+  },
+  {
     id: 'heures',
     chemin: '/heures',
     titre: 'Heures',

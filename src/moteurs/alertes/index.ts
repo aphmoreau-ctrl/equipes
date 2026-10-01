@@ -155,10 +155,16 @@ export function calculerAlertes(
   // Dependance : une seule personne sait faire quelque chose
   for (const alerte of alertesDeDependance(actifs)) alertes.push(alerte)
 
-  const ordreGravite: Record<GraviteAlerte, number> = { urgent: 0, attention: 1, information: 2 }
-  return alertes.sort(
+  return trierAlertes(alertes)
+}
+
+const ORDRE_GRAVITE: Record<GraviteAlerte, number> = { urgent: 0, attention: 1, information: 2 }
+
+/** Le plus urgent d'abord, puis par echeance, puis par identifiant (stable). */
+export function trierAlertes(alertes: readonly Alerte[]): Alerte[] {
+  return [...alertes].sort(
     (a, b) =>
-      ordreGravite[a.gravite] - ordreGravite[b.gravite] ||
+      ORDRE_GRAVITE[a.gravite] - ORDRE_GRAVITE[b.gravite] ||
       (a.echeance ?? '9999').localeCompare(b.echeance ?? '9999') ||
       a.id.localeCompare(b.id),
   )
@@ -327,4 +333,36 @@ export function alertesDeSecurite(
   }
 
   return alertes
+}
+
+/** Tout ce qui peut produire une alerte, quel que soit le module d'origine. */
+export interface SourcesAlertes {
+  readonly collaborateurs: readonly Collaborateur[]
+  readonly entretiens: readonly Entretien[]
+  readonly actionsSecurite: readonly ActionSecurite[]
+}
+
+/**
+ * Alertes centralisees (§15, « Alertes et rappels ») : contrats, essais,
+ * habilitations, dependance, entretiens obligatoires et securite, reunis en
+ * une seule liste triee. C'est elle qu'affichent l'ecran Alertes et la
+ * pastille du menu.
+ */
+export function alertesCentralisees(
+  sources: SourcesAlertes,
+  date: string,
+  reglages: ReglagesAlertes = REGLAGES_ALERTES_PAR_DEFAUT,
+): Alerte[] {
+  const toutes = [
+    ...calculerAlertes(sources.collaborateurs, date, reglages),
+    ...alertesDEntretien(sources.collaborateurs, sources.entretiens, date, reglages),
+    ...alertesDeSecurite(sources.actionsSecurite, sources.collaborateurs, date, reglages),
+  ]
+  const vues = new Set<string>()
+  const uniques = toutes.filter((alerte) => {
+    if (vues.has(alerte.id)) return false
+    vues.add(alerte.id)
+    return true
+  })
+  return trierAlertes(uniques)
 }

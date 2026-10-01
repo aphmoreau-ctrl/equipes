@@ -4,6 +4,8 @@ import { clientsParTranche, tranchesOuvertes } from '../domaine/magasin'
 import { calculerBesoin, type BesoinJour, type ContexteJour } from '../moteurs/besoin'
 import { coefficientEvenements } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
+import { aujourdhui } from '../domaine/calendrier'
+import { alertesCentralisees, type Alerte } from '../moteurs/alertes'
 import {
   configurationDeRayon,
   effacerEtat,
@@ -24,6 +26,10 @@ interface ValeurDonnees {
   readonly modifier: (transformation: (etat: EtatApplication) => EtatApplication) => void
   /** Revient aux donnees de demonstration. */
   readonly reinitialiser: () => void
+  /** Remplace toutes les donnees, par exemple depuis un fichier de sauvegarde. */
+  readonly remplacer: (etat: EtatApplication) => void
+  /** Toutes les alertes du jour, tous modules confondus (§15). */
+  readonly alertes: readonly Alerte[]
   /** Calcule le besoin d'un rayon pour une date, ou null si le rayon n'a pas de modele. */
   readonly besoinDuJour: (date: string, rayonId: string) => BesoinJour | null
   /** Planning d'une semaine, cree vide s'il n'existe pas encore. */
@@ -58,6 +64,25 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
     effacerEtat()
     setEtat(etatInitial())
   }, [])
+
+  const remplacer = useCallback((nouvel: EtatApplication) => {
+    enregistrerEtat(nouvel)
+    setEtat(nouvel)
+  }, [])
+
+  const alertes = useMemo(
+    () =>
+      alertesCentralisees(
+        {
+          collaborateurs: etat.collaborateurs,
+          entretiens: etat.entretiens,
+          actionsSecurite: etat.actionsSecurite,
+        },
+        aujourdhui(),
+        etat.reglagesAlertes,
+      ),
+    [etat.collaborateurs, etat.entretiens, etat.actionsSecurite, etat.reglagesAlertes],
+  )
 
   const besoinDuJour = useCallback(
     (date: string, rayonId: string): BesoinJour | null => {
@@ -103,8 +128,18 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
   )
 
   const valeur = useMemo<ValeurDonnees>(
-    () => ({ etat, modifier, reinitialiser, besoinDuJour, planning, modifierPlanning, historique }),
-    [etat, modifier, reinitialiser, besoinDuJour, planning, modifierPlanning, historique],
+    () => ({
+      etat,
+      modifier,
+      reinitialiser,
+      remplacer,
+      alertes,
+      besoinDuJour,
+      planning,
+      modifierPlanning,
+      historique,
+    }),
+    [etat, modifier, reinitialiser, remplacer, alertes, besoinDuJour, planning, modifierPlanning, historique],
   )
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>

@@ -750,3 +750,48 @@ passer dans le feu de l'action.
 **Raison.** Stocker des fichiers demande Firebase (lot 4). L'écran le dit
 clairement plutôt que de laisser croire que c'est possible.
 **À venir** : le stockage de fichiers une fois Firebase en place.
+
+## Lot 14 — Alertes centralisées, recherche, sauvegarde
+
+### D-66 — L'écran Alertes réunit vraiment tout
+**Constat.** Jusqu'ici, l'écran Alertes ne montrait que les contrats, les
+périodes d'essai, les habilitations et les postes fragiles. Les entretiens
+obligatoires et les échéances de sécurité n'apparaissaient qu'au bas de
+l'écran Équipe — l'inverse d'une liste « centralisée ».
+**Décision.** Une seule fonction rassemble toutes les sources ; l'écran
+Alertes et la pastille du menu l'utilisent toutes deux. Le préavis des
+entretiens devient réglable depuis l'écran Alertes.
+
+### D-67 — Une pastille rouge ne compte que l'urgent
+**Décision.** La pastille du menu (et de l'icône de l'application, quand
+l'appareil l'autorise) affiche le nombre d'alertes **« à traiter tout de
+suite »**, pas le total.
+**Raison.** Un chiffre qui ne descend jamais finit par ne plus être regardé.
+**Limite.** Sur iPhone et iPad, la pastille sur l'icône de l'écran d'accueil
+n'apparaît que si les notifications sont autorisées pour l'application ; elle
+n'est pas demandée pour l'instant. La pastille du menu, elle, est toujours là.
+
+### D-68 — La recherche est un écran, pas une barre permanente
+**Décision.** « Rechercher » est une entrée du menu (sous « Plus » sur
+iPhone), qui cherche dans les collaborateurs (nom, poste, rayons,
+compétences, habilitations), les rayons, les notes, les documents, les
+formations et les besoins de recrutement.
+**Raison.** Une barre fixe en haut de chaque écran prendrait de la place sur
+iPhone pour un usage occasionnel.
+**Alternative.** Une loupe dans l'en-tête de chaque écran.
+**Règle.** Majuscules et accents ignorés ; chaque mot tapé doit apparaître ;
+les correspondances dans le titre passent en premier.
+
+### D-69 — Sauvegarde sur fichier en attendant Firebase
+**Décision.** Paramètres → « Télécharger une sauvegarde » produit un fichier
+`equipes-sauvegarde-AAAA-MM-JJ.json`, restaurable sur n'importe quel appareil
+après confirmation.
+**Raison.** Sans Firebase, toutes les données ne vivent que sur l'iPad : un
+appareil perdu, et tout est perdu. C'est aussi le seul moyen, d'ici là, de
+passer ses données de l'iPad à l'iPhone.
+**Précautions.** Le fichier n'est envoyé nulle part par l'application ; l'écran
+rappelle de ne pas le transmettre par e-mail. Un fichier d'une version plus
+récente, endommagé ou étranger est refusé avec une explication ; une ancienne
+sauvegarde est complétée par les valeurs par défaut des modules apparus depuis.
+**Attention.** Ce fichier n'est **pas chiffré** : il doit rester dans un
+endroit protégé (Fichiers, iCloud de l'appareil).

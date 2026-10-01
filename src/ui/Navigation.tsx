@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Icone } from './Icone'
+import { useDonnees } from './DonneesProvider'
 import { MODULES, modulesPrincipaux, modulesSecondaires } from './modules'
 import type { Module } from './modules'
 
@@ -19,11 +20,51 @@ function classeLien({ isActive }: { isActive: boolean }): string {
   return isActive ? 'lien-module lien-module--actif' : 'lien-module'
 }
 
-function LienModule({ module }: { readonly module: Module }) {
+/** Nombre d'alertes « a traiter tout de suite », pour la pastille rouge. */
+export function useNombreUrgences(): number {
+  const { alertes } = useDonnees()
+  const nombre = alertes.filter((alerte) => alerte.gravite === 'urgent').length
+
+  // Pastille sur l'icone de l'application, quand l'appareil le permet
+  // (application installee ; sur iPhone et iPad, notifications autorisees).
+  useEffect(() => {
+    const appareil = navigator as Navigator & {
+      setAppBadge?: (nombre: number) => Promise<void>
+      clearAppBadge?: () => Promise<void>
+    }
+    const action =
+      nombre > 0 ? appareil.setAppBadge?.(nombre) : appareil.clearAppBadge?.()
+    action?.catch(() => {
+      // Refuse par l'appareil : la pastille du menu suffit.
+    })
+  }, [nombre])
+
+  return nombre
+}
+
+function PastilleUrgences({ nombre }: { readonly nombre: number }) {
+  if (nombre === 0) return null
+  return (
+    <span className="navigation__pastille navigation__pastille--urgent" aria-hidden="true">
+      {nombre}
+    </span>
+  )
+}
+
+function LienModule({ module, urgences }: { readonly module: Module; readonly urgences: number }) {
+  const avecPastille = module.id === 'alertes' && urgences > 0
   return (
     <NavLink to={module.chemin} end={module.chemin === '/'} className={classeLien}>
       <Icone nom={module.id} />
       <span className="lien-module__titre">{module.titre}</span>
+      {avecPastille && (
+        <>
+          <PastilleUrgences nombre={urgences} />
+          <span className="visuellement-cache">
+            {` — ${urgences} à traiter tout de suite`}
+          </span>
+        </>
+      )}
       {!module.pret && <span className="navigation__pastille">{module.livraison}</span>}
     </NavLink>
   )
@@ -31,13 +72,14 @@ function LienModule({ module }: { readonly module: Module }) {
 
 /** iPad et Mac : tous les modules visibles d'un coup d'oeil. */
 export function MenuLateral() {
+  const urgences = useNombreUrgences()
   return (
     <nav className="menu-lateral" aria-label="Modules de l’application">
       <Marque taille="grande" />
       <ul className="menu-lateral__liste">
         {MODULES.map((module) => (
           <li key={module.id}>
-            <LienModule module={module} />
+            <LienModule module={module} urgences={urgences} />
           </li>
         ))}
       </ul>
@@ -60,6 +102,7 @@ export function EnteteMobile() {
  */
 export function BarreOnglets() {
   const [ouvert, setOuvert] = useState(false)
+  const urgences = useNombreUrgences()
   const emplacement = useLocation()
   const secondaires = modulesSecondaires()
   const surUnModuleSecondaire = secondaires.some(
@@ -96,7 +139,7 @@ export function BarreOnglets() {
             <ul className="panneau-plus__liste">
               {secondaires.map((module) => (
                 <li key={module.id}>
-                  <LienModule module={module} />
+                  <LienModule module={module} urgences={urgences} />
                 </li>
               ))}
             </ul>
@@ -129,7 +172,10 @@ export function BarreOnglets() {
           onClick={() => setOuvert((etait) => !etait)}
           aria-expanded={ouvert}
         >
-          <Icone nom="plus" />
+          <span className="onglets__icone">
+            <Icone nom="plus" />
+            <PastilleUrgences nombre={urgences} />
+          </span>
           <span>Plus</span>
         </button>
       </nav>

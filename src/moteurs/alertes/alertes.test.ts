@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Collaborateur } from '../../domaine/collaborateur'
 import { COLLABORATEURS_DEMO } from '../../donnees/collaborateurs-demo'
 import {
+  alertesCentralisees,
   alertesDeDependance,
   alertesProchaines,
   calculerAlertes,
@@ -223,5 +224,70 @@ describe('alertes sur l equipe de demonstration', () => {
       // Une initiale est une lettre majuscule suivie d'un point.
       expect(alerte.titre).not.toMatch(/[A-ZÉÈ][a-zéèêàç]{3,}\s[A-Z][a-zéèêàç]{3,}/)
     }
+  })
+})
+
+describe('alertes centralisees', () => {
+  const date = '2026-10-01'
+
+  it('reunit contrats, entretiens et securite en une seule liste triee', () => {
+    const alertes = alertesCentralisees(
+      {
+        collaborateurs: [personne({ finContrat: '2026-10-20' })],
+        entretiens: [],
+        actionsSecurite: [
+          {
+            id: 'at-1',
+            type: 'accident',
+            titre: 'Coupure',
+            date: '2026-09-30',
+            collaborateurId: 'demo-1',
+            echeance: null,
+            faite: false,
+          },
+        ],
+      },
+      date,
+    )
+    const categories = new Set(alertes.map((alerte) => alerte.categorie))
+    expect(categories.has('fin-contrat')).toBe(true)
+    expect(categories.has('securite')).toBe(true)
+    expect(categories.has('entretien')).toBe(true)
+    // Le plus urgent d'abord : l'accident a declarer passe avant la fin de
+    // contrat, moins pressante.
+    const rang = (categorie: string) => alertes.findIndex((alerte) => alerte.categorie === categorie)
+    expect(alertes[0]?.gravite).toBe('urgent')
+    expect(rang('securite')).toBeLessThan(rang('fin-contrat'))
+  })
+
+  it('ne compte jamais deux fois la meme alerte', () => {
+    const alertes = alertesCentralisees(
+      { collaborateurs: [personne()], entretiens: [], actionsSecurite: [] },
+      date,
+    )
+    const ids = alertes.map((alerte) => alerte.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('ignore une action de securite deja faite', () => {
+    const alertes = alertesCentralisees(
+      {
+        collaborateurs: [],
+        entretiens: [],
+        actionsSecurite: [
+          {
+            id: 'at-2',
+            type: 'accident',
+            titre: 'Chute',
+            date: '2026-09-30',
+            collaborateurId: null,
+            echeance: null,
+            faite: true,
+          },
+        ],
+      },
+      date,
+    )
+    expect(alertes).toHaveLength(0)
   })
 })

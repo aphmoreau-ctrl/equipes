@@ -76,6 +76,7 @@ function besoinDemo(): BesoinJour {
       personnes,
       competences,
       competencesCritiques: [],
+    niveauxMinimum: {},
     }
   })
 

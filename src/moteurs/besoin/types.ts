@@ -1,5 +1,6 @@
 import type { JourSemaine } from '../../domaine/calendrier'
 import type { Minutes } from '../../domaine/temps'
+import type { NiveauCompetence } from '../../domaine/collaborateur'
 
 /**
  * Calcul du besoin : pour chaque rayon, chaque jour et chaque tranche de
@@ -41,6 +42,25 @@ export interface PlageBloc {
   readonly fin: string
 }
 
+/**
+ * Une competence exigee par une tache, avec le NIVEAU minimum pour la tenir.
+ *
+ * Les niveaux sont ceux des fiches : 0 ne fait pas, 1 avec aide, 2 autonome,
+ * 3 sait former. Par defaut une tache demande le niveau 2 : savoir faire seul.
+ * Le niveau 1 se reserve aux taches que l'on peut confier a quelqu'un en
+ * formation, accompagne.
+ */
+export interface ExigenceCompetence {
+  readonly competence: string
+  readonly niveauMinimum: NiveauCompetence
+  /**
+   * CRITIQUE : sans elle, le poste ne peut pas etre tenu du tout. Un boucher
+   * qualifie au comptoir, un titulaire du CAP a la maree. Un remplacant qui ne
+   * l'a pas est ecarte, sans discussion.
+   */
+  readonly critique?: boolean
+}
+
 /** Ce que tout bloc possede, quel que soit son type. */
 export interface BlocCommun {
   readonly id: string
@@ -50,14 +70,8 @@ export interface BlocCommun {
   readonly jours: readonly JourSemaine[]
   /** Creneau pendant lequel le travail est reparti. */
   readonly plage: PlageBloc
-  /** Competences necessaires pour ce travail. */
-  readonly competences: readonly string[]
-  /**
-   * Competences CRITIQUES : sans elles, le poste ne peut pas etre tenu.
-   * Un boucher qualifie au comptoir, un titulaire du CAP a la maree.
-   * Un remplacant qui ne les a pas est ecarte, sans discussion.
-   */
-  readonly competencesCritiques?: readonly string[]
+  /** Competences necessaires pour ce travail, avec leur niveau minimum. */
+  readonly competences: readonly ExigenceCompetence[]
   /** Coefficients qui font varier ce bloc. */
   readonly coefficients: readonly NatureCoefficient[]
   /**
@@ -239,6 +253,8 @@ export interface TrancheBesoin {
   readonly competences: readonly string[]
   /** Competences sans lesquelles le poste ne peut pas etre tenu. */
   readonly competencesCritiques: readonly string[]
+  /** Niveau minimum exige pour chaque competence de la tranche. */
+  readonly niveauxMinimum: Readonly<Record<string, NiveauCompetence>>
 }
 
 export interface BesoinJour {

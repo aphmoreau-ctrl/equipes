@@ -13,9 +13,9 @@ import {
 } from './demo'
 
 describe('magasin de demonstration', () => {
-  it('reprend les sept rayons frais du cahier des charges', () => {
-    expect(RAYONS_DEMO).toHaveLength(7)
-    expect(rayonsActifs(MAGASIN_DEMO, 'frais')).toHaveLength(7)
+  it('reprend les neuf rayons du service', () => {
+    expect(RAYONS_DEMO).toHaveLength(9)
+    expect(rayonsActifs(MAGASIN_DEMO, 'frais')).toHaveLength(9)
   })
 
   it('n utilise aucun identifiant de rayon en double', () => {
@@ -23,8 +23,8 @@ describe('magasin de demonstration', () => {
     expect(new Set(identifiants).size).toBe(identifiants.length)
   })
 
-  it('numerote les rayons de 1 a 7 sans trou', () => {
-    expect(RAYONS_DEMO.map((rayon) => rayon.ordre)).toEqual([1, 2, 3, 4, 5, 6, 7])
+  it('numerote les rayons de 1 a 9 sans trou', () => {
+    expect(RAYONS_DEMO.map((rayon) => rayon.ordre)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 
   it('donne des horaires coherents chaque jour', () => {
@@ -195,8 +195,8 @@ describe('besoin calcule sur les donnees de demonstration', () => {
 })
 
 describe('configurations disponibles', () => {
-  it('couvre les sept rayons frais', () => {
-    expect(CONFIGURATIONS_DEMO).toHaveLength(7)
+  it('couvre les neuf rayons', () => {
+    expect(CONFIGURATIONS_DEMO).toHaveLength(9)
     expect(CONFIGURATIONS_DEMO[0]?.rayonId).toBe('fruits-legumes')
   })
 })

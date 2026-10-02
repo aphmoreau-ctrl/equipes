@@ -39,10 +39,10 @@ beforeEach(() => {
 })
 
 describe('ecran Besoin', () => {
-  it('propose les sept rayons du magasin', async () => {
+  it('propose les neuf rayons du magasin', async () => {
     afficher()
     const choix = await screen.findByLabelText('Rayon')
-    expect(within(choix).getAllByRole('option')).toHaveLength(7)
+    expect(within(choix).getAllByRole('option')).toHaveLength(9)
   })
 
   it('affiche la courbe et les totaux du rayon fruits et legumes', async () => {
@@ -52,7 +52,7 @@ describe('ecran Besoin', () => {
     expect(await screen.findByText('Courbe du besoin')).toBeInTheDocument()
     expect(screen.getByText('Totaux de la journée')).toBeInTheDocument()
     expect(screen.getByText('Travail à faire')).toBeInTheDocument()
-    expect(screen.getByText(/personnes en même temps/)).toBeInTheDocument()
+    expect(screen.getByText(/personnes? en même temps/)).toBeInTheDocument()
   })
 
   it('decompose la courbe bloc par bloc', async () => {

@@ -268,7 +268,10 @@ export function Besoin() {
                   <dd>{heuresEnTexte(besoin.heuresPresence)}</dd>
 
                   <dt>Pointe</dt>
-                  <dd>{pointeDeLaJournee(besoin)} personnes en même temps</dd>
+                  <dd>
+                    {pointeDeLaJournee(besoin)} personne
+                    {pointeDeLaJournee(besoin) > 1 ? 's' : ''} en même temps
+                  </dd>
 
                   <dt>Budget du rayon</dt>
                   <dd>{budget} h par semaine</dd>

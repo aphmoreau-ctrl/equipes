@@ -32,7 +32,7 @@ describe('ecran Equipe', () => {
     afficher(<Equipe />)
     expect(within(sectionFiches()).getByText('Camille D.')).toBeInTheDocument()
     expect(within(sectionFiches()).getByText('Thierry M.')).toBeInTheDocument()
-    expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/26 personnes/)).toBeInTheDocument()
   })
 
   it('filtre par rayon, en tenant compte des rayons secondaires', () => {
@@ -72,9 +72,23 @@ describe('ecran Equipe', () => {
   it('modifie le niveau d une competence', () => {
     afficher(<Equipe />)
     const carte = fiche('Sofia B.')
-    const bouton = within(carte).getByRole('button', { name: 'boucherie : Autonome' })
+    const bouton = within(carte).getByRole('button', { name: 'tri : Autonome' })
     fireEvent.click(bouton)
     expect(bouton).toHaveClass('bouton--principal')
+  })
+
+  it('ne propose que les compétences utiles au rayon de la personne', () => {
+    afficher(<Equipe />)
+    // Sofia tient les fruits et legumes : le tri la concerne, la boucherie non.
+    const fruitsLegumes = fiche('Sofia B.')
+    expect(within(fruitsLegumes).getByText('tri')).toBeInTheDocument()
+    expect(within(fruitsLegumes).queryByText('boucherie')).not.toBeInTheDocument()
+
+    // Une competence deja notee reste affichee, meme hors de son rayon.
+    expect(within(fruitsLegumes).getByText('hygiène')).toBeInTheDocument()
+
+    // Le caviste, lui, a bien le conseil en vins.
+    expect(within(fiche('Victor M.')).getByText('conseil vins')).toBeInTheDocument()
   })
 
   it('declare une indisponibilite', () => {
@@ -98,12 +112,12 @@ describe('ecran Equipe', () => {
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Fermer' }))
 
     expect(within(sectionFiches()).getByText('Noémie T.')).toBeInTheDocument()
-    expect(screen.getByText(/21 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/27 personnes/)).toBeInTheDocument()
 
     const carte = fiche('Noémie T.')
     fireEvent.click(within(carte).getByRole('button', { name: 'Retirer de l’effectif' }))
     expect(within(sectionFiches()).queryByText('Noémie T.')).not.toBeInTheDocument()
-    expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/26 personnes/)).toBeInTheDocument()
   })
 
   it('affiche les plages restreintes declarees', () => {

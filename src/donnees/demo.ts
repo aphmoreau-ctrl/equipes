@@ -1,5 +1,6 @@
 import type { JourSemaine } from '../domaine/calendrier'
 import type { HorairesSemaine, Magasin } from '../domaine/magasin'
+import { exige } from '../moteurs/besoin'
 import type { Bloc, ConfigurationRayon } from '../moteurs/besoin'
 import { MODELES_AUTRES_RAYONS } from './modeles-rayons'
 
@@ -70,6 +71,31 @@ export const MAGASIN_DEMO: Magasin = {
     { id: 'charcuterie-traiteur', serviceId: 'frais', nom: 'Charcuterie-traiteur', ordre: 5, actif: true, horairesPropres: null },
     { id: 'fromage', serviceId: 'frais', nom: 'Fromage', ordre: 6, actif: true, horairesPropres: null },
     { id: 'boulangerie', serviceId: 'frais', nom: 'Boulangerie', ordre: 7, actif: true, horairesPropres: null },
+    // La cave ouvre plus tard que le frais : personne n'achete de vin a 8 h 30.
+    {
+      id: 'cave-vins',
+      serviceId: 'frais',
+      nom: 'Cave / vins',
+      ordre: 8,
+      actif: true,
+      horairesPropres: memeHoraireTousLesJours('09:30', '19:30', {
+        ouverture: '09:30',
+        fermeture: '12:30',
+      }),
+    },
+    // Le drive ouvre avant le magasin et ferme avec lui : les creneaux de
+    // retrait commencent a 9 h, la preparation bien avant.
+    {
+      id: 'drive',
+      serviceId: 'frais',
+      nom: 'Drive',
+      ordre: 9,
+      actif: true,
+      horairesPropres: memeHoraireTousLesJours('09:00', '19:30', {
+        ouverture: '09:00',
+        fermeture: '12:30',
+      }),
+    },
   ],
 
   horaires: memeHoraireTousLesJours('08:30', '19:30', { ouverture: '09:00', fermeture: '12:30' }),
@@ -114,6 +140,8 @@ export const MAGASIN_DEMO: Magasin = {
     'charcuterie-traiteur': 135,
     fromage: 115,
     boulangerie: 120,
+    'cave-vins': 60,
+    drive: 190,
   },
 }
 
@@ -134,7 +162,7 @@ const BLOCS_FRUITS_LEGUMES: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '05:00', fin: '06:30' },
-    competences: ['réception'],
+    competences: [exige('réception')],
     coefficients: ['evenement'],
     palettesParJour: { 1: 6, 2: 4, 3: 5, 4: 4, 5: 7, 6: 8, 7: 0 },
     minutesParPalette: 12,
@@ -146,7 +174,7 @@ const BLOCS_FRUITS_LEGUMES: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '05:30', fin: '08:30' },
-    competences: ['mise en place'],
+    competences: [exige('mise en place')],
     coefficients: ['qualite', 'saison', 'evenement', 'promotion'],
     colisParJour: { 1: 110, 2: 80, 3: 95, 4: 80, 5: 130, 6: 160, 7: 0 },
     cadenceColisParHeure: 22,
@@ -158,7 +186,7 @@ const BLOCS_FRUITS_LEGUMES: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '06:00', fin: '09:00' },
-    competences: ['mise en place'],
+    competences: [exige('mise en place')],
     coefficients: ['qualite', 'evenement', 'promotion'],
     colisParJour: { 1: 45, 2: 35, 3: 40, 4: 35, 5: 55, 6: 70, 7: 0 },
     cadenceColisParHeure: 38,
@@ -170,7 +198,7 @@ const BLOCS_FRUITS_LEGUMES: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '06:30', fin: '09:30' },
-    competences: ['hygiène', 'découpe'],
+    competences: [exige('hygiène'), exige('découpe')],
     coefficients: ['saison', 'meteo'],
     produits: [
       { nom: 'Salades de fruits', quantite: 18, minutesParUnite: 3.5 },
@@ -265,7 +293,7 @@ const BLOCS_FRUITS_LEGUMES: readonly Bloc[] = [
     actif: true,
     jours: [1, 2, 3, 4, 5, 6],
     plage: { debut: '10:00', fin: '11:00' },
-    competences: ['commandes'],
+    competences: [exige('commandes')],
     coefficients: [],
     minutes: 40,
   },

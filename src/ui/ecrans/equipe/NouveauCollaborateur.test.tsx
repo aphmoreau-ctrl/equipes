@@ -40,7 +40,7 @@ describe('fenêtre « Nouveau collaborateur »', () => {
     const fenetre = ouvrir()
     expect(within(fenetre).getByLabelText('Prénom')).toHaveFocus()
     // Aucune fiche « Nouveau X. » n'apparait a l'ouverture.
-    expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/26 personnes/)).toBeInTheDocument()
   })
 
   it('garde « Enregistrer » grisé tant que le prénom et le rayon manquent', () => {
@@ -103,7 +103,7 @@ describe('fenêtre « Nouveau collaborateur »', () => {
 
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Fermer la fenêtre' }))
     expect(within(sectionFiches()).getByText('Noémie T.')).toBeInTheDocument()
-    expect(screen.getByText(/21 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/27 personnes/)).toBeInTheDocument()
   })
 
   it('retient les jours de repos fixes comme des journées non disponibles', () => {
@@ -148,7 +148,7 @@ describe('fenêtre « Nouveau collaborateur »', () => {
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Annuler' }))
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Abandonner' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
+    expect(screen.getByText(/26 personnes/)).toBeInTheDocument()
   })
 
   it('se referme sans rien demander si l’on n’a rien saisi', () => {

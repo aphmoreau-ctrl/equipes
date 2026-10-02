@@ -1,4 +1,5 @@
 import type { JourSemaine } from '../domaine/calendrier'
+import { exige } from '../moteurs/besoin'
 import type { Bloc, ConfigurationRayon, Meteo, NiveauQualite } from '../moteurs/besoin'
 
 /**
@@ -59,7 +60,7 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: [1, 3, 5],
     plage: { debut: '05:00', fin: '06:30' },
-    competences: ['boucherie'],
+    competences: [exige('boucherie')],
     coefficients: ['evenement'],
     format: 'Quartiers',
     quantiteParJour: volumes(0, 0, 0),
@@ -72,7 +73,7 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '05:30', fin: '09:30' },
-    competences: ['boucherie', 'hygiène'],
+    competences: [exige('boucherie'), exige('hygiène')],
     coefficients: ['saison', 'evenement', 'promotion'],
     produits: [
       { nom: 'Barquettes libre-service', quantite: 70, minutesParUnite: 1.8 },
@@ -102,10 +103,9 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '08:30', fin: '19:30' },
-    competences: [],
     // Au moins un BOUCHER QUALIFIE derriere le comptoir des qu'il est ouvert :
     // c'est une competence critique, jamais remplacable par quelqu'un d'autre.
-    competencesCritiques: ['boucherie'],
+    competences: [exige('boucherie', 2, true)],
     coefficients: ['evenement', 'promotion'],
     partClientsPourcent: 14,
     minutesParClient: 2.6,
@@ -118,7 +118,7 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '07:00', fin: '08:00' },
-    competences: ['boucherie'],
+    competences: [exige('boucherie')],
     coefficients: [],
     minutes: 25,
   },
@@ -140,7 +140,7 @@ const BLOCS_BOUCHERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '18:30', fin: '19:45' },
-    competences: ['hygiène'],
+    competences: [exige('hygiène')],
     coefficients: [],
     minutesParMeuble: 14,
   },
@@ -156,7 +156,7 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6],
     plage: { debut: '05:00', fin: '06:00' },
-    competences: ['marée'],
+    competences: [exige('marée')],
     coefficients: ['evenement'],
     palettesParJour: { 1: 0, 2: 3, 3: 3, 4: 3, 5: 5, 6: 6, 7: 0 },
     minutesParPalette: 14,
@@ -168,7 +168,7 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6, 7],
     plage: { debut: '06:00', fin: '08:30' },
-    competences: ['marée'],
+    competences: [exige('marée')],
     coefficients: [],
     minutes: 110,
   },
@@ -179,7 +179,7 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6],
     plage: { debut: '06:30', fin: '09:00' },
-    competences: ['marée'],
+    competences: [exige('marée')],
     coefficients: ['evenement', 'promotion'],
     format: 'Poisson entier à préparer',
     quantiteParJour: { 1: 0, 2: 45, 3: 45, 4: 45, 5: 70, 6: 90, 7: 0 },
@@ -192,8 +192,7 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6, 7],
     plage: { debut: '08:30', fin: '18:30' },
-    competences: [],
-    competencesCritiques: ['marée'],
+    competences: [exige('marée', 2, true)],
     coefficients: ['evenement', 'promotion'],
     partClientsPourcent: 7,
     minutesParClient: 3,
@@ -206,7 +205,7 @@ const BLOCS_MAREE: readonly Bloc[] = [
     actif: true,
     jours: [2, 3, 4, 5, 6, 7],
     plage: { debut: '18:30', fin: '19:45' },
-    competences: ['hygiène'],
+    competences: [exige('hygiène')],
     coefficients: [],
     minutes: 75,
   },
@@ -222,7 +221,7 @@ const BLOCS_CREMERIE: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '05:00', fin: '06:00' },
-    competences: ['réception'],
+    competences: [exige('réception')],
     coefficients: ['evenement'],
     palettesParJour: volumes(5, 7, 8),
     minutesParPalette: 10,
@@ -313,10 +312,9 @@ function blocsComptoirTraiteur(
       actif: true,
       jours: TOUS_LES_JOURS,
       plage: { debut: '08:30', fin: '19:30' },
-      competences: [],
       // La tenue du comptoir exige la competence du rayon : sans elle, le
       // poste ne peut pas etre tenu, meme par quelqu'un de disponible.
-      competencesCritiques: [prefixe === 'ch' ? 'charcuterie' : 'fromage'],
+      competences: [exige(prefixe === 'ch' ? 'charcuterie' : 'fromage', 2, true)],
       coefficients: ['evenement', 'promotion'],
       partClientsPourcent: partClients,
       minutesParClient: 2.4,
@@ -330,7 +328,7 @@ function blocsComptoirTraiteur(
       actif: true,
       jours: TOUS_LES_JOURS,
       plage: { debut: '06:30', fin: '08:30' },
-      competences: [prefixe === 'ch' ? 'charcuterie' : 'fromage'],
+      competences: [exige(prefixe === 'ch' ? 'charcuterie' : 'fromage')],
       coefficients: ['saison', 'evenement'],
       minutes: 95,
     },
@@ -364,7 +362,7 @@ function blocsComptoirTraiteur(
       actif: true,
       jours: TOUS_LES_JOURS,
       plage: { debut: '18:45', fin: '19:45' },
-      competences: ['hygiène'],
+      competences: [exige('hygiène')],
       coefficients: [],
       minutesParMeuble: 11,
     },
@@ -378,7 +376,7 @@ function blocsComptoirTraiteur(
       actif: true,
       jours: LUNDI_AU_SAMEDI,
       plage: { debut: '06:00', fin: '10:00' },
-      competences: ['traiteur', 'hygiène'],
+      competences: [exige('traiteur'), exige('hygiène')],
       coefficients: ['saison', 'evenement', 'promotion'],
       produits: [
         { nom: 'Salades traiteur', quantite: 20, minutesParUnite: 3 },
@@ -403,7 +401,7 @@ const BLOCS_BOULANGERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '05:00', fin: '09:00' },
-    competences: ['boulangerie'],
+    competences: [exige('boulangerie')],
     coefficients: ['evenement', 'promotion'],
     fourneesParJour: { 1: 7, 2: 7, 3: 8, 4: 7, 5: 10, 6: 12, 7: 9 },
     minutesParFournee: 18,
@@ -415,7 +413,7 @@ const BLOCS_BOULANGERIE: readonly Bloc[] = [
     actif: true,
     jours: LUNDI_AU_SAMEDI,
     plage: { debut: '15:00', fin: '18:00' },
-    competences: ['boulangerie'],
+    competences: [exige('boulangerie')],
     coefficients: ['evenement'],
     fourneesParJour: volumes(3, 4, 5),
     minutesParFournee: 18,
@@ -451,9 +449,174 @@ const BLOCS_BOULANGERIE: readonly Bloc[] = [
     actif: true,
     jours: TOUS_LES_JOURS,
     plage: { debut: '18:30', fin: '19:45' },
-    competences: ['hygiène'],
+    competences: [exige('hygiène')],
     coefficients: [],
     minutesParMeuble: 13,
+  },
+]
+
+// ------------------------------------------------------------- Cave / vins
+
+/*
+ * La cave travaille autrement que le frais : pas de chaine du froid, pas de
+ * dates courtes, mais un conseil client qui prend du temps et une foire aux
+ * vins qui multiplie la charge pendant trois semaines. La foire passe par le
+ * coefficient « evenement », a declarer dans Parametres.
+ */
+const BLOCS_CAVE: readonly Bloc[] = [
+  {
+    id: 'ca-reception',
+    nom: 'Réception et mise en réserve',
+    type: 'reception',
+    actif: true,
+    jours: [2, 4],
+    plage: { debut: '06:00', fin: '08:00' },
+    competences: [exige('réception', 1)],
+    coefficients: ['evenement'],
+    palettesParJour: { 1: 0, 2: 2, 3: 0, 4: 2, 5: 0, 6: 0, 7: 0 },
+    minutesParPalette: 35,
+  },
+  {
+    id: 'ca-mise-en-rayon',
+    nom: 'Mise en rayon',
+    type: 'mise-en-place',
+    actif: true,
+    jours: LUNDI_AU_SAMEDI,
+    plage: { debut: '06:30', fin: '10:00' },
+    competences: [exige('mise en rayon', 1)],
+    coefficients: ['evenement', 'promotion'],
+    colisParJour: volumes(14, 22, 26),
+    cadenceColisParHeure: 28,
+  },
+  {
+    id: 'ca-etiquetage',
+    nom: 'Étiquetage et balisage des prix',
+    type: 'tache-fixe',
+    actif: true,
+    jours: [1, 4],
+    plage: { debut: '10:00', fin: '12:00' },
+    competences: [exige('étiquetage', 1)],
+    coefficients: ['promotion'],
+    minutes: 50,
+  },
+  {
+    id: 'ca-conseil',
+    nom: 'Conseil client',
+    type: 'comptoir',
+    actif: true,
+    jours: TOUS_LES_JOURS,
+    /*
+     * Le conseil se tient l'apres-midi et en fin de journee, quand les
+     * acheteurs de vin passent. Le reste du temps, le rayon vit sans
+     * presence dediee : ce n'est pas un comptoir de decoupe.
+     */
+    plage: { debut: '15:00', fin: '19:30' },
+    // Le conseil en vins demande une vraie connaissance : sans elle, le
+    // client repart sans reponse. Critique des que le rayon est tenu.
+    competences: [exige('conseil vins', 2, true)],
+    coefficients: ['evenement', 'promotion'],
+    partClientsPourcent: 5,
+    minutesParClient: 3.5,
+    presenceMinimum: 1,
+  },
+  {
+    id: 'ca-facing',
+    nom: 'Facing et rangement du linéaire',
+    type: 'facing',
+    actif: true,
+    jours: LUNDI_AU_SAMEDI,
+    plage: { debut: '17:00', fin: '19:30' },
+    competences: [],
+    coefficients: [],
+    minutesParMetre: 1.2,
+  },
+  {
+    id: 'ca-nettoyage',
+    nom: 'Nettoyage du rayon',
+    type: 'nettoyage',
+    actif: true,
+    jours: [3, 6],
+    plage: { debut: '19:00', fin: '20:00' },
+    competences: [],
+    coefficients: [],
+    minutesParMeuble: 10,
+  },
+]
+
+// ------------------------------------------------------------------- Drive
+
+/*
+ * Le drive se compte en COMMANDES, pas en clients ni en colis : chaque
+ * commande se prepare, se controle, puis se remet sur un creneau. Les volumes
+ * ci-dessous sont des commandes par jour, a remplacer par les vrais chiffres.
+ */
+const BLOCS_DRIVE: readonly Bloc[] = [
+  {
+    id: 'dr-preparation',
+    nom: 'Préparation des commandes',
+    type: 'format-livraison',
+    actif: true,
+    jours: TOUS_LES_JOURS,
+    plage: { debut: '06:00', fin: '18:00' },
+    competences: [exige('préparation drive', 1)],
+    coefficients: ['evenement', 'promotion'],
+    format: 'Commandes',
+    quantiteParJour: volumes(55, 85, 95, 40),
+    minutesParUnite: 7,
+  },
+  {
+    id: 'dr-controle',
+    nom: 'Contrôle des commandes et bacs froids',
+    type: 'format-livraison',
+    actif: true,
+    jours: TOUS_LES_JOURS,
+    plage: { debut: '07:00', fin: '18:30' },
+    // La chaine du froid engage la responsabilite du magasin : le controle
+    // ne se delegue pas a quelqu'un qui ne la maitrise pas.
+    competences: [exige('contrôle drive', 2, true), exige('contrôle températures', 2)],
+    coefficients: [],
+    format: 'Commandes',
+    quantiteParJour: volumes(55, 85, 95, 40),
+    minutesParUnite: 1.8,
+  },
+  {
+    id: 'dr-manquants',
+    nom: 'Manquants et substitutions',
+    type: 'format-livraison',
+    actif: true,
+    jours: TOUS_LES_JOURS,
+    plage: { debut: '07:30', fin: '18:00' },
+    competences: [exige('préparation drive', 2)],
+    coefficients: ['promotion'],
+    format: 'Commandes',
+    quantiteParJour: volumes(55, 85, 95, 40),
+    minutesParUnite: 1.2,
+  },
+  {
+    id: 'dr-remise',
+    nom: 'Remise des commandes au client',
+    type: 'comptoir',
+    actif: true,
+    jours: TOUS_LES_JOURS,
+    plage: { debut: '09:00', fin: '19:30' },
+    competences: [exige('remise drive', 1)],
+    coefficients: ['evenement'],
+    // Part des clients du magasin qui viennent retirer une commande.
+    partClientsPourcent: 9,
+    minutesParClient: 4,
+    // Une borne de retrait sans personne, c'est un client qui attend.
+    presenceMinimum: 1,
+  },
+  {
+    id: 'dr-nettoyage',
+    nom: 'Nettoyage des bacs et de la zone de retrait',
+    type: 'nettoyage',
+    actif: true,
+    jours: LUNDI_AU_SAMEDI,
+    plage: { debut: '19:00', fin: '20:00' },
+    competences: [exige('nettoyage', 1)],
+    coefficients: [],
+    minutesParMeuble: 12,
   },
 ]
 
@@ -528,6 +691,37 @@ export const MODELE_BOULANGERIE = modele(
   BLOCS_BOULANGERIE,
 )
 
+export const MODELE_CAVE = modele(
+  'cave-vins',
+  { metresLineaires: 24, etals: 0, meublesFroids: 2, nombreReferences: 480 },
+  BLOCS_CAVE,
+  {
+    // La foire aux vins en septembre, les fetes en decembre.
+    coefficientsSaison: {
+      1: 0.85, 2: 0.85, 3: 0.95, 4: 1, 5: 1.05, 6: 1.05,
+      7: 1.1, 8: 1, 9: 1.4, 10: 1.1, 11: 1.1, 12: 1.45,
+    },
+    // Le vin se vend davantage par beau temps : terrasses et barbecues.
+    coefficientsMeteo: { normal: 1, chaud: 1.1, 'tres-chaud': 1.15, froid: 0.95, pluie: 0.95 },
+  },
+)
+
+export const MODELE_DRIVE = modele(
+  'drive',
+  { metresLineaires: 0, etals: 0, meublesFroids: 6, nombreReferences: 0 },
+  BLOCS_DRIVE,
+  {
+    // Une borne de retrait ouverte exige quelqu'un, toute la journee.
+    presenceMinimum: 1,
+    // La pluie fait basculer les clients du magasin vers le drive.
+    coefficientsMeteo: { normal: 1, chaud: 1, 'tres-chaud': 1.1, froid: 1.05, pluie: 1.2 },
+    coefficientsSaison: {
+      1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1,
+      7: 0.9, 8: 0.9, 9: 1.05, 10: 1, 11: 1.05, 12: 1.25,
+    },
+  },
+)
+
 export const MODELES_AUTRES_RAYONS: readonly ConfigurationRayon[] = [
   MODELE_BOUCHERIE,
   MODELE_MAREE,
@@ -535,4 +729,6 @@ export const MODELES_AUTRES_RAYONS: readonly ConfigurationRayon[] = [
   MODELE_CHARCUTERIE,
   MODELE_FROMAGE,
   MODELE_BOULANGERIE,
+  MODELE_CAVE,
+  MODELE_DRIVE,
 ]

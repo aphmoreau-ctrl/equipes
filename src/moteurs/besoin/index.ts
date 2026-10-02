@@ -1,6 +1,7 @@
 export {
   coefficientQualite,
   coefficientDuBloc,
+  exige,
   minutesBrutesDuBloc,
   minutesDuBloc,
   postesNecessaires,
@@ -35,6 +36,7 @@ export type {
   BlocTri,
   ConfigurationRayon,
   ContexteJour,
+  ExigenceCompetence,
   Meteo,
   NatureCoefficient,
   NiveauQualite,

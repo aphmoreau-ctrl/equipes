@@ -1069,3 +1069,83 @@ mais sur Mac, chaque bouton important devenait vide au passage de la souris.
 bouton principal et reprenait le dessus sur sa couleur de fond.
 **Corrigé.** Le bouton principal redonne sa couleur au survol, et s'éclaircit
 légèrement pour rester vivant.
+
+## Lot 1b — à faire (demandé par Arnaud le 2 octobre 2026)
+
+### Corrections de règles validées, à appliquer au lot 1b
+1. **Travail de nuit des mineurs** : distinguer deux tranches d'âge —
+   **moins de 16 ans, interdit de 20 h à 6 h** ; **16 et 17 ans, interdit de
+   22 h à 6 h**. Aujourd'hui l'application ne connaît qu'un seul seuil (22 h –
+   6 h) et un seul indicateur « mineur ». Il faudra donc distinguer les deux
+   tranches sur la fiche, sans jamais enregistrer de date de naissance.
+2. **Travail de nuit des adultes** : passer la plage par défaut de
+   **21 h – 5 h à 21 h – 6 h** (définition légale), modifiable.
+3. **Apprentis** : temps de formation au CFA = temps de travail, donc non
+   planifiable (L6222-24). Un apprenti majeur suit les règles des adultes, avec
+   cette seule protection en plus.
+4. **À signaler « à vérifier » dans l'écran de réglage** : le contingent de
+   180 h d'heures supplémentaires, les majorations (dimanche, férié, nuit) et
+   le délai de prévenance de 7 jours ouvrés. Arnaud les confirmera avec le
+   service paie ; ils restent les valeurs de départ en attendant.
+
+## Lot 1a — Rayons, compétences, catalogue (2 octobre 2026)
+
+### D-82 — Le catalogue existant est enrichi, pas remplacé
+**Décision.** Les « blocs » de travail déjà en place deviennent le catalogue de
+tâches, enrichis d'un niveau de compétence. Le modèle de volumes reste celui
+qui existait : palettes pour une réception, colis pour une mise en rayon,
+mètres de linéaire pour un facing, produits pour un laboratoire, unités pour
+un drive.
+**Raison.** Remplacer par un modèle uniforme « durée fixe ou par unité » aurait
+réécrit le moteur de besoin, ses tests, et surtout **changé les courbes de
+besoin des plannings déjà saisis**. Un test (`besoins-inchanges.test.ts`) fige
+désormais la charge des sept rayons d'origine : si elle bouge, le test casse.
+**Alternative possible :** le modèle uniforme, au prix de cette rupture.
+
+### D-83 — Une compétence exigée porte son niveau, et son caractère critique
+**Décision.** Une tâche n'exige plus « la boucherie » mais « la boucherie,
+niveau 2 ». L'ancienne liste séparée des compétences critiques disparaît : le
+caractère critique est maintenant porté par l'exigence elle-même.
+**Raison.** Deux listes parallèles finissent par se contredire. Par défaut une
+tâche demande le **niveau 2, autonome** ; le niveau 1 est réservé aux tâches
+que l'on peut confier à quelqu'un en formation, accompagné.
+**Pour information :** quand deux tâches demandent la même compétence à deux
+niveaux différents sur la même tranche, c'est **le plus exigeant** qui compte.
+
+### D-84 — Le nom de la compétence est son identifiant
+**Décision.** Une compétence n'a pas de code technique : son nom est son
+identité (« conseil vins »). Le catalogue est enregistré dans l'application et
+modifiable.
+**Raison.** Les compétences sont déjà écrites sous forme de noms dans les
+tâches et dans les fiches. Introduire des codes aurait exigé de tout
+renommer, pour aucun bénéfice visible. **Conséquence à connaître :** renommer
+une compétence devra la renommer partout à la fois — ce sera le travail de
+l'écran de réglage, au lot 1b.
+
+### D-85 — Chaque fiche ne propose que les compétences de ses rayons
+**Décision.** La fiche d'une personne des fruits et légumes ne propose plus les
+compétences de boucherie. Elle propose celles de son rayon principal, celles de
+ses rayons d'appui, les compétences communes (hygiène, nettoyage, réception…),
+et **toutes celles qu'elle possède déjà**, même hors de ses rayons.
+**Raison.** La liste était la même pour tout le monde et s'allongeait à chaque
+ajout. Une compétence déjà notée ne disparaît jamais : changer quelqu'un de
+rayon ne doit pas effacer ce qu'il sait faire.
+
+### D-86 — Horaires propres à la cave et au drive
+**Décision.** La cave ouvre à 9 h 30, le drive à 9 h : ni l'un ni l'autre ne
+suit les horaires du frais. Le conseil en vins est tenu **l'après-midi**
+(15 h – 19 h 30), pas toute la journée.
+**Raison.** Une cave n'est pas un comptoir de découpe : personne n'achète de
+vin à 8 h 30, et exiger une présence toute la journée aurait gonflé le besoin
+sans raison. **À ajuster** avec vos horaires réels, depuis Paramètres.
+
+### D-87 — Six collaborateurs fictifs de plus
+**Décision.** La démonstration compte maintenant 26 personnes : un caviste, une
+employée partagée cave/drive, un responsable drive, deux préparatrices et un
+apprenti au drive.
+**Raison.** Deux rayons sans personne auraient affiché 0 % de couverture et
+rendu la démonstration illisible. Tous fictifs, prénom + initiale.
+
+### C-24 — « 1 personnes en même temps »
+Repéré en vérifiant la cave : la pointe de la journée s'écrivait toujours au
+pluriel. Corrigé.

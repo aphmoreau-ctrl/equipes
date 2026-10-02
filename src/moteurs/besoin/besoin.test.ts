@@ -4,6 +4,7 @@ import {
   calculerBesoin,
   coefficientDuBloc,
   coefficientQualite,
+  exige,
   minutesBrutesDuBloc,
   minutesParBlocSurLaJournee,
   personnesNecessaires,
@@ -195,7 +196,7 @@ describe('calcul de chaque type de bloc', () => {
   it('reception : palettes multipliees par le temps de controle', () => {
     const bloc: Bloc = {
       id: 'rec', nom: 'Réception', type: 'reception', actif: true, jours,
-      plage: { debut: '05:00', fin: '07:00' }, competences: ['réception'], coefficients: [],
+      plage: { debut: '05:00', fin: '07:00' }, competences: [exige('réception')], coefficients: [],
       palettesParJour: { 1: 4, 2: 2, 3: 2, 4: 2, 5: 3, 6: 5, 7: 0 },
       minutesParPalette: 15,
     }
@@ -269,7 +270,7 @@ describe('calcul de chaque type de bloc', () => {
   it('transformation : production, mise en route et nettoyage', () => {
     const bloc: Bloc = {
       id: 'tra', nom: 'Fruits découpés', type: 'transformation', actif: true, jours,
-      plage: { debut: '06:00', fin: '09:00' }, competences: ['hygiène'], coefficients: [],
+      plage: { debut: '06:00', fin: '09:00' }, competences: [exige('hygiène')], coefficients: [],
       produits: [
         { nom: 'Salade de fruits', quantite: 10, minutesParUnite: 4 },
         { nom: 'Jus pressé', quantite: 20, minutesParUnite: 2 },
@@ -333,7 +334,7 @@ describe('calcul du besoin d une journee', () => {
 
   it('rassemble les competences requises par tranche', () => {
     const avecCompetence = tacheFixe({
-      id: 'labo', nom: 'Laboratoire', competences: ['hygiène', 'découpe'],
+      id: 'labo', nom: 'Laboratoire', competences: [exige('hygiène'), exige('découpe')],
       plage: { debut: '06:00', fin: '06:30' },
     })
     const besoin = calculerBesoin(configuration({ blocs: [avecCompetence] }), contexte())

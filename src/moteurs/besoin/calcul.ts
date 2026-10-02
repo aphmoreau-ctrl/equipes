@@ -14,6 +14,7 @@ import type {
   TrancheBesoin,
 } from './types'
 import { nombreEnTexte } from '../../domaine/nombres'
+import type { NiveauCompetence } from '../../domaine/collaborateur'
 
 const NATURES: readonly NatureCoefficient[] = [
   'saison',
@@ -85,6 +86,9 @@ export function calculerBesoin(
     const minutesParBloc: Record<string, number> = {}
     const competences = new Set<string>()
     const critiques = new Set<string>()
+    // Deux taches peuvent demander la meme competence a deux niveaux : on
+    // retient le plus exigeant, sinon la tranche serait sous-exigeante.
+    const niveauxMinimum: Record<string, NiveauCompetence> = {}
     let minutesDeLaTranche = 0
 
     for (const bloc of blocsActifs) {
@@ -92,10 +96,13 @@ export function calculerBesoin(
       if (minutes <= 0) continue
       minutesParBloc[bloc.id] = minutes
       minutesDeLaTranche += minutes
-      for (const competence of bloc.competences) competences.add(competence)
-      for (const competence of bloc.competencesCritiques ?? []) {
-        competences.add(competence)
-        critiques.add(competence)
+      for (const exigence of bloc.competences) {
+        competences.add(exigence.competence)
+        if (exigence.critique === true) critiques.add(exigence.competence)
+        niveauxMinimum[exigence.competence] = Math.max(
+          niveauxMinimum[exigence.competence] ?? 0,
+          exigence.niveauMinimum,
+        ) as NiveauCompetence
       }
     }
 
@@ -125,6 +132,7 @@ export function calculerBesoin(
       personnes,
       competences: [...competences].sort(),
       competencesCritiques: [...critiques].sort(),
+      niveauxMinimum,
     })
   }
 

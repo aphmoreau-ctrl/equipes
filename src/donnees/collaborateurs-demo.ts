@@ -264,4 +264,59 @@ export const COLLABORATEURS_DEMO: readonly Collaborateur[] = [
     competences: { 'boulangerie': 1 },
     equite: { samedisTravailles: 3, dimanchesTravailles: 3 },
   }),
+
+  // ------------------------------------------------- Cave / vins et Drive
+  collaborateur({
+    id: 'c-21', prenom: 'Victor', initiale: 'M.', rayonPrincipal: 'cave-vins',
+    rayonsSecondaires: ['cremerie'], poste: 'Caviste',
+    niveauClassification: 'Niveau 3', heures: 35, dateEntree: '2021-04-12',
+    competences: { 'conseil vins': 3, 'mise en rayon': 2, 'étiquetage': 2, 'réception': 2 },
+    equite: { samedisTravailles: 22, dimanchesTravailles: 4, fermetures: 14 },
+  }),
+  collaborateur({
+    id: 'c-22', prenom: 'Sonia', initiale: 'R.', rayonPrincipal: 'cave-vins',
+    rayonsSecondaires: ['drive'], poste: 'Employée commerciale',
+    heures: 24, dateEntree: '2025-06-02',
+    disponibilites: indisponible([3, 7]),
+    competences: { 'conseil vins': 2, 'mise en rayon': 2, 'étiquetage': 1 },
+    equite: { samedisTravailles: 11, dimanchesTravailles: 0, fermetures: 5 },
+  }),
+  collaborateur({
+    id: 'c-23', prenom: 'Damien', initiale: 'P.', rayonPrincipal: 'drive',
+    rayonsSecondaires: ['cremerie', 'fruits-legumes'], poste: 'Responsable drive',
+    statut: 'agent-maitrise', niveauClassification: 'Niveau 5',
+    heures: 35, dateEntree: '2020-09-14',
+    competences: {
+      'préparation drive': 3, 'contrôle drive': 3, 'remise drive': 3,
+      'contrôle températures': 3, 'nettoyage': 2,
+    },
+    equite: { samedisTravailles: 25, dimanchesTravailles: 10, fermetures: 18 },
+  }),
+  collaborateur({
+    id: 'c-24', prenom: 'Awa', initiale: 'S.', rayonPrincipal: 'drive',
+    poste: 'Préparatrice drive', heures: 35, dateEntree: '2023-03-06',
+    competences: {
+      'préparation drive': 2, 'contrôle drive': 2, 'remise drive': 2,
+      'contrôle températures': 2, 'nettoyage': 2,
+    },
+    equite: { samedisTravailles: 20, dimanchesTravailles: 7, fermetures: 11 },
+  }),
+  collaborateur({
+    id: 'c-25', prenom: 'Tom', initiale: 'B.', rayonPrincipal: 'drive',
+    poste: 'Préparateur drive', contrat: 'apprenti', heures: 28,
+    dateEntree: '2026-09-01', finContrat: '2028-08-31',
+    competences: { 'préparation drive': 1, 'remise drive': 1, 'nettoyage': 2 },
+    equite: { samedisTravailles: 2, dimanchesTravailles: 0 },
+  }),
+  collaborateur({
+    id: 'c-26', prenom: 'Clara', initiale: 'J.', rayonPrincipal: 'drive',
+    rayonsSecondaires: ['cave-vins'], poste: 'Préparatrice drive',
+    heures: 30, dateEntree: '2024-11-18',
+    disponibilites: matinsSeulement([1, 2, 3, 4, 5]),
+    competences: {
+      'préparation drive': 2, 'remise drive': 2, 'contrôle températures': 2,
+      'conseil vins': 1,
+    },
+    equite: { samedisTravailles: 16, dimanchesTravailles: 5, fermetures: 3 },
+  }),
 ]

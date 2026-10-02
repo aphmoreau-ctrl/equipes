@@ -83,6 +83,7 @@ describe('tableau de bord', () => {
         minutesTotal: index >= 12 && index < 26 ? 30 : 0,
         personnes: index >= 12 && index < 26 ? 1 : 0,
         competences: [], competencesCritiques: [],
+    niveauxMinimum: {},
       })),
       minutesTotal: 420, heuresTotal: 7, heuresPresence: 7,
       coefficientsAppliques: { saison: 1, meteo: 1, evenement: 1, promotion: 1, qualite: 1 },

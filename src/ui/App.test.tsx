@@ -191,7 +191,7 @@ describe('navigation, une fois l application ouverte', () => {
     expect(screen.getByText('tests')).toBeInTheDocument()
   })
 
-  it('montre les sept rayons de demonstration dans les parametres', async () => {
+  it('montre les neuf rayons de demonstration dans les parametres', async () => {
     fireEvent.click(screen.getByRole('link', { name: /Paramètres/ }))
     await screen.findByRole('heading', { level: 1, name: 'Paramètres' })
     expect(screen.getByText('Fruits et légumes')).toBeInTheDocument()

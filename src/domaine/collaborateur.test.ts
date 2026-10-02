@@ -110,9 +110,9 @@ describe('capacite', () => {
 })
 
 describe('equipe de demonstration', () => {
-  it('compte entre quinze et vingt-cinq personnes', () => {
+  it('compte entre quinze et trente personnes', () => {
     expect(COLLABORATEURS_DEMO.length).toBeGreaterThanOrEqual(15)
-    expect(COLLABORATEURS_DEMO.length).toBeLessThanOrEqual(25)
+    expect(COLLABORATEURS_DEMO.length).toBeLessThanOrEqual(30)
   })
 
   it('n utilise aucun identifiant en double', () => {
@@ -120,9 +120,9 @@ describe('equipe de demonstration', () => {
     expect(new Set(identifiants).size).toBe(identifiants.length)
   })
 
-  it('couvre les sept rayons', () => {
+  it('couvre les neuf rayons', () => {
     const rayons = new Set(COLLABORATEURS_DEMO.map((c) => c.rayonPrincipal))
-    expect(rayons.size).toBe(7)
+    expect(rayons.size).toBe(9)
   })
 
   it('mélange les contrats et les durées, comme une vraie équipe', () => {

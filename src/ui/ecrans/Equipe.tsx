@@ -11,6 +11,7 @@ import {
   type NiveauCompetence,
 } from '../../domaine/collaborateur'
 import { rayonParId, rayonsActifs } from '../../domaine/magasin'
+import { competencesDuRayon, type Competence } from '../../domaine/competence'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre, ChampTexte, Depliant, Interrupteur } from '../composants/Champ'
 import {
@@ -25,19 +26,6 @@ import {
   type BrouillonCollaborateur,
 } from './equipe/NouveauCollaborateur'
 
-const COMPETENCES_CONNUES = [
-  'réception',
-  'mise en place',
-  'commandes',
-  'hygiène',
-  'découpe',
-  'boucherie',
-  'marée',
-  'charcuterie',
-  'traiteur',
-  'fromage',
-  'boulangerie',
-] as const
 
 const NIVEAUX: readonly NiveauCompetence[] = [0, 1, 2, 3]
 
@@ -46,6 +34,9 @@ export function Equipe() {
   const rayons = rayonsActifs(etat.magasin)
   const [filtre, setFiltre] = useState('tous')
   const [fenetreOuverte, setFenetreOuverte] = useState(false)
+
+  const competencesProposees = (collaborateur: Collaborateur): string[] =>
+    competencesDeLaFiche(etat.competences, collaborateur)
 
   const equipe = etat.collaborateurs
     .filter((collaborateur) => collaborateur.actif)
@@ -348,7 +339,7 @@ export function Equipe() {
 
             <p className="champ__libelle">Compétences</p>
             <ul className="liste-competences">
-              {COMPETENCES_CONNUES.map((competence) => (
+              {competencesProposees(collaborateur).map((competence) => (
                 <li key={competence} className="ligne-competence">
                   <span className="ligne-competence__nom">{competence}</span>
                   <span className="groupe-boutons">
@@ -452,6 +443,23 @@ export function Equipe() {
       <SectionSecurite />
     </>
   )
+}
+
+/**
+ * Competences a proposer sur une fiche : celles qui servent dans son rayon
+ * principal ou dans ses rayons d'appui, plus celles qu'il possede deja — une
+ * competence notee ne doit jamais disparaitre parce qu'on a change de rayon.
+ */
+function competencesDeLaFiche(
+  catalogue: readonly Competence[],
+  collaborateur: Collaborateur,
+): string[] {
+  const rayons = [collaborateur.rayonPrincipal, ...collaborateur.rayonsSecondaires]
+  const retenues = new Set<string>(Object.keys(collaborateur.competences))
+  for (const rayon of rayons) {
+    for (const competence of competencesDuRayon(catalogue, rayon)) retenues.add(competence.nom)
+  }
+  return [...retenues].sort((a, b) => a.localeCompare(b, 'fr'))
 }
 
 function ChampDate({

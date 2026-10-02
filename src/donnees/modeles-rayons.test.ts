@@ -28,8 +28,8 @@ function contexteDemo(date: string, rayonId: string) {
 }
 
 describe('couverture des rayons', () => {
-  it('modelise les sept rayons frais', () => {
-    expect(CONFIGURATIONS_DEMO).toHaveLength(7)
+  it('modelise les neuf rayons', () => {
+    expect(CONFIGURATIONS_DEMO).toHaveLength(9)
     expect(CONFIGURATIONS_DEMO.map((c) => c.rayonId).sort()).toEqual(
       MAGASIN_DEMO.rayons.map((r) => r.id).sort(),
     )
@@ -84,7 +84,11 @@ describe('specificites annoncees au cahier des charges', () => {
     const comptoir = MODELE_BOUCHERIE.blocs.find((bloc) => bloc.type === 'comptoir')
     expect(comptoir?.presenceMinimum).toBeGreaterThanOrEqual(1)
     // La competence est CRITIQUE : personne d'autre ne peut tenir le poste.
-    expect(comptoir?.competencesCritiques).toContain('boucherie')
+    expect(comptoir?.competences).toContainEqual({
+      competence: 'boucherie',
+      niveauMinimum: 2,
+      critique: true,
+    })
   })
 
   it('fromage : comptoir tenu avec celui de la charcuterie', () => {
@@ -181,7 +185,7 @@ describe('besoin calcule pour chaque rayon', () => {
     expect(decembre.heuresTotal).toBeGreaterThan(novembre.heuresTotal)
   })
 
-  it('compte six modeles hors fruits et legumes', () => {
-    expect(MODELES_AUTRES_RAYONS).toHaveLength(6)
+  it('compte huit modeles hors fruits et legumes', () => {
+    expect(MODELES_AUTRES_RAYONS).toHaveLength(8)
   })
 })

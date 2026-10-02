@@ -69,7 +69,7 @@ describe('sauvegarde sur fichier', () => {
   })
 
   it('resume le contenu avant restauration', () => {
-    expect(resumerSauvegarde(etatInitial())).toMatch(/^20 collaborateurs, 0 semaine de planning/)
+    expect(resumerSauvegarde(etatInitial())).toMatch(/^26 collaborateurs, 0 semaine de planning/)
   })
 })
 

@@ -46,9 +46,9 @@ describe('reglage des rayons', () => {
   it('desactive un rayon', () => {
     afficher(<SectionRayons />)
     const interrupteurs = screen.getAllByRole('button', { name: 'Actif' })
-    expect(interrupteurs).toHaveLength(7)
+    expect(interrupteurs).toHaveLength(9)
     fireEvent.click(interrupteurs[0] as HTMLElement)
-    expect(screen.getAllByRole('button', { name: 'Actif' })).toHaveLength(6)
+    expect(screen.getAllByRole('button', { name: 'Actif' })).toHaveLength(8)
     expect(screen.getByRole('button', { name: 'Inactif' })).toBeInTheDocument()
   })
 

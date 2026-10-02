@@ -27,6 +27,8 @@ import type { ConfigurationRayon, Meteo, SaisieQualite } from '../moteurs/besoin
 import { COLLABORATEURS_DEMO } from './collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
 import { MISSIONS_DEMO, RENFORTS_DEMO } from './vivier-demo'
+import type { Competence } from '../domaine/competence'
+import { COMPETENCES_DEMO } from './competences-demo'
 
 /**
  * Etat complet de l'application, conserve sur l'appareil.
@@ -57,6 +59,8 @@ export interface EtatApplication {
   readonly version: number
   readonly magasin: Magasin
   readonly configurations: readonly ConfigurationRayon[]
+  /** Catalogue des competences, rattachees aux rayons. Modifiable. */
+  readonly competences: readonly Competence[]
   readonly collaborateurs: readonly Collaborateur[]
   readonly absences: readonly Absence[]
   readonly demandesConge: readonly DemandeConge[]
@@ -104,6 +108,7 @@ export function etatInitial(): EtatApplication {
     version: VERSION_ETAT,
     magasin: MAGASIN_DEMO,
     configurations: CONFIGURATIONS_DEMO,
+    competences: COMPETENCES_DEMO,
     collaborateurs: COLLABORATEURS_DEMO,
     absences: [],
     demandesConge: [],

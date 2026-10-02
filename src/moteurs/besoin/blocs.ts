@@ -4,9 +4,27 @@ import type {
   Bloc,
   ConfigurationRayon,
   ContexteJour,
+  ExigenceCompetence,
   NatureCoefficient,
   PlageBloc,
 } from './types'
+import type { NiveauCompetence } from '../../domaine/collaborateur'
+
+/**
+ * Ecrit une exigence de competence. Par defaut : niveau 2, « autonome ».
+ *
+ *   exige('decoupe')          -> decoupe, niveau 2
+ *   exige('facing', 1)        -> facing, niveau 1 (peut etre accompagne)
+ *   exige('boucherie', 2, true) -> critique : sans elle, poste intenable
+ */
+export function exige(
+  competence: string,
+  niveauMinimum: NiveauCompetence = 2,
+  critique = false,
+): ExigenceCompetence {
+  return critique ? { competence, niveauMinimum, critique } : { competence, niveauMinimum }
+}
+
 
 /**
  * Calcul des minutes de travail apportees par un bloc, tranche par tranche.

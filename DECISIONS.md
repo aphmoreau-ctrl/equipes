@@ -1359,3 +1359,41 @@ les boutons et menus disparaissent.
 **Raison.** Ces feuilles se distribuent le matin. Elles ne portent ni statut de
 suivi, ni note, ni commentaire — ce sont des documents sortants, soumis à la
 même règle que les autres.
+
+## Lot 6 — Verrouillage, relance, amélioration locale (2 octobre 2026)
+
+### D-107 — Le verrou se pose sur une case, pas sur une vacation
+**Décision.** Le cadenas se pose sur une **case** (une personne, un jour) et
+non sur une vacation. La case verrouillée ne bouge plus : ni échangée, ni
+décalée, ni supprimée, et la personne ne reçoit rien d'autre ce jour-là.
+**Raison.** C'est ainsi qu'on raisonne devant un planning : « Camille, lundi,
+c'est décidé ». Verrouiller la vacation aurait laissé la possibilité d'en
+ajouter une seconde le même jour.
+**Enregistré dans le planning**, donc conservé d'une séance à l'autre et repris
+par la sauvegarde.
+
+### D-108 — « Relancer » reprend le reste, il ne recommence pas
+**Décision.** Le bouton « Relancer sans toucher aux cases verrouillées »
+replace les cases verrouillées **en premier**, les compte dans la couverture et
+dans les règles, puis recalcule tout le reste autour.
+**Raison.** C'est ce qui rend l'outil utilisable : on fige ce qu'on a décidé —
+un rendez-vous, une demande acceptée, une formation — et on laisse
+l'application s'occuper du reste. Le nombre de cases verrouillées est affiché à
+côté du bouton, pour qu'on sache toujours ce qui est figé.
+
+### D-109 — Décalages de 15 et 30 minutes seulement
+**Décision.** Après les échanges de personnes, le moteur essaie de décaler
+chaque poste de **−30, −15, +15 ou +30 minutes**, et garde le décalage s'il
+améliore la couverture sans enfreindre une règle.
+**Raison.** Un poste calé sur un horaire type tombe rarement pile sur le
+besoin : une fournée sort à 06 h 45, une livraison arrive à 05 h 15. Un quart
+d'heure de décalage comble le trou sans rien coûter.
+**Pourquoi s'arrêter à trente minutes.** Au-delà, ce n'est plus un ajustement
+mais un autre poste : les gens organisent leur journée autour de leur horaire,
+et déplacer quelqu'un d'une heure sans le lui demander n'est pas acceptable.
+
+### D-110 — Une vacation posée à la main garde son horaire exact
+**Décision.** Une vacation verrouillée posée à une heure qui ne correspond à
+aucun horaire type reçoit son propre horaire, calculé sur ses heures réelles.
+**Raison.** Sans cela, le moteur n'aurait pas su quelles tranches elle couvre,
+et aurait cru le besoin découvert là où quelqu'un travaille.

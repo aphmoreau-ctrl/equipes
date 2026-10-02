@@ -30,10 +30,19 @@ export interface Planning extends Suivi {
   /** Lundi de la semaine : sert d'identifiant. */
   readonly semaine: string
   readonly vacations: readonly Vacation[]
+  /**
+   * Cases verrouillees par l'utilisateur : « collaborateurId|jour ».
+   *
+   * Une case verrouillee ne bouge jamais : « Relancer » recalcule tout le
+   * reste autour d'elle. C'est ce qui permet de figer ce qu'on a decide —
+   * un rendez-vous, une demande acceptee — et de laisser l'application
+   * s'occuper du reste.
+   */
+  readonly casesVerrouillees: readonly string[]
 }
 
 export function planningVide(semaine: string): Planning {
-  return { semaine, vacations: [], ...suiviInitial() }
+  return { semaine, vacations: [], casesVerrouillees: [], ...suiviInitial() }
 }
 
 /** Enregistre un changement d'etat dans l'historique. Rien n'est jamais ecrase. */

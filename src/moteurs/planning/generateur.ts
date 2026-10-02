@@ -58,6 +58,15 @@ export interface EntreesGeneration {
   readonly vacationsAnterieures?: readonly Vacation[]
   /** Planning de la semaine precedente, pour limiter les changements. */
   readonly planningPrecedent?: readonly Vacation[]
+  /**
+   * Vacations deja en place que l'utilisateur a VERROUILLEES.
+   *
+   * Elles ne bougent jamais : ni echangees, ni decalees, ni supprimees. Le
+   * calcul les prend en compte — elles occupent la personne et couvrent le
+   * besoin — puis complete autour. C'est ce qui fait de « Relancer » une
+   * reprise du reste, et non un recommencement.
+   */
+  readonly vacationsVerrouillees?: readonly Vacation[]
   /** Temps de calcul maximal, en millisecondes. */
   readonly dureeMaximaleMs?: number
 }
@@ -69,6 +78,10 @@ export interface ResultatGeneration {
   readonly essais: number
   /** Nombre d'echanges retenus pendant l'amelioration. */
   readonly ameliorations: number
+  /** Nombre de postes decales de 15 ou 30 minutes pour mieux coller au besoin. */
+  readonly decalages: number
+  /** Nombre de vacations laissees intactes parce qu'elles etaient verrouillees. */
+  readonly verrouillees: number
   readonly dureeMs: number
   /** Ce que le moteur n'a pas su resoudre, en francais. */
   readonly restesAExpliquer: readonly string[]
@@ -179,6 +192,59 @@ function affectationPermise(
  * 3. on tente enfin des echanges tant qu'ils ameliorent le score, dans la
  *    limite du temps accorde.
  */
+/**
+ * Retrouve (ou fabrique) l'horaire correspondant a une vacation.
+ *
+ * Une vacation verrouillee a pu etre posee a la main, a une heure qui ne
+ * correspond a aucun horaire type. On lui construit alors son propre horaire,
+ * et on calcule ses tranches comme pour les autres.
+ */
+function horairePour(
+  vacation: Vacation,
+  horaires: HoraireType[],
+  tranchesDe: Map<string, number[]>,
+): HoraireType {
+  const connu = horaires.find(
+    (candidat) => candidat.debut === vacation.debut && candidat.fin === vacation.fin,
+  )
+  if (connu !== undefined) return connu
+
+  const pauseDebut = enTexte(
+    enMinutes(vacation.debut) + Math.floor(duree(vacation.debut, vacation.fin) / 2),
+  )
+  const horaire: HoraireType = {
+    id: `pose-${vacation.debut}-${vacation.fin}`,
+    nom: `${vacation.debut}–${vacation.fin}`,
+    debut: vacation.debut,
+    fin: vacation.fin,
+    pauseMinutes: vacation.pauseMinutes,
+    pauseDebut,
+  }
+  horaires.push(horaire)
+  tranchesDe.set(horaire.id, tranchesCouvertesPar(horaire))
+  return horaire
+}
+
+/** Tranches reellement couvertes par un horaire, pause deduite. */
+function tranchesCouvertesPar(horaire: HoraireType): number[] {
+  const debutH = enMinutes(horaire.debut)
+  const finH = debutH + duree(horaire.debut, horaire.fin)
+  const pauseDebut = enMinutes(horaire.pauseDebut)
+  const pauseFin = pauseDebut + horaire.pauseMinutes
+
+  const couvertes: number[] = []
+  for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
+    const debutTranche = index * TRANCHE_MINUTES
+    const finTranche = debutTranche + TRANCHE_MINUTES
+    if (!(debutH < finTranche && finH > debutTranche)) continue
+    // Une personne en pause sur la moitie de la tranche ne couvre pas.
+    const enPause = Math.min(finTranche, pauseFin) - Math.max(debutTranche, pauseDebut)
+    if (enPause >= TRANCHE_MINUTES / 2) continue
+    couvertes.push(index)
+  }
+  return couvertes
+}
+
 /** Duree minimale d'un poste, en minutes : on ne deplace personne pour moins. */
 const DUREE_MINIMALE_POSTE = 3 * 60
 
@@ -243,7 +309,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   const equipe = [...entrees.collaborateurs]
     .filter((collaborateur) => collaborateur.actif)
     .sort((a, b) => a.id.localeCompare(b.id))
-  const horaires = [
+  const horaires: HoraireType[] = [
     ...entrees.horairesTypes,
     ...postesCourts(entrees.besoins),
   ].sort((a, b) => a.debut.localeCompare(b.debut) || a.id.localeCompare(b.id))
@@ -288,22 +354,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   /** Tranches couvertes par chaque horaire type, calculees une seule fois. */
   const tranchesDe = new Map<string, number[]>()
   for (const horaire of horaires) {
-    const debutH = enMinutes(horaire.debut)
-    const finH = debutH + duree(horaire.debut, horaire.fin)
-    const pauseDebut = enMinutes(horaire.pauseDebut)
-    const pauseFin = pauseDebut + horaire.pauseMinutes
-
-    const couvertes: number[] = []
-    for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
-      const debutTranche = index * TRANCHE_MINUTES
-      const finTranche = debutTranche + TRANCHE_MINUTES
-      if (!(debutH < finTranche && finH > debutTranche)) continue
-      // Une personne en pause sur la moitie de la tranche ne couvre pas.
-      const enPause = Math.min(finTranche, pauseFin) - Math.max(debutTranche, pauseDebut)
-      if (enPause >= TRANCHE_MINUTES / 2) continue
-      couvertes.push(index)
-    }
-    tranchesDe.set(horaire.id, couvertes)
+    tranchesDe.set(horaire.id, tranchesCouvertesPar(horaire))
   }
 
   const parPersonne = new Map<string, Vacation[]>()
@@ -469,6 +520,24 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     return null
   }
 
+  /*
+   * 0. Les cases verrouillees d'abord.
+   *
+   * Elles entrent dans les compteurs comme les autres — elles occupent la
+   * personne, elles couvrent le besoin — mais elles ne figurent pas dans
+   * « placees » : rien ne viendra donc les echanger ni les decaler.
+   */
+  const verrouillees: Vacation[] = []
+  for (const vacation of [...(entrees.vacationsVerrouillees ?? [])].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    const collaborateur = equipe.find((c) => c.id === vacation.collaborateurId)
+    if (collaborateur === undefined) continue
+    const horaire = horairePour(vacation, horaires, tranchesDe)
+    inscrire(vacation, horaire, collaborateur, 1)
+    verrouillees.push(vacation)
+  }
+
   // ----------------------------- 1 et 2. Couvrir, puis completer les contrats
   for (const exigeant of [true, false]) {
     let continuer = true
@@ -561,8 +630,78 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     }
   }
 
+  /*
+   * 4. Decalages de 15 et 30 minutes.
+   *
+   * Un poste cale sur un horaire type tombe rarement pile sur le besoin : une
+   * fournee sort a 06h45, une livraison arrive a 05h15. Decaler le poste d'un
+   * quart d'heure peut couvrir un trou sans rien couter. On n'essaie que des
+   * decalages courts : au-dela, ce n'est plus un ajustement, c'est un autre
+   * poste, et la personne a organise sa journee autour de son horaire.
+   */
+  const DECALAGES = [-30, -15, 15, 30]
+  let decalages = 0
+  let continuerDecalage = true
+
+  while (continuerDecalage && Date.now() - debutCalcul < limite) {
+    continuerDecalage = false
+
+    for (let position = 0; position < placees.length; position += 1) {
+      if (Date.now() - debutCalcul >= limite) break
+
+      const actuelle = placees[position] as Vacation
+      const horaire = horaires.find(
+        (candidat) => candidat.debut === actuelle.debut && candidat.fin === actuelle.fin,
+      )
+      const titulaire = equipe.find((c) => c.id === actuelle.collaborateurId)
+      if (horaire === undefined || titulaire === undefined) continue
+
+      inscrire(actuelle, horaire, titulaire, -1)
+      const coutActuel = variationDAjout(actuelle, horaire, titulaire)
+
+      let meilleur: { vacation: Vacation; horaire: HoraireType; variation: number } | null = null
+
+      for (const minutes of DECALAGES) {
+        const debut = enMinutes(actuelle.debut) + minutes
+        const fin = enMinutes(actuelle.fin) + minutes
+        if (debut < 0 || fin > MINUTES_PAR_JOUR) continue
+
+        const decale: Vacation = {
+          ...actuelle,
+          debut: enTexte(debut),
+          fin: enTexte(fin),
+        }
+        const horaireDecale = horairePour(decale, horaires, tranchesDe)
+        const variation = variationDAjout(decale, horaireDecale, titulaire)
+        if (variation >= coutActuel - 1e-9) continue
+        if (meilleur !== null && variation >= meilleur.variation) continue
+        meilleur = { vacation: decale, horaire: horaireDecale, variation }
+      }
+
+      if (
+        meilleur === null ||
+        !affectationPermise(
+          meilleur.vacation,
+          titulaire,
+          parPersonne.get(titulaire.id) ?? [],
+          entrees,
+          [],
+        )
+      ) {
+        inscrire(actuelle, horaire, titulaire, 1)
+        continue
+      }
+
+      inscrire(meilleur.vacation, meilleur.horaire, titulaire, 1)
+      placees[position] = meilleur.vacation
+      decalages += 1
+      continuerDecalage = true
+      break
+    }
+  }
+
   // ------------------------------------------------ Resultat et restes
-  const ordonnees = [...placees].sort(
+  const ordonnees = [...verrouillees, ...placees].sort(
     (a, b) =>
       a.jour.localeCompare(b.jour) ||
       a.debut.localeCompare(b.debut) ||
@@ -598,6 +737,8 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     penalites: penaliser(ordonnees, entrees.besoins, equipe, poids, entrees.planningPrecedent ?? []),
     essais,
     ameliorations,
+    decalages,
+    verrouillees: verrouillees.length,
     dureeMs: Date.now() - debutCalcul,
     restesAExpliquer: restes,
   }

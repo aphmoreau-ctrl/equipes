@@ -19,7 +19,9 @@ export function GrillePlanning({
   caseSelectionnee,
   infractionsParPersonne,
   renforts,
+  casesVerrouillees,
   onChoisirCase,
+  onBasculerVerrou,
 }: {
   readonly collaborateurs: readonly Collaborateur[]
   readonly jours: readonly string[]
@@ -39,7 +41,10 @@ export function GrillePlanning({
     readonly origine: string
     readonly vacations: readonly Vacation[]
   }[]
+  /** Cases que l'utilisateur a verrouillees : « collaborateurId|jour ». */
+  readonly casesVerrouillees: ReadonlySet<string>
   readonly onChoisirCase: (collaborateurId: string, jour: string) => void
+  readonly onBasculerVerrou: (collaborateurId: string, jour: string) => void
 }) {
   function vacationsDe(collaborateurId: string, jour: string): Vacation[] {
     return vacations.filter(
@@ -105,11 +110,16 @@ export function GrillePlanning({
                     caseSelectionnee?.collaborateurId === collaborateur.id &&
                     caseSelectionnee.jour === jour
 
+                  const verrouillee = casesVerrouillees.has(`${collaborateur.id}|${jour}`)
+                  const classes = ['case']
+                  if (choisie) classes.push('case--choisie')
+                  if (verrouillee) classes.push('case--verrouillee')
+
                   return (
-                    <td key={jour}>
+                    <td key={jour} className="case__boite">
                       <button
                         type="button"
-                        className={choisie ? 'case case--choisie' : 'case'}
+                        className={classes.join(' ')}
                         aria-label={`${nomAffiche(collaborateur)}, ${nomDuJour(jourDeLaSemaine(jour))} ${jour}`}
                         onClick={() => onChoisirCase(collaborateur.id, jour)}
                       >
@@ -126,6 +136,23 @@ export function GrillePlanning({
                           ))
                         )}
                       </button>
+                      {dedans.length > 0 && (
+                        <button
+                          type="button"
+                          className={
+                            verrouillee ? 'verrou verrou--ferme' : 'verrou'
+                          }
+                          aria-pressed={verrouillee}
+                          aria-label={
+                            verrouillee
+                              ? `Déverrouiller ${nomAffiche(collaborateur)}, ${nomDuJour(jourDeLaSemaine(jour))}`
+                              : `Verrouiller ${nomAffiche(collaborateur)}, ${nomDuJour(jourDeLaSemaine(jour))}`
+                          }
+                          onClick={() => onBasculerVerrou(collaborateur.id, jour)}
+                        >
+                          {verrouillee ? '🔒' : '🔓'}
+                        </button>
+                      )}
                     </td>
                   )
                 })}

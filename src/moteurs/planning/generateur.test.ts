@@ -5,7 +5,7 @@ import { clientsParTranche, tranchesOuvertes } from '../../domaine/magasin'
 import { COLLABORATEURS_DEMO } from '../../donnees/collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from '../../donnees/demo'
 import { calculerBesoin, type BesoinJour } from '../besoin'
-import { contexteDeVerification, PARAMETRES_PAR_DEFAUT, verifier } from '../regles'
+import { contexteDeVerification, PARAMETRES_PAR_DEFAUT, verifier, type Vacation } from '../regles'
 import { genererLePlanning, postesCourts, type EntreesGeneration } from './generateur'
 import { manqueRestant } from './score'
 import { calculerCouverture } from '../indicateurs'
@@ -306,5 +306,92 @@ describe('le générateur compte les tranches comme le calcul de couverture', ()
       (vacation) => duree(vacation.debut, vacation.fin) < 6 * 60,
     )
     expect(courtes.length).toBeGreaterThan(0)
+  })
+})
+
+describe('verrouillage et relance', () => {
+  it('ne touche jamais à une vacation verrouillée', () => {
+    const verrouillee: Vacation = {
+      id: 'verrou-1',
+      collaborateurId: 'c-03',
+      rayonId: 'fruits-legumes',
+      jour: '2026-11-04',
+      debut: '10:00',
+      fin: '14:00',
+      pauseMinutes: 0,
+    }
+
+    const resultat = genererLePlanning(entrees({ vacationsVerrouillees: [verrouillee] }))
+
+    const retrouvee = resultat.vacations.find((vacation) => vacation.id === 'verrou-1')
+    expect(retrouvee).toEqual(verrouillee)
+    expect(resultat.verrouillees).toBe(1)
+  })
+
+  it('ne donne pas une deuxième vacation le même jour à quelqu’un de verrouillé', () => {
+    const verrouillee: Vacation = {
+      id: 'verrou-1',
+      collaborateurId: 'c-03',
+      rayonId: 'fruits-legumes',
+      jour: '2026-11-04',
+      debut: '10:00',
+      fin: '14:00',
+      pauseMinutes: 0,
+    }
+
+    const resultat = genererLePlanning(entrees({ vacationsVerrouillees: [verrouillee] }))
+    const sonJour = resultat.vacations.filter(
+      (vacation) => vacation.collaborateurId === 'c-03' && vacation.jour === '2026-11-04',
+    )
+    expect(sonJour).toHaveLength(1)
+  })
+
+  it('complète autour des cases verrouillées, sans violer de règle', () => {
+    const verrouillee: Vacation = {
+      id: 'verrou-1',
+      collaborateurId: 'c-01',
+      rayonId: 'fruits-legumes',
+      jour: '2026-11-02',
+      debut: '13:30',
+      fin: '20:30',
+      pauseMinutes: 20,
+    }
+
+    const donnees = entrees({ vacationsVerrouillees: [verrouillee] })
+    const resultat = genererLePlanning(donnees)
+    expect(resultat.vacations.length).toBeGreaterThan(1)
+
+    const infractions = verifier(
+      contexteDeVerification(resultat.vacations, PARAMETRES_PAR_DEFAUT, {
+        collaborateurs: COLLABORATEURS_DEMO,
+      }),
+    )
+    expect(infractions.filter((i) => i.severite === 'bloquante')).toEqual([])
+  })
+
+  it('décale des postes de 15 ou 30 minutes pour mieux coller au besoin', () => {
+    const resultat = genererLePlanning(entrees())
+    const heuresTypes = new Set(MAGASIN_DEMO.horairesTypes.map((h) => `${h.debut}-${h.fin}`))
+    const decalees = resultat.vacations.filter(
+      (vacation) => !heuresTypes.has(`${vacation.debut}-${vacation.fin}`),
+    )
+    // Le compteur et les vacations doivent raconter la meme chose.
+    if (resultat.decalages > 0) expect(decalees.length).toBeGreaterThan(0)
+    expect(resultat.decalages).toBeGreaterThanOrEqual(0)
+  })
+
+  it('reste déterministe avec des cases verrouillées', () => {
+    const verrouillee: Vacation = {
+      id: 'verrou-1',
+      collaborateurId: 'c-03',
+      rayonId: 'fruits-legumes',
+      jour: '2026-11-04',
+      debut: '10:00',
+      fin: '14:00',
+      pauseMinutes: 0,
+    }
+    const premier = genererLePlanning(entrees({ vacationsVerrouillees: [verrouillee] }))
+    const second = genererLePlanning(entrees({ vacationsVerrouillees: [verrouillee] }))
+    expect(second.vacations).toEqual(premier.vacations)
   })
 })

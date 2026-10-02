@@ -367,3 +367,59 @@ describe('renforts extérieurs dans le planning', () => {
     expect(document_?.textContent).toMatch(/Intérimaire|Étudiant|Ancien salarié/)
   })
 })
+
+describe('verrouillage des cases', () => {
+  function placerUneVacation(): void {
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+  }
+
+  it('ne propose un verrou que sur une case occupée', () => {
+    afficher()
+    expect(screen.queryByRole('button', { name: /^Verrouiller Camille D\./ })).not.toBeInTheDocument()
+
+    placerUneVacation()
+    expect(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ })).toBeInTheDocument()
+  })
+
+  it('verrouille puis déverrouille une case', () => {
+    afficher()
+    placerUneVacation()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
+    expect(
+      screen.getByRole('button', { name: /^Déverrouiller Camille D\., lundi/ }),
+    ).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(screen.getByRole('button', { name: /^Déverrouiller Camille D\., lundi/ }))
+    expect(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('compte les cases verrouillées à côté du bouton Relancer', () => {
+    afficher()
+    placerUneVacation()
+    expect(screen.getByText('aucune case verrouillée pour l’instant')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
+    expect(screen.getByText('1 case verrouillée')).toBeInTheDocument()
+  })
+
+  it('garde la vacation verrouillée après une relance', () => {
+    afficher()
+    placerUneVacation()
+    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
+
+    const avant = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0]
+    const horaireAvant = avant?.textContent
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Relancer sans toucher aux cases verrouillées' }),
+    )
+
+    const apres = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0]
+    expect(apres?.textContent).toBe(horaireAvant)
+  })
+})

@@ -58,10 +58,39 @@ export function Planning() {
   const [documentAffiche, setDocumentAffiche] = useState<TypeDocument | null>(null)
   const [proposition, setProposition] = useState<ResultatGeneration | null>(null)
   const { etat: etatGeneration, erreur: erreurGeneration, generer } = useGenerateur()
+
   const [confirmationGeneration, setConfirmationGeneration] = useState(false)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
   const planningCourant = planning(semaine)
+
+  const casesVerrouillees = useMemo(
+    () => new Set(planningCourant.casesVerrouillees ?? []),
+    [planningCourant.casesVerrouillees],
+  )
+
+  /** Verrouiller une case : elle ne bougera plus, meme en relancant. */
+  function basculerLeVerrou(collaborateurId: string, jour: string): void {
+    const cle = `${collaborateurId}|${jour}`
+    modifierPlanning(semaine, (precedent) => {
+      const deja = precedent.casesVerrouillees ?? []
+      return {
+        ...precedent,
+        casesVerrouillees: deja.includes(cle)
+          ? deja.filter((autre) => autre !== cle)
+          : [...deja, cle].sort(),
+      }
+    })
+  }
+
+  /** Vacations figees par un verrou : le calcul les garde telles quelles. */
+  const vacationsVerrouillees = useMemo(
+    () =>
+      planningCourant.vacations.filter((vacation) =>
+        casesVerrouillees.has(`${vacation.collaborateurId}|${vacation.jour}`),
+      ),
+    [planningCourant.vacations, casesVerrouillees],
+  )
 
   const equipe = etat.collaborateurs
     .filter((collaborateur) => collaborateur.actif)
@@ -227,6 +256,7 @@ export function Planning() {
         parametres: etat.reglesParametres,
         vacationsAnterieures: historique(semaine),
         planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
+        vacationsVerrouillees,
         dureeMaximaleMs: 5000,
       },
       (resultat) => {
@@ -389,6 +419,24 @@ export function Planning() {
           </button>
         )}
 
+        {planningCourant.vacations.length > 0 && !confirmationGeneration && (
+          <p>
+            <button
+              type="button"
+              className="bouton"
+              disabled={etatGeneration === 'en-cours'}
+              onClick={proposerUnPlanning}
+            >
+              Relancer sans toucher aux cases verrouillées
+            </button>
+            <span className="bouton__aide">
+              {casesVerrouillees.size === 0
+                ? 'aucune case verrouillée pour l’instant'
+                : `${casesVerrouillees.size} case${casesVerrouillees.size > 1 ? 's' : ''} verrouillée${casesVerrouillees.size > 1 ? 's' : ''}`}
+            </span>
+          </p>
+        )}
+
         {etatGeneration === 'en-cours' && (
           <p className="champ__aide" role="status">
             Le calcul se fait à côté : vous pouvez continuer à utiliser l’application.
@@ -445,6 +493,8 @@ export function Planning() {
           vacations={planningCourant.vacations}
           rayons={rayons}
           caseSelectionnee={caseChoisie}
+          casesVerrouillees={casesVerrouillees}
+          onBasculerVerrou={basculerLeVerrou}
           infractionsParPersonne={infractionsParPersonne}
           renforts={renfortsDeLaSemaine}
           onChoisirCase={(collaborateurId, jour) =>

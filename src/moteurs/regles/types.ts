@@ -1,4 +1,5 @@
 import type { Collaborateur } from '../../domaine/collaborateur'
+import type { Absence } from '../../domaine/absence'
 import type { Minutes } from '../../domaine/temps'
 
 /**
@@ -38,6 +39,9 @@ export type IdentifiantRegle =
   | 'travail-de-nuit'
   | 'jeune-travailleur'
   | 'formation-en-centre'
+  | 'repos-fixe'
+  | 'absence-en-cours'
+  | 'dates-de-contrat'
 
 /** Une periode de travail d'une personne, un jour donne. */
 export interface Vacation {
@@ -163,6 +167,8 @@ export interface ContexteVerification {
   readonly datePublication: string | null
   /** Heures supplementaires deja consommees cette annee, par collaborateur. */
   readonly heuresSupplementairesAnnuelles: Readonly<Record<string, number>>
+  /** Absences et conges accordes : on ne planifie pas quelqu'un d'absent. */
+  readonly absences: readonly Absence[]
 }
 
 /** Une regle verifiable. */

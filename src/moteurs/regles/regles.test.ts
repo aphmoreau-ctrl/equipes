@@ -685,8 +685,8 @@ describe('moins de 18 ans', () => {
 // ------------------------------------------------------- Vue d’ensemble
 
 describe('cohérence de l’ensemble', () => {
-  it('implémente les quatorze règles prévues', () => {
-    expect(REGLES_IMPLEMENTEES).toHaveLength(14)
+  it('implémente les dix-sept règles prévues', () => {
+    expect(REGLES_IMPLEMENTEES).toHaveLength(17)
   })
 
   it('donne une sévérité, un nom et une référence à chaque règle', () => {
@@ -833,5 +833,62 @@ describe('travail de nuit des mineurs : deux tranches d’âge', () => {
       vacation({ jour: '2026-11-02', debut: '15:00', fin: '22:30' }),
     ])
     expect(infractions.map((i) => i.regle)).not.toContain('jeune-travailleur')
+  })
+})
+
+describe('règles de présence : la personne n’est pas là', () => {
+  it('refuse une vacation un jour de repos fixe', () => {
+    const avecRepos = {
+      ...personne(),
+      disponibilites: [{ jour: 3 as const, disponible: false, plage: null }],
+    }
+    // 2026-11-04 est un mercredi.
+    const infractions = controler(
+      [vacation({ jour: '2026-11-04', debut: '08:00', fin: '15:00' })],
+      { collaborateurs: [avecRepos] },
+    )
+    const repos = infractions.find((i) => i.regle === 'repos-fixe')
+    expect(repos?.severite).toBe('bloquante')
+    expect(repos?.explication).toContain('non disponible')
+  })
+
+  it('refuse une vacation pendant une absence, sans jamais dire le motif', () => {
+    const infractions = controler([vacation({ jour: '2026-11-03', debut: '08:00', fin: '15:00' })], {
+      absences: [
+        {
+          id: 'a1',
+          collaborateurId: 'demo-1',
+          debut: '2026-11-02',
+          fin: '2026-11-06',
+          type: 'maladie',
+          prevue: false,
+        },
+      ],
+    })
+    const absence = infractions.find((i) => i.regle === 'absence-en-cours')
+    expect(absence?.severite).toBe('bloquante')
+    expect(absence?.libelle).toBe('Absent : Maladie')
+    expect(absence?.explication).toContain('la remplacer')
+  })
+
+  it('refuse une vacation avant l’entrée et après la fin du contrat', () => {
+    const enCdd = { ...personne(), dateEntree: '2026-11-03', finContrat: '2026-11-06' }
+
+    const avant = controler([vacation({ jour: '2026-11-02', debut: '08:00', fin: '15:00' })], {
+      collaborateurs: [enCdd],
+    })
+    expect(avant.find((i) => i.regle === 'dates-de-contrat')?.libelle).toBe('Avant son entrée')
+
+    const apres = controler([vacation({ jour: '2026-11-09', debut: '08:00', fin: '15:00' })], {
+      collaborateurs: [enCdd],
+    })
+    expect(apres.find((i) => i.regle === 'dates-de-contrat')?.libelle).toBe(
+      'Après la fin de son contrat',
+    )
+
+    const pendant = controler([vacation({ jour: '2026-11-04', debut: '08:00', fin: '15:00' })], {
+      collaborateurs: [enCdd],
+    })
+    expect(pendant.map((i) => i.regle)).not.toContain('dates-de-contrat')
   })
 })

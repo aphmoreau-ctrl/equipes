@@ -1244,3 +1244,33 @@ ajouter si la précision de la demi-heure ne suffit plus.
 calcul : deux fois plus de barres, deux fois plus fines.
 **Raison.** Sans cela, la courbe devenait deux fois plus large et illisible sur
 iPhone.
+
+## Lot 3 — Vérificateur des règles dures (2 octobre 2026)
+
+### D-98 — Trois règles de présence, toutes bloquantes
+**Décision.** Trois règles s'ajoutent, toutes **bloquantes** :
+- **repos fixe** : une vacation un jour déclaré non disponible sur la fiche ;
+- **absence ou congé** : une vacation pendant une absence accordée ;
+- **dates de contrat** : une vacation avant l'entrée ou après la fin du contrat.
+**Raison.** Elles disent toutes « la personne n'est pas là », mais elles ne se
+corrigent pas de la même façon : une absence se remplace, un repos se déplace,
+une date de contrat ne se discute pas. Les séparer rend le message utile.
+**RGPD :** le message d'absence nomme le **type** (« Maladie »), jamais le
+motif — c'est déjà ce que la fiche enregistre, et rien de plus.
+
+Le générateur applique aussi ces trois règles, plus la formation au CFA : il ne
+proposera jamais quelqu'un qui n'est pas là.
+
+### D-99 — Le binôme : un niveau 1 ne tient pas une tâche seul
+**Décision.** Une compétence exigée au niveau 2 est considérée tenue si
+quelqu'un a ce niveau, **ou** si une personne de niveau 1 (« en formation »)
+est présente sur la même tranche avec une personne de **niveau 3** (« sait
+former »). Sans cet accompagnant, la tranche signale un « binôme incomplet ».
+**Raison.** C'est exactement ce que demande la spécification, et cela
+correspond au terrain : on confie une tâche à quelqu'un en formation, mais
+jamais sans quelqu'un pour le reprendre.
+**Où c'est contrôlé.** Dans le calcul de couverture, pas dans les règles
+légales : c'est la seule place qui connaît qui est présent sur quelle tranche,
+et avec quel niveau exigé.
+**Précision.** Un accompagnant de niveau 2 ne suffit pas à former — mais s'il
+est là, il tient la tâche lui-même, donc rien n'est signalé.

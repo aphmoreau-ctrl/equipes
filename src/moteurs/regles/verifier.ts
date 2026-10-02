@@ -2,6 +2,7 @@ import type { Collaborateur } from '../../domaine/collaborateur'
 import { dureeMaximaleHebdomadaire, dureeMaximaleQuotidienne, dureeMoyenneSur12Semaines } from './regles/durees'
 import { contingentHeuresSupplementaires } from './regles/heures-supplementaires'
 import { formationEnCentre } from './regles/formation'
+import { absenceEnCours, datesDeContrat, reposFixe } from './regles/presence'
 import { jeuneTravailleur } from './regles/jeunes'
 import { travailDeNuit } from './regles/nuit'
 import { pauseObligatoire } from './regles/pause'
@@ -33,6 +34,9 @@ export const REGLES_IMPLEMENTEES: readonly Regle[] = [
   travailDeNuit,
   jeuneTravailleur,
   formationEnCentre,
+  reposFixe,
+  absenceEnCours,
+  datesDeContrat,
 ]
 
 /** Construit un contexte complet a partir du minimum indispensable. */
@@ -48,6 +52,7 @@ export function contexteDeVerification(
     vacationsAnterieures: complements.vacationsAnterieures ?? [],
     datePublication: complements.datePublication ?? null,
     heuresSupplementairesAnnuelles: complements.heuresSupplementairesAnnuelles ?? {},
+    absences: complements.absences ?? [],
   }
 }
 

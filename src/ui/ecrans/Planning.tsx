@@ -77,9 +77,18 @@ export function Planning() {
           vacationsAnterieures: historique(semaine),
           datePublication: datePublication(planningCourant),
           heuresSupplementairesAnnuelles: etat.heuresSupplementairesAnnuelles,
+          absences: absencesEffectives(etat),
         }),
       ),
-    [planningCourant, etat.collaborateurs, etat.reglesParametres, etat.heuresSupplementairesAnnuelles, historique, semaine],
+    [
+      planningCourant,
+      etat,
+      etat.collaborateurs,
+      etat.reglesParametres,
+      etat.heuresSupplementairesAnnuelles,
+      historique,
+      semaine,
+    ],
   )
 
   const infractionsParPersonne = useMemo(() => {

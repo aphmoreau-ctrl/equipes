@@ -1,6 +1,12 @@
 import { estAbsent, type Absence } from '../../domaine/absence'
 import { jourDeLaSemaine, jourEnTexte, semaineDe } from '../../domaine/calendrier'
-import { estAutonome, estDisponible, peutTravaillerDans, type Collaborateur } from '../../domaine/collaborateur'
+import {
+  enFormation,
+  estAutonome,
+  estDisponible,
+  peutTravaillerDans,
+  type Collaborateur,
+} from '../../domaine/collaborateur'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
 import { TRANCHES_PAR_JOUR, duree, enMinutes } from '../../domaine/temps'
 import type { BesoinJour } from '../besoin'
@@ -102,6 +108,13 @@ function affectationPermise(
   if (!peutTravaillerDans(collaborateur, vacation.rayonId)) return false
   if (estAbsent(entrees.absences, collaborateur.id, vacation.jour)) return false
   if (!estDisponible(collaborateur, jourDeLaSemaine(vacation.jour))) return false
+
+  // Hors des dates du contrat : la personne n'est pas (ou plus) dans l'effectif.
+  if (vacation.jour < collaborateur.dateEntree) return false
+  if (collaborateur.finContrat !== null && vacation.jour > collaborateur.finContrat) return false
+
+  // En formation au CFA : ce temps est deja du temps de travail (L6222-24).
+  if (enFormation(collaborateur, vacation.jour) !== undefined) return false
 
   // Plage de disponibilite restreinte : la vacation doit tenir dedans.
   const disponibilite = collaborateur.disponibilites.find(

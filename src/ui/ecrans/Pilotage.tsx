@@ -39,9 +39,17 @@ export function Pilotage() {
         contexteDeVerification(planningCourant.vacations, etat.reglesParametres, {
           collaborateurs: etat.collaborateurs,
           vacationsAnterieures: historique(semaine),
+          absences: absencesEffectives(etat),
         }),
       ),
-    [planningCourant.vacations, etat.reglesParametres, etat.collaborateurs, historique, semaine],
+    [
+      planningCourant.vacations,
+      etat,
+      etat.reglesParametres,
+      etat.collaborateurs,
+      historique,
+      semaine,
+    ],
   )
 
   const tableau = useMemo(

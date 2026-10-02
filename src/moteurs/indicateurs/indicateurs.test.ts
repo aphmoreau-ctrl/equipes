@@ -232,3 +232,57 @@ describe('explication des trous', () => {
     expect(plages[0]?.manqueMaximal).toBe(2)
   })
 })
+
+describe('binôme : un niveau 1 ne tient pas seul', () => {
+  function avecNiveau(id: string, niveau: 0 | 1 | 2 | 3) {
+    return { ...personne({ id }), competences: { 'mise en place': niveau } }
+  }
+
+  it('accepte une personne autonome, seule', () => {
+    const couverture = calculerCouverture(
+      besoinDemo(),
+      [vacation({ collaborateurId: 'a', debut: '06:00', fin: '08:00' })],
+      [avecNiveau('a', 2)],
+    )
+    expect(couverture.tranches[24]?.competencesManquantes).toEqual([])
+    expect(couverture.tranches[24]?.binomesIncomplets).toEqual([])
+  })
+
+  it('refuse une personne en formation laissée seule', () => {
+    const couverture = calculerCouverture(
+      besoinDemo(),
+      [vacation({ collaborateurId: 'a', debut: '06:00', fin: '08:00' })],
+      [avecNiveau('a', 1)],
+    )
+    expect(couverture.tranches[24]?.competencesManquantes).toContain('mise en place')
+    expect(couverture.tranches[24]?.binomesIncomplets).toContain('mise en place')
+  })
+
+  it('accepte la personne en formation accompagnée d’un formateur', () => {
+    const couverture = calculerCouverture(
+      besoinDemo(),
+      [
+        vacation({ id: 'v1', collaborateurId: 'a', debut: '06:00', fin: '08:00' }),
+        vacation({ id: 'v2', collaborateurId: 'b', debut: '06:00', fin: '08:00' }),
+      ],
+      [avecNiveau('a', 1), avecNiveau('b', 3)],
+    )
+    expect(couverture.tranches[24]?.competencesManquantes).toEqual([])
+    expect(couverture.tranches[24]?.binomesIncomplets).toEqual([])
+  })
+
+  it('ne suffit pas avec un accompagnant de niveau 2', () => {
+    const couverture = calculerCouverture(
+      besoinDemo(),
+      [
+        vacation({ id: 'v1', collaborateurId: 'a', debut: '06:00', fin: '08:00' }),
+        vacation({ id: 'v2', collaborateurId: 'b', debut: '06:00', fin: '08:00' }),
+      ],
+      [avecNiveau('a', 1), avecNiveau('b', 2)],
+    )
+    // Le niveau 2 tient la tache lui-meme : rien ne manque, et aucun binome
+    // n'est a signaler puisque quelqu'un a le niveau exige.
+    expect(couverture.tranches[24]?.competencesManquantes).toEqual([])
+    expect(couverture.tranches[24]?.binomesIncomplets).toEqual([])
+  })
+})

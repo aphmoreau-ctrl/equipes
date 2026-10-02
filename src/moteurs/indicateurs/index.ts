@@ -24,6 +24,11 @@ export interface CouvertureTranche {
   readonly competencesManquantes: readonly string[]
   /** Competences manquantes SANS LESQUELLES le poste ne peut pas etre tenu. */
   readonly competencesCritiquesManquantes: readonly string[]
+  /**
+   * Competences tenues uniquement par quelqu'un en formation, sans personne
+   * de niveau 3 pour l'accompagner : le binome prevu n'est pas complet.
+   */
+  readonly binomesIncomplets: readonly string[]
 }
 
 export interface CouvertureJour {
@@ -52,6 +57,26 @@ export interface CouvertureJour {
  * Une pause dont l'heure n'est pas renseignee est deduite du temps de travail,
  * mais ne creuse pas la couverture : on ne sait pas quand elle tombe.
  */
+/**
+ * Cette competence est-elle tenue sur la tranche ?
+ *
+ * Oui si quelqu'un a le niveau exige. Oui AUSSI si quelqu'un de niveau 1
+ * (« en formation ») est present avec une personne de niveau 3 (« sait
+ * former ») : c'est le binome prevu au cahier des charges. Dans tous les
+ * autres cas, non.
+ */
+export function competenceTenue(
+  presents: readonly Collaborateur[],
+  competence: string,
+  niveauMinimum: number,
+): boolean {
+  if (presents.some((c) => (c.competences[competence] ?? 0) >= niveauMinimum)) return true
+
+  const enFormation = presents.some((c) => (c.competences[competence] ?? 0) === 1)
+  const formateur = presents.some((c) => (c.competences[competence] ?? 0) >= 3)
+  return enFormation && formateur
+}
+
 export function couvreLaTranche(vacation: Vacation, index: number): boolean {
   const debut = enMinutes(vacation.debut)
   const fin = debut + duree(vacation.debut, vacation.fin)
@@ -100,13 +125,28 @@ export function calculerCouverture(
     const presents = presentes.length
 
     const requises = trancheBesoin?.competences ?? []
+    const niveaux = trancheBesoin?.niveauxMinimum ?? {}
+    const presentsSurLaTranche = presentes
+      .map((vacation) => collaborateurs.find((c) => c.id === vacation.collaborateurId))
+      .filter((collaborateur): collaborateur is Collaborateur => collaborateur !== undefined)
+
     const manquantes = requises.filter(
-      (competence) =>
-        !presentes.some((vacation) => {
-          const collaborateur = collaborateurs.find((c) => c.id === vacation.collaborateurId)
-          return collaborateur !== undefined && estAutonome(collaborateur, competence)
-        }),
+      (competence) => !competenceTenue(presentsSurLaTranche, competence, niveaux[competence] ?? 2),
     )
+
+    /*
+     * Binome : quelqu'un en formation (niveau 1) tient la tache SI une
+     * personne de niveau 3 est presente sur la meme tranche pour la meme
+     * competence. Sans cet accompagnant, le binome est incomplet.
+     */
+    const binomesIncomplets = requises.filter((competence) => {
+      const exige = niveaux[competence] ?? 2
+      if (exige < 2) return false
+      const seulementEnFormation =
+        !presentsSurLaTranche.some((c) => (c.competences[competence] ?? 0) >= exige) &&
+        presentsSurLaTranche.some((c) => (c.competences[competence] ?? 0) === 1)
+      return seulementEnFormation && !presentsSurLaTranche.some((c) => (c.competences[competence] ?? 0) >= 3)
+    })
 
     besoinCumule += attendu
     couvertCumule += Math.min(presents, attendu)
@@ -127,6 +167,7 @@ export function calculerCouverture(
       competencesCritiquesManquantes: manquantes.filter((competence) =>
         critiques.includes(competence),
       ),
+      binomesIncomplets,
     })
   }
 

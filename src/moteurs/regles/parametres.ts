@@ -89,5 +89,8 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
     'travail-de-nuit': 'avertissement',
     'jeune-travailleur': 'bloquante',
     'formation-en-centre': 'bloquante',
+    'repos-fixe': 'bloquante',
+    'absence-en-cours': 'bloquante',
+    'dates-de-contrat': 'bloquante',
   },
 }

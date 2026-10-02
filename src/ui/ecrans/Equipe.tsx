@@ -1,7 +1,14 @@
 import { useState } from 'react'
-import { JOURS_SEMAINE, dateEnTexte, nomDuJour } from '../../domaine/calendrier'
+import {
+  JOURS_SEMAINE,
+  ajouterJours,
+  aujourdhui,
+  dateEnTexte,
+  nomDuJour,
+} from '../../domaine/calendrier'
 import {
   LIBELLES_CONTRAT,
+  LIBELLES_TRANCHE_AGE,
   LIBELLES_NIVEAU,
   LIBELLES_STATUT,
   capaciteHebdomadaire,
@@ -9,6 +16,8 @@ import {
   nomAffiche,
   type Collaborateur,
   type NiveauCompetence,
+  type PeriodeFormation,
+  type TrancheAge,
 } from '../../domaine/collaborateur'
 import { rayonParId, rayonsActifs } from '../../domaine/magasin'
 import { competencesDuRayon, type Competence } from '../../domaine/competence'
@@ -99,7 +108,8 @@ export function Equipe() {
             fermetures: 0,
             feriesTravailles: 0,
           },
-          estMineur: false,
+          periodesFormation: [],
+          trancheAge: 'majeur',
           contactAutorise: false,
           actif: true,
         },
@@ -314,6 +324,32 @@ export function Equipe() {
               />
             </div>
 
+            <p className="champ__libelle" id={`age-${collaborateur.id}`}>
+              Tranche d’âge
+            </p>
+            <div className="groupe-boutons" role="group" aria-labelledby={`age-${collaborateur.id}`}>
+              {(Object.keys(LIBELLES_TRANCHE_AGE) as TrancheAge[]).map((tranche) => (
+                <button
+                  key={tranche}
+                  type="button"
+                  className={
+                    collaborateur.trancheAge === tranche ? 'bouton bouton--principal' : 'bouton'
+                  }
+                  aria-pressed={collaborateur.trancheAge === tranche}
+                  onClick={() => modifierCollaborateur(collaborateur.id, { trancheAge: tranche })}
+                >
+                  {LIBELLES_TRANCHE_AGE[tranche]}
+                </button>
+              ))}
+            </div>
+            <p className="champ__aide">
+              Seule la tranche est enregistrée, jamais la date de naissance. Elle déclenche les
+              protections légales : repos de 12 h, 8 h par jour, et l’arrêt du travail à 22 h —
+              à 20 h avant 16 ans. Pensez à la mettre à jour à l’anniversaire.
+            </p>
+
+            <PeriodesDeFormation collaborateur={collaborateur} onChanger={modifierCollaborateur} />
+
             <p className="champ__libelle">Disponibilités déclarées</p>
             <div className="groupe-boutons">
               {JOURS_SEMAINE.map((jour) => {
@@ -460,6 +496,91 @@ function competencesDeLaFiche(
     for (const competence of competencesDuRayon(catalogue, rayon)) retenues.add(competence.nom)
   }
   return [...retenues].sort((a, b) => a.localeCompare(b, 'fr'))
+}
+
+/**
+ * Periodes de formation en centre, pour les apprentis.
+ *
+ * Le temps de formation est du temps de travail : l'application refuse de
+ * poser une vacation pendant ces periodes.
+ */
+function PeriodesDeFormation({
+  collaborateur,
+  onChanger,
+}: {
+  readonly collaborateur: Collaborateur
+  readonly onChanger: (identifiant: string, changement: Partial<Collaborateur>) => void
+}) {
+  const periodes = collaborateur.periodesFormation
+
+  function ajouter(): void {
+    const debut = aujourdhui()
+    onChanger(collaborateur.id, {
+      periodesFormation: [
+        ...periodes,
+        { id: `f-${Date.now()}`, debut, fin: ajouterJours(debut, 4), intitule: 'CFA' },
+      ],
+    })
+  }
+
+  function changer(identifiant: string, changement: Partial<PeriodeFormation>): void {
+    onChanger(collaborateur.id, {
+      periodesFormation: periodes.map((periode) =>
+        periode.id === identifiant ? { ...periode, ...changement } : periode,
+      ),
+    })
+  }
+
+  function retirer(identifiant: string): void {
+    onChanger(collaborateur.id, {
+      periodesFormation: periodes.filter((periode) => periode.id !== identifiant),
+    })
+  }
+
+  return (
+    <>
+      <p className="champ__libelle">Formation en centre (CFA)</p>
+      {periodes.length === 0 ? (
+        <p className="champ__aide">
+          Aucune période enregistrée. Pour un apprenti, ajoutez ses semaines de cours : le
+          planning ne pourra plus lui donner de vacation pendant ces jours-là.
+        </p>
+      ) : (
+        <ul className="liste-simple">
+          {periodes.map((periode) => (
+            <li key={periode.id} className="champs">
+              <ChampTexte
+                libelle="Intitulé"
+                valeur={periode.intitule}
+                etroit
+                onChange={(intitule) => changer(periode.id, { intitule })}
+              />
+              <ChampDate
+                libelle="Du"
+                valeur={periode.debut}
+                onChange={(debut) => changer(periode.id, { debut: debut ?? periode.debut })}
+              />
+              <ChampDate
+                libelle="Au"
+                valeur={periode.fin}
+                onChange={(fin) => changer(periode.id, { fin: fin ?? periode.fin })}
+              />
+              <button
+                type="button"
+                className="bouton bouton--discret"
+                onClick={() => retirer(periode.id)}
+              >
+                Retirer
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button type="button" className="bouton" onClick={ajouter}>
+        Ajouter une période de formation
+      </button>
+    </>
+  )
 }
 
 function ChampDate({

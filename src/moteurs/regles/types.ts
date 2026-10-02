@@ -37,6 +37,7 @@ export type IdentifiantRegle =
   | 'contingent-heures-supplementaires'
   | 'travail-de-nuit'
   | 'jeune-travailleur'
+  | 'formation-en-centre'
 
 /** Une periode de travail d'une personne, un jour donne. */
 export interface Vacation {
@@ -130,10 +131,14 @@ export interface ParametresRegles {
   readonly nuitFin: string
   /** Heures de nuit par an au-dela desquelles on devient travailleur de nuit. */
   readonly seuilTravailleurDeNuitHeuresAnnuelles: number
-  /** Heure a partir de laquelle un mineur ne peut plus travailler. */
+  /** 16-17 ans : heure a partir de laquelle le travail est interdit. */
   readonly jeuneNuitDebut: string
-  /** Heure avant laquelle un mineur ne peut pas travailler. */
+  /** 16-17 ans : heure avant laquelle le travail est interdit. */
   readonly jeuneNuitFin: string
+  /** Moins de 16 ans : heure a partir de laquelle le travail est interdit. */
+  readonly moinsDe16NuitDebut: string
+  /** Moins de 16 ans : heure avant laquelle le travail est interdit. */
+  readonly moinsDe16NuitFin: string
   readonly majorations: ParametresMajorations
   /** Severite choisie pour chaque regle : bloquante ou avertissement. */
   readonly severites: Readonly<Record<IdentifiantRegle, Severite>>

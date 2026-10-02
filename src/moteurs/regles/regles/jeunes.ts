@@ -1,6 +1,7 @@
 import { dureeEnTexte } from '../../../domaine/temps'
 import { minutesInterditesAuxJeunes } from '../reperes'
 import type { Infraction, Regle } from '../types'
+import { estMineur } from '../../../domaine/collaborateur'
 import { jourEnTexte } from '../../../domaine/calendrier'
 
 /**
@@ -18,9 +19,17 @@ export const jeuneTravailleur: Regle = {
 
     for (const vacation of vacations) {
       const collaborateur = collaborateurs.find((c) => c.id === vacation.collaborateurId)
-      if (collaborateur?.estMineur !== true) continue
+      if (collaborateur === undefined || !estMineur(collaborateur)) continue
 
-      const minutes = minutesInterditesAuxJeunes(vacation, parametres)
+      /*
+       * La loi distingue deux tranches : avant 16 ans, le travail s'arrete a
+       * 20 h ; de 16 a 17 ans, a 22 h. Reprise a 6 h dans les deux cas.
+       */
+      const avant16 = collaborateur.trancheAge === 'moins-de-16'
+      const debut = avant16 ? parametres.moinsDe16NuitDebut : parametres.jeuneNuitDebut
+      const fin = avant16 ? parametres.moinsDe16NuitFin : parametres.jeuneNuitFin
+
+      const minutes = minutesInterditesAuxJeunes(vacation, parametres, collaborateur.trancheAge)
       if (minutes <= 0) continue
 
       infractions.push({
@@ -31,8 +40,8 @@ export const jeuneTravailleur: Regle = {
         libelle: `Travail de nuit interdit : ${dureeEnTexte(minutes)}`,
         explication:
           `La vacation de ${vacation.debut} à ${vacation.fin} le ${jourEnTexte(vacation.jour)} comporte ` +
-          `${dureeEnTexte(minutes)} entre ${parametres.jeuneNuitDebut} et ` +
-          `${parametres.jeuneNuitFin}, interdites aux salariés de moins de 18 ans.`,
+          `${dureeEnTexte(minutes)} entre ${debut} et ${fin}, interdites aux salariés de ` +
+          (avant16 ? 'moins de 16 ans.' : '16 ou 17 ans.'),
       })
     }
 

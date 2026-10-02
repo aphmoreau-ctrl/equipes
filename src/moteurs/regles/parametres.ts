@@ -54,14 +54,17 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
   plafondHeuresComplementairesPourcent: 10,
   // Duree minimale d'un temps partiel : 24 h par semaine.
   dureeMinimaleTempsPartielMinutes: 24 * 60,
-  // Nuit au sens de la convention 2216 : de 21 h a 5 h.
+  // Nuit au sens de la loi : de 21 h a 6 h (L3122-2).
   nuitDebut: '21:00',
-  nuitFin: '05:00',
+  nuitFin: '06:00',
   // Au-dela de 270 h de nuit par an, on devient travailleur de nuit.
   seuilTravailleurDeNuitHeuresAnnuelles: 270,
-  // Un mineur ne travaille ni apres 22 h, ni avant 6 h.
+  // De 16 a 17 ans : ni apres 22 h, ni avant 6 h (L3163-1).
   jeuneNuitDebut: '22:00',
   jeuneNuitFin: '06:00',
+  // Avant 16 ans, la nuit commence deux heures plus tot : 20 h (L3163-1).
+  moinsDe16NuitDebut: '20:00',
+  moinsDe16NuitFin: '06:00',
   majorations: {
     dimancheHabituelPourcent: 20,
     dimancheExceptionnelPourcent: 100,
@@ -85,5 +88,6 @@ export const PARAMETRES_PAR_DEFAUT: ParametresRegles = {
     'contingent-heures-supplementaires': 'avertissement',
     'travail-de-nuit': 'avertissement',
     'jeune-travailleur': 'bloquante',
+    'formation-en-centre': 'bloquante',
   },
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { dureeEnTexte } from '../../domaine/temps'
-import { PARAMETRES_PAR_DEFAUT, REGLES_IMPLEMENTEES } from '../../moteurs/regles'
 import { useDonnees } from '../DonneesProvider'
 import { ReglagePastille } from '../composants/PastilleIcone'
+import { SectionRegles } from './parametres/SectionRegles'
+import { SectionCompetences } from './parametres/SectionCompetences'
+import { SectionTaches } from './parametres/SectionTaches'
 import { useNombreUrgences } from '../Navigation'
 import { MODULES } from '../modules'
 import {
@@ -59,7 +60,6 @@ export function Parametres({
   const [confirmationCode, setConfirmationCode] = useState(false)
   const [confirmationDonnees, setConfirmationDonnees] = useState(false)
   const [erreurFaceId, setErreurFaceId] = useState('')
-  const p = PARAMETRES_PAR_DEFAUT
 
   async function activerFaceId(): Promise<void> {
     setErreurFaceId('')
@@ -96,54 +96,14 @@ export function Parametres({
       <SectionEvenements />
       <SectionBudgets />
 
+      <SectionCompetences />
+      <SectionTaches />
+
       {etat.configurations.map((configuration) => (
         <SectionModeleRayon key={configuration.rayonId} rayonId={configuration.rayonId} />
       ))}
 
-      <section className="carte">
-        <h2>Règles légales et conventionnelles</h2>
-        <p>
-          Valeurs de départ ({REGLES_IMPLEMENTEES.length} règle
-          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} déjà contrôlée
-          {REGLES_IMPLEMENTEES.length > 1 ? 's' : ''} automatiquement).
-        </p>
-        <dl className="liste-faits">
-          <dt>Durée maximale par jour</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneMinutes)}</dd>
-
-          <dt>Dérogation exceptionnelle</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleQuotidienneDerogationMinutes)}</dd>
-
-          <dt>Durée maximale par semaine</dt>
-          <dd>{dureeEnTexte(p.dureeMaximaleHebdomadaireMinutes)}</dd>
-
-          <dt>Moyenne sur 12 semaines</dt>
-          <dd>{dureeEnTexte(p.dureeMoyenneMaximaleSur12SemainesMinutes)}</dd>
-
-          <dt>Repos quotidien</dt>
-          <dd>{dureeEnTexte(p.reposQuotidienMinutes)}</dd>
-
-          <dt>Repos hebdomadaire</dt>
-          <dd>{dureeEnTexte(p.reposHebdomadaireMinutes)}</dd>
-
-          <dt>Pause obligatoire</dt>
-          <dd>
-            {dureeEnTexte(p.dureeMinimaleDeLaPauseMinutes)} dès{' '}
-            {dureeEnTexte(p.seuilDeclenchantLaPauseMinutes)} de travail
-          </dd>
-
-          <dt>Délai de prévenance</dt>
-          <dd>{p.delaiDePrevenanceJoursOuvres} jours ouvrés</dd>
-
-          <dt>Contingent d’heures supplémentaires</dt>
-          <dd>{p.contingentHeuresSupplementairesAnnuel} h par an</dd>
-        </dl>
-        <p className="avis avis--attention">
-          Ce sont des <strong>valeurs de départ</strong>, à vérifier et ajuster selon votre contrat
-          et les accords du magasin. Elles deviendront modifiables ici même au lot 5, en même temps
-          que le contrôle du planning.
-        </p>
-      </section>
+      <SectionRegles />
 
       <section className="carte">
         <h2>Pastille sur l’icône</h2>

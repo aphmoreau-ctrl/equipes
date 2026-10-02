@@ -1,6 +1,7 @@
 import { jourDeLaSemaine, lundiDeLaSemaine } from '../../domaine/calendrier'
 import { MINUTES_PAR_JOUR, chevauchement, duree, enMinutes, type Minutes } from '../../domaine/temps'
 import type { ParametresRegles, Vacation } from './types'
+import { estMineur, type Collaborateur, type TrancheAge } from '../../domaine/collaborateur'
 
 /**
  * Reperes de temps communs a toutes les regles : instants absolus, semaines,
@@ -103,8 +104,31 @@ export function minutesDeNuit(
 export function minutesInterditesAuxJeunes(
   vacation: Vacation,
   parametres: ParametresRegles,
+  trancheAge: TrancheAge = '16-17',
 ): Minutes {
-  return minutesDeNuit(vacation, parametres.jeuneNuitDebut, parametres.jeuneNuitFin)
+  // Avant 16 ans le travail s'arrete deux heures plus tot.
+  return trancheAge === 'moins-de-16'
+    ? minutesDeNuit(vacation, parametres.moinsDe16NuitDebut, parametres.moinsDe16NuitFin)
+    : minutesDeNuit(vacation, parametres.jeuneNuitDebut, parametres.jeuneNuitFin)
+}
+
+/** Moins de 18 ans ? Une seule facon de le demander, pour toutes les regles. */
+export function estMineurParmi(
+  collaborateurs: readonly Collaborateur[],
+  collaborateurId: string,
+): boolean {
+  const collaborateur = collaborateurs.find((c) => c.id === collaborateurId)
+  return collaborateur !== undefined && estMineur(collaborateur)
+}
+
+/** Moins de 16 ans : protection de nuit renforcee (pas de travail apres 20 h). */
+export function estDeMoinsDe16Ans(
+  collaborateurs: readonly Collaborateur[],
+  collaborateurId: string,
+): boolean {
+  return (
+    collaborateurs.find((c) => c.id === collaborateurId)?.trancheAge === 'moins-de-16'
+  )
 }
 
 /** Vrai si la vacation tombe un samedi. */

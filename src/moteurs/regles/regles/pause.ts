@@ -1,3 +1,4 @@
+import { estMineurParmi } from '../reperes'
 import { dureeEnTexte } from '../../../domaine/temps'
 import { dureeTravailEffectif, grouperParJournee } from '../regroupement'
 import type { Infraction, Regle } from '../types'
@@ -26,7 +27,7 @@ export const pauseObligatoire: Regle = {
 
     for (const journee of grouperParJournee(vacations)) {
       const mineur =
-        collaborateurs.find((c) => c.id === journee.collaborateurId)?.estMineur === true
+        estMineurParmi(collaborateurs, journee.collaborateurId)
       const seuil = mineur
         ? parametres.seuilDeclenchantLaPauseJeuneMinutes
         : parametres.seuilDeclenchantLaPauseMinutes

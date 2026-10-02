@@ -110,7 +110,8 @@ export function presenceDeRenfort(renfort: Renfort): Collaborateur {
     competences: renfort.competences,
     habilitations: [],
     compteursEquite: { samedisTravailles: 0, dimanchesTravailles: 0, fermetures: 0, feriesTravailles: 0 },
-    estMineur: false,
+    periodesFormation: [],
+    trancheAge: 'majeur',
     contactAutorise: renfort.contactAutorise,
     actif: true,
   }

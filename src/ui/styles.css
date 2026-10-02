@@ -1751,3 +1751,34 @@ select.champ__saisie {
   font-size: 14px;
   overflow-wrap: anywhere;
 }
+
+/* --------------------------------------------- Reglages : grilles de champs
+ * Les champs de reglage se rangent en colonnes sur iPad et sur Mac, et en une
+ * seule colonne sur iPhone. Chacun garde une cible tactile confortable.
+ */
+.grille-champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 8px;
+}
+
+.grille-champs .champ--etroit {
+  max-width: none;
+}
+
+/* Mention « a verifier » : une valeur de convention, pas de loi. */
+.etiquette {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.etiquette--verifier {
+  background: color-mix(in srgb, var(--avertissement) 14%, transparent);
+  color: var(--avertissement);
+}

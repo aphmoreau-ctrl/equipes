@@ -194,8 +194,12 @@ describe('navigation, une fois l application ouverte', () => {
   it('montre les neuf rayons de demonstration dans les parametres', async () => {
     fireEvent.click(screen.getByRole('link', { name: /Paramètres/ }))
     await screen.findByRole('heading', { level: 1, name: 'Paramètres' })
-    expect(screen.getByText('Fruits et légumes')).toBeInTheDocument()
-    expect(screen.getByText('Boulangerie')).toBeInTheDocument()
+    // Le nom d'un rayon apparait a plusieurs endroits des reglages : dans la
+    // liste des rayons, dans les competences, dans le catalogue des taches.
+    expect(screen.getAllByText('Fruits et légumes').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Boulangerie').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Catalogue des tâches' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Compétences' })).toBeInTheDocument()
   })
 
   it('redemande un code apres une demande de changement', async () => {

@@ -1,6 +1,6 @@
 import { ajouterJours, jourEnTexte, lundiDeLaSemaine } from '../../../domaine/calendrier'
 import { dureeEnTexte } from '../../../domaine/temps'
-import { collaborateursConcernes, debutDe, finDe, instant, vacationsDe } from '../reperes'
+import { collaborateursConcernes, debutDe, estMineurParmi, finDe, instant, vacationsDe } from '../reperes'
 import type { Infraction, Regle, Vacation } from '../types'
 
 /** Repos quotidien : heures consecutives entre la fin d'une journee et le debut de la suivante. */
@@ -13,7 +13,7 @@ export const reposQuotidien: Regle = {
     const infractions: Infraction[] = []
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
-      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const mineur = estMineurParmi(collaborateurs, collaborateurId)
       const minimum = mineur
         ? parametres.reposQuotidienJeuneMinutes
         : parametres.reposQuotidienMinutes
@@ -72,7 +72,7 @@ export const reposHebdomadaire: Regle = {
     const toutes = [...vacationsAnterieures, ...vacations]
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
-      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const mineur = estMineurParmi(collaborateurs, collaborateurId)
       const minimum = mineur
         ? parametres.reposHebdomadaireJeuneMinutes
         : parametres.reposHebdomadaireMinutes
@@ -176,7 +176,7 @@ export const joursMaximumParSemaine: Regle = {
     const infractions: Infraction[] = []
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
-      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const mineur = estMineurParmi(collaborateurs, collaborateurId)
       const maximum = mineur
         ? parametres.joursMaximumParSemaineJeune
         : parametres.joursMaximumParSemaine

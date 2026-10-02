@@ -20,7 +20,8 @@ function personne(id: string, competences: Record<string, 0 | 1 | 2 | 3>): Colla
     finPeriodeEssai: null, finContrat: null, disponibilites: [], competences,
     habilitations: [],
     compteursEquite: { samedisTravailles: 0, dimanchesTravailles: 0, fermetures: 0, feriesTravailles: 0 },
-    estMineur: false, contactAutorise: false, actif: true,
+    periodesFormation: [],
+    trancheAge: 'majeur', contactAutorise: false, actif: true,
   }
 }
 

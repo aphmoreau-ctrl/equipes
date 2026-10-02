@@ -4,7 +4,9 @@ import type {
   Disponibilite,
   Habilitation,
   NiveauCompetence,
+  PeriodeFormation,
   StatutCollaborateur,
+  TrancheAge,
   TypeContrat,
 } from '../domaine/collaborateur'
 
@@ -56,7 +58,8 @@ interface Raccourci {
   readonly competences: Readonly<Record<string, NiveauCompetence>>
   readonly habilitations?: readonly Habilitation[]
   readonly equite?: Partial<Collaborateur['compteursEquite']>
-  readonly estMineur?: boolean
+  readonly periodesFormation?: readonly PeriodeFormation[]
+  readonly trancheAge?: TrancheAge
   readonly contactAutorise?: boolean
 }
 
@@ -88,7 +91,8 @@ function collaborateur(raccourci: Raccourci): Collaborateur {
       feriesTravailles: 0,
       ...raccourci.equite,
     },
-    estMineur: raccourci.estMineur ?? false,
+    periodesFormation: raccourci.periodesFormation ?? [],
+    trancheAge: raccourci.trancheAge ?? 'majeur',
     contactAutorise: raccourci.contactAutorise ?? false,
     actif: true,
   }
@@ -166,7 +170,13 @@ export const COLLABORATEURS_DEMO: readonly Collaborateur[] = [
   collaborateur({
     id: 'c-09', prenom: 'Noé', initiale: 'F.', rayonPrincipal: 'boucherie',
     poste: 'Apprenti boucher', contrat: 'apprenti', heures: 35, dateEntree: '2025-09-01',
-    estMineur: true,
+    trancheAge: '16-17',
+    // Une semaine de cours par mois : le magasin ne peut pas le planifier.
+    periodesFormation: [
+      { id: 'f-01', debut: '2026-10-05', fin: '2026-10-09', intitule: 'CFA' },
+      { id: 'f-02', debut: '2026-11-02', fin: '2026-11-06', intitule: 'CFA' },
+      { id: 'f-03', debut: '2026-12-07', fin: '2026-12-11', intitule: 'CFA' },
+    ],
     competences: { 'boucherie': 1, 'hygiène': 1 },
     equite: { samedisTravailles: 15, dimanchesTravailles: 3 },
   }),
@@ -305,6 +315,10 @@ export const COLLABORATEURS_DEMO: readonly Collaborateur[] = [
     id: 'c-25', prenom: 'Tom', initiale: 'B.', rayonPrincipal: 'drive',
     poste: 'Préparateur drive', contrat: 'apprenti', heures: 28,
     dateEntree: '2026-09-01', finContrat: '2028-08-31',
+    periodesFormation: [
+      { id: 'f-04', debut: '2026-09-28', fin: '2026-10-02', intitule: 'CFA' },
+      { id: 'f-05', debut: '2026-11-16', fin: '2026-11-20', intitule: 'CFA' },
+    ],
     competences: { 'préparation drive': 1, 'remise drive': 1, 'nettoyage': 2 },
     equite: { samedisTravailles: 2, dimanchesTravailles: 0 },
   }),

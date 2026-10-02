@@ -1,6 +1,7 @@
 import type { Collaborateur } from '../../domaine/collaborateur'
 import { dureeMaximaleHebdomadaire, dureeMaximaleQuotidienne, dureeMoyenneSur12Semaines } from './regles/durees'
 import { contingentHeuresSupplementaires } from './regles/heures-supplementaires'
+import { formationEnCentre } from './regles/formation'
 import { jeuneTravailleur } from './regles/jeunes'
 import { travailDeNuit } from './regles/nuit'
 import { pauseObligatoire } from './regles/pause'
@@ -31,6 +32,7 @@ export const REGLES_IMPLEMENTEES: readonly Regle[] = [
   contingentHeuresSupplementaires,
   travailDeNuit,
   jeuneTravailleur,
+  formationEnCentre,
 ]
 
 /** Construit un contexte complet a partir du minimum indispensable. */

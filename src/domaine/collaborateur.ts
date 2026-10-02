@@ -13,6 +13,18 @@ export type StatutCollaborateur = 'employe' | 'agent-maitrise' | 'cadre'
 
 export type TypeContrat = 'cdi' | 'cdd' | 'interim' | 'apprenti' | 'etudiant'
 
+/**
+ * Tranche d'age, pour les seules protections legales qui en dependent.
+ * Jamais de date de naissance : la tranche suffit.
+ */
+export type TrancheAge = 'majeur' | '16-17' | 'moins-de-16'
+
+export const LIBELLES_TRANCHE_AGE: Readonly<Record<TrancheAge, string>> = {
+  majeur: '18 ans ou plus',
+  '16-17': '16 ou 17 ans',
+  'moins-de-16': 'Moins de 16 ans',
+}
+
 /** Grille de polyvalence : 0 ne sait pas faire, 3 sait former les autres. */
 export type NiveauCompetence = 0 | 1 | 2 | 3
 
@@ -43,6 +55,18 @@ export interface Disponibilite {
   readonly disponible: boolean
   /** Plage restreinte (« matins uniquement »), ou null si toute la journee. */
   readonly plage: { readonly debut: string; readonly fin: string } | null
+}
+
+/**
+ * Une periode de formation en centre, du premier au dernier jour inclus.
+ * Aucun motif, aucun detail : des dates, et c'est tout.
+ */
+export interface PeriodeFormation {
+  readonly id: string
+  readonly debut: string
+  readonly fin: string
+  /** Libelle libre et factuel : « CFA », « semaine de cours ». */
+  readonly intitule: string
 }
 
 /** Habilitation obligatoire : hygiene, transpalette, decoupe... */
@@ -91,17 +115,43 @@ export interface Collaborateur {
   readonly compteursEquite: CompteursEquite
 
   /**
-   * Moins de 18 ans : declenche les regles protectrices des jeunes
-   * travailleurs (repos de 12 h, pas de travail de nuit, 8 h par jour).
+   * Tranche d'age, et rien de plus.
    *
-   * On enregistre un simple oui/non, jamais la date de naissance : c'est la
-   * donnee minimale suffisante pour appliquer la loi (RGPD, §3).
+   * La loi protege differemment les moins de 16 ans (pas de travail apres
+   * 20 h) et les 16-17 ans (pas de travail apres 22 h) ; au-dela, ce sont les
+   * regles des adultes. On enregistre donc la TRANCHE, jamais la date de
+   * naissance : c'est la donnee minimale suffisante pour appliquer la loi
+   * (RGPD, §3). Elle se met a jour a l'anniversaire, a la main.
    */
-  readonly estMineur: boolean
+  readonly trancheAge: TrancheAge
+
+  /**
+   * Periodes de formation en centre (CFA), pour les apprentis.
+   *
+   * Le temps passe en formation est du TEMPS DE TRAVAIL (L6222-24) : il est
+   * remunere, il compte dans la duree du travail, et l'apprenti ne peut pas
+   * etre planifie en magasin pendant ces periodes.
+   */
+  readonly periodesFormation: readonly PeriodeFormation[]
 
   /** Contact pour les remplacements, seulement si la personne l'a accepte. */
   readonly contactAutorise: boolean
   readonly actif: boolean
+}
+
+/** La personne est-elle en formation en centre ce jour-la ? */
+export function enFormation(
+  collaborateur: { readonly periodesFormation: readonly PeriodeFormation[] },
+  date: string,
+): PeriodeFormation | undefined {
+  return collaborateur.periodesFormation.find(
+    (periode) => periode.debut <= date && date <= periode.fin,
+  )
+}
+
+/** Moins de 18 ans : declenche toutes les protections des jeunes travailleurs. */
+export function estMineur(collaborateur: { readonly trancheAge: TrancheAge }): boolean {
+  return collaborateur.trancheAge !== 'majeur'
 }
 
 /** « Camille D. » — la seule forme d'identite affichee dans l'application. */

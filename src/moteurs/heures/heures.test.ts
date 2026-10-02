@@ -21,7 +21,8 @@ function personne(modifications: Partial<Collaborateur> = {}): Collaborateur {
     finPeriodeEssai: null, finContrat: null, disponibilites: [], competences: {},
     habilitations: [],
     compteursEquite: { samedisTravailles: 0, dimanchesTravailles: 0, fermetures: 0, feriesTravailles: 0 },
-    estMineur: false, contactAutorise: false, actif: true,
+    periodesFormation: [],
+    trancheAge: 'majeur', contactAutorise: false, actif: true,
     ...modifications,
   }
 }
@@ -125,7 +126,20 @@ describe('éléments variables de paie', () => {
   it('compte les heures de nuit', () => {
     const nuit = [vacation('2026-11-02', '04:00', '11:20')]
     const elements = calculerLesElementsVariables('2026-11', nuit, [], [personne()], P)
-    // De 04:00 a 05:00 : une heure de nuit.
+    // La nuit legale va de 21 h a 6 h : de 04:00 a 06:00, deux heures.
+    expect(elements[0]?.heuresDeNuit).toBeCloseTo(2, 6)
+  })
+
+  it('suit le paramètre, et non une valeur écrite en dur', () => {
+    const nuit = [vacation('2026-11-02', '04:00', '11:20')]
+    const avecNuitPlusCourte = { ...P, nuitFin: '05:00' }
+    const elements = calculerLesElementsVariables(
+      '2026-11',
+      nuit,
+      [],
+      [personne()],
+      avecNuitPlusCourte,
+    )
     expect(elements[0]?.heuresDeNuit).toBeCloseTo(1, 6)
   })
 

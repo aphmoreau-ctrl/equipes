@@ -1149,3 +1149,66 @@ rendu la démonstration illisible. Tous fictifs, prénom + initiale.
 ### C-24 — « 1 personnes en même temps »
 Repéré en vérifiant la cave : la pointe de la journée s'écrivait toujours au
 pluriel. Corrigé.
+
+## Lot 1b — Réglages et règles (2 octobre 2026)
+
+### D-88 — La tranche d'âge remplace le simple « mineur »
+**Décision.** La fiche enregistre une **tranche d'âge** : 18 ans ou plus,
+16-17 ans, moins de 16 ans. Elle remplace l'ancien oui/non « mineur ».
+**Raison.** La loi distingue les deux tranches : avant 16 ans le travail
+s'arrête à 20 h, de 16 à 17 ans à 22 h. Un seul indicateur ne pouvait pas les
+séparer. **Toujours aucune date de naissance** : la tranche suffit à appliquer
+la loi, et c'est la donnée minimale (RGPD). **À savoir :** elle se met à jour à
+la main, à l'anniversaire — un rappel sera ajouté dans les alertes.
+
+### D-89 — La nuit légale va jusqu'à 6 h, pas 5 h
+**Décision.** La plage de nuit passe de 21 h – 5 h à **21 h – 6 h**, qui est la
+définition légale (L3122-2).
+**Conséquence à vérifier avec la paie.** Le **comptage** des heures de nuit
+change : une vacation de 4 h à 11 h 20 compte désormais 2 h de nuit au lieu
+d'une. Les **majorations**, elles, gardent leurs tranches de convention
+(21 h – 22 h à 5 %, 22 h – 5 h à 20 %) : ce sont deux choses différentes, et
+c'est volontaire. Les deux sont modifiables dans Paramètres.
+
+### D-90 — Une règle de plus : la formation en centre
+**Décision.** Quatorzième règle, **bloquante** : aucune vacation ne peut être
+posée un jour où un apprenti est en formation au CFA (L6222-24). Les périodes
+se saisissent sur sa fiche — des dates et un intitulé, rien d'autre.
+**Raison.** Ce temps est du temps de travail : il est rémunéré, il compte dans
+la durée du travail, et la personne n'est pas en magasin.
+
+### D-91 — Les règles deviennent modifiables, deux ans avant prévu
+**Décision.** L'écran Paramètres ne se contente plus d'afficher les règles : il
+permet de les modifier, toutes. Il était écrit qu'elles le deviendraient « au
+lot 5 » ; c'était une promesse en attente.
+**Organisation retenue.** Trois cartes : *Règles légales* (ce que dit la loi),
+*Moins de 18 ans* (les protections par tranche d'âge), *Convention collective*
+— cette dernière portant la mention **« à vérifier »** sur le contingent de
+180 h, le délai de prévenance de 7 jours et toutes les majorations, à
+confirmer avec le service paie.
+
+### D-92 — Renommer une compétence la renomme partout
+**Décision.** Changer le nom d'une compétence dans Paramètres le change aussi
+dans **toutes les tâches** qui l'exigent et dans **toutes les fiches** qui la
+possèdent, avec leur niveau.
+**Raison.** Le nom est l'identifiant (D-84). Sans cette propagation, un simple
+renommage aurait silencieusement coupé le lien entre une tâche et les personnes
+capables de la tenir — le pire défaut possible pour un planning.
+**Alternative écartée :** interdire le renommage.
+
+### D-93 — Désactiver plutôt que supprimer
+**Décision.** Une compétence et une tâche peuvent être **désactivées** : elles
+sortent des calculs et des listes sans rien effacer. La suppression définitive
+reste possible pour les tâches, par un bouton distinct.
+**Raison.** Pendant vos premières semaines d'ajustement, se tromper doit être
+sans conséquence.
+
+### D-94 — Une tâche ajoutée à la main dure un temps fixe
+**Décision.** Le bouton « Ajouter » crée une tâche à **durée fixe** (minutes),
+sur une fenêtre horaire et des jours choisis.
+**Raison.** Les tâches qui dépendent d'un volume (palettes, colis, mètres,
+commandes) ont chacune leur façon de se compter ; les créer de zéro depuis
+l'écran aurait demandé un formulaire différent par type. Pour celles-là, le
+plus simple est de partir d'une tâche existante du même genre et de la
+modifier. **Alternative possible :** un formulaire par type de tâche, plus
+complet et plus lourd.

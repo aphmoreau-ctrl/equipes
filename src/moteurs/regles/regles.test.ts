@@ -52,7 +52,8 @@ function personne(modifications: Partial<Collaborateur> = {}): Collaborateur {
     competences: {},
     habilitations: [],
     compteursEquite: { samedisTravailles: 0, dimanchesTravailles: 0, fermetures: 0, feriesTravailles: 0 },
-    estMineur: false,
+    periodesFormation: [],
+    trancheAge: 'majeur',
     contactAutorise: false,
     actif: true,
     ...modifications,
@@ -211,7 +212,7 @@ describe('durée maximale par jour', () => {
   it('applique 8 h aux moins de 18 ans', () => {
     const neufHeures = [vacation({ debut: '06:00', fin: '15:20' })]
     expect(regles(neufHeures)).toEqual([])
-    const infractions = controler(neufHeures, { collaborateurs: [personne({ estMineur: true })] })
+    const infractions = controler(neufHeures, { collaborateurs: [personne({ trancheAge: '16-17' })] })
     expect(infractions.some((i) => i.regle === 'duree-maximale-quotidienne')).toBe(true)
     expect(infractions[0]?.explication).toContain('moins de 18 ans')
   })
@@ -316,7 +317,7 @@ describe('repos quotidien', () => {
     ]
     expect(regles(journees)).not.toContain('repos-quotidien')
     expect(
-      controler(journees, { collaborateurs: [personne({ estMineur: true })] }).map((i) => i.regle),
+      controler(journees, { collaborateurs: [personne({ trancheAge: '16-17' })] }).map((i) => i.regle),
     ).toContain('repos-quotidien')
   })
 
@@ -377,7 +378,7 @@ describe('repos hebdomadaire : 35 heures consécutives, strictement', () => {
     const majeur = constats(planning).filter((i) => i.regle === 'repos-hebdomadaire')
     expect(majeur).toEqual([])
 
-    const mineur = constats(planning, { collaborateurs: [personne({ estMineur: true })] })
+    const mineur = constats(planning, { collaborateurs: [personne({ trancheAge: '16-17' })] })
     expect(mineur.map((i) => i.regle)).toContain('repos-hebdomadaire')
   })
 })
@@ -415,7 +416,7 @@ describe('six jours par semaine au maximum', () => {
     )
     expect(regles(six)).not.toContain('jours-maximum-par-semaine')
     expect(
-      constats(six, { collaborateurs: [personne({ estMineur: true })] }).map((i) => i.regle),
+      constats(six, { collaborateurs: [personne({ trancheAge: '16-17' })] }).map((i) => i.regle),
     ).toContain('jours-maximum-par-semaine')
   })
 })
@@ -458,7 +459,7 @@ describe('pause obligatoire', () => {
     const journee = [vacation({ debut: '06:00', fin: '11:00', pauseMinutes: 20 })]
     expect(regles(journee)).not.toContain('pause-obligatoire')
     expect(
-      constats(journee, { collaborateurs: [personne({ estMineur: true })] }).map((i) => i.regle),
+      constats(journee, { collaborateurs: [personne({ trancheAge: '16-17' })] }).map((i) => i.regle),
     ).toContain('pause-obligatoire')
   })
 
@@ -656,7 +657,7 @@ describe('travail de nuit', () => {
 // ------------------------------------------------------------- Jeunes
 
 describe('moins de 18 ans', () => {
-  const jeune = personne({ estMineur: true })
+  const jeune = personne({ trancheAge: '16-17' })
 
   it('accepte une journée dans les horaires autorisés', () => {
     expect(regles([vacation({ debut: '06:00', fin: '13:20' })], { collaborateurs: [jeune] }))
@@ -684,8 +685,8 @@ describe('moins de 18 ans', () => {
 // ------------------------------------------------------- Vue d’ensemble
 
 describe('cohérence de l’ensemble', () => {
-  it('implémente les treize règles du cahier des charges', () => {
-    expect(REGLES_IMPLEMENTEES).toHaveLength(13)
+  it('implémente les quatorze règles prévues', () => {
+    expect(REGLES_IMPLEMENTEES).toHaveLength(14)
   })
 
   it('donne une sévérité, un nom et une référence à chaque règle', () => {
@@ -754,5 +755,83 @@ describe('cohérence de l’ensemble', () => {
       expect(infraction.explication.length).toBeGreaterThan(20)
       expect(infraction.explication).not.toMatch(/undefined|NaN|\[object/)
     }
+  })
+})
+
+describe('formation en centre : l’apprenti n’est pas en magasin', () => {
+  const apprenti = {
+    ...personne(),
+    id: 'app',
+    contrat: 'apprenti' as const,
+    trancheAge: '16-17' as const,
+    periodesFormation: [
+      { id: 'f1', debut: '2026-11-02', fin: '2026-11-06', intitule: 'CFA' },
+    ],
+  }
+
+  it('refuse une vacation posée pendant la semaine de cours', () => {
+    const infractions = controler(
+      [vacation({ id: 'v', collaborateurId: 'app', jour: '2026-11-03', debut: '08:00', fin: '15:00' })],
+      { collaborateurs: [apprenti] },
+    )
+    const formation = infractions.find((i) => i.regle === 'formation-en-centre')
+    expect(formation).toBeDefined()
+    expect(formation?.severite).toBe('bloquante')
+    expect(formation?.explication).toContain('temps de travail')
+  })
+
+  it('accepte une vacation la semaine suivante', () => {
+    const infractions = controler(
+      [vacation({ id: 'v', collaborateurId: 'app', jour: '2026-11-09', debut: '08:00', fin: '15:00' })],
+      { collaborateurs: [apprenti] },
+    )
+    expect(infractions.map((i) => i.regle)).not.toContain('formation-en-centre')
+  })
+
+  it('ne concerne que les personnes qui ont des périodes de formation', () => {
+    const infractions = controler([
+      vacation({ jour: '2026-11-03', debut: '08:00', fin: '15:00' }),
+    ])
+    expect(infractions.map((i) => i.regle)).not.toContain('formation-en-centre')
+  })
+})
+
+describe('travail de nuit des mineurs : deux tranches d’âge', () => {
+  it('interdit le travail après 22 h à un salarié de 16 ou 17 ans', () => {
+    const jeune = { ...personne(), id: 'j', trancheAge: '16-17' as const }
+    const infractions = controler(
+      [vacation({ id: 'v', collaborateurId: 'j', jour: '2026-11-02', debut: '15:00', fin: '23:00' })],
+      { collaborateurs: [jeune] },
+    )
+    const nuit = infractions.find((i) => i.regle === 'jeune-travailleur')
+    expect(nuit?.explication).toContain('16 ou 17 ans')
+    expect(nuit?.libelle).toContain('1 h')
+  })
+
+  it('arrête le travail dès 20 h avant 16 ans', () => {
+    const enfant = { ...personne(), id: 'e', trancheAge: 'moins-de-16' as const }
+    const infractions = controler(
+      [vacation({ id: 'v', collaborateurId: 'e', jour: '2026-11-02', debut: '15:00', fin: '21:00' })],
+      { collaborateurs: [enfant] },
+    )
+    const nuit = infractions.find((i) => i.regle === 'jeune-travailleur')
+    expect(nuit).toBeDefined()
+    expect(nuit?.explication).toContain('moins de 16 ans')
+    expect(nuit?.explication).toContain('20:00')
+
+    // La meme vacation ne pose aucun probleme a 16 ou 17 ans.
+    const plusAge = { ...personne(), id: 'e', trancheAge: '16-17' as const }
+    const autres = controler(
+      [vacation({ id: 'v', collaborateurId: 'e', jour: '2026-11-02', debut: '15:00', fin: '21:00' })],
+      { collaborateurs: [plusAge] },
+    )
+    expect(autres.map((i) => i.regle)).not.toContain('jeune-travailleur')
+  })
+
+  it('ne dit rien pour un salarié majeur', () => {
+    const infractions = controler([
+      vacation({ jour: '2026-11-02', debut: '15:00', fin: '22:30' }),
+    ])
+    expect(infractions.map((i) => i.regle)).not.toContain('jeune-travailleur')
   })
 })

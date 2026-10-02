@@ -1,7 +1,7 @@
 import { ajouterJours, jourEnTexte, lundiDeLaSemaine } from '../../../domaine/calendrier'
 import { dureeEnTexte } from '../../../domaine/temps'
 import { dureeTravailEffectif, grouperParJournee } from '../regroupement'
-import { grouperParSemaine, vacationsDe, collaborateursConcernes } from '../reperes'
+import { collaborateursConcernes, estMineurParmi, grouperParSemaine, vacationsDe } from '../reperes'
 import type { Infraction, Regle } from '../types'
 
 /** Duree maximale de travail effectif sur une meme journee. */
@@ -20,7 +20,7 @@ export const dureeMaximaleQuotidienne: Regle = {
       )
       const enDerogation = journee.vacations.some((vacation) => vacation.derogation === true)
       const mineur =
-        collaborateurs.find((c) => c.id === journee.collaborateurId)?.estMineur === true
+        estMineurParmi(collaborateurs, journee.collaborateurId)
 
       const plafond = mineur
         ? parametres.dureeMaximaleQuotidienneJeuneMinutes
@@ -58,7 +58,7 @@ export const dureeMaximaleHebdomadaire: Regle = {
     const infractions: Infraction[] = []
 
     for (const collaborateurId of collaborateursConcernes(vacations)) {
-      const mineur = collaborateurs.find((c) => c.id === collaborateurId)?.estMineur === true
+      const mineur = estMineurParmi(collaborateurs, collaborateurId)
       const plafond = mineur
         ? parametres.dureeMaximaleHebdomadaireJeuneMinutes
         : parametres.dureeMaximaleHebdomadaireMinutes

@@ -41,6 +41,7 @@ import { useGenerateur } from '../useGenerateur'
 import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
 import { Conflits } from '../composants/Conflits'
 import { VueTousRayons } from '../composants/VueTousRayons'
+import { Equite } from '../composants/Equite'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -59,12 +60,19 @@ export function Planning() {
   )
   const [documentAffiche, setDocumentAffiche] = useState<TypeDocument | null>(null)
   const [proposition, setProposition] = useState<ResultatGeneration | null>(null)
+  const [nombreDeSemaines, setNombreDeSemaines] = useState(1)
   const { etat: etatGeneration, erreur: erreurGeneration, generer } = useGenerateur()
 
   const [confirmationGeneration, setConfirmationGeneration] = useState(false)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
   const planningCourant = planning(semaine)
+
+  /** Toutes les vacations enregistrees, pour mesurer l'equite sur quatre semaines. */
+  const toutesLesVacations = useMemo(
+    () => Object.values(etat.plannings).flatMap((enregistre) => enregistre.vacations),
+    [etat.plannings],
+  )
 
   const casesVerrouillees = useMemo(
     () => new Set(planningCourant.casesVerrouillees ?? []),
@@ -85,14 +93,6 @@ export function Planning() {
     })
   }
 
-  /** Vacations figees par un verrou : le calcul les garde telles quelles. */
-  const vacationsVerrouillees = useMemo(
-    () =>
-      planningCourant.vacations.filter((vacation) =>
-        casesVerrouillees.has(`${vacation.collaborateurId}|${vacation.jour}`),
-      ),
-    [planningCourant.vacations, casesVerrouillees],
-  )
 
   const equipe = etat.collaborateurs
     .filter((collaborateur) => collaborateur.actif)
@@ -245,25 +245,64 @@ export function Planning() {
     }))
   }
 
+  /**
+   * Construit la semaine, ou plusieurs d'affilee.
+   *
+   * Au-dela d'une semaine, chacune recoit ce qui a ete decide pour les
+   * precedentes : sans ce report, on referait quatre fois le meme planning,
+   * et le meme aurait quatre fois le samedi.
+   */
+  /**
+   * Construit la semaine, ou plusieurs d'affilee, dans un fil separe.
+   *
+   * Chaque semaine recoit ce qui a ete decide pour les precedentes : sans ce
+   * report, on referait quatre fois le meme planning, et le meme aurait
+   * quatre fois le samedi.
+   */
   function proposerUnPlanning(): void {
     setConfirmationGeneration(false)
+
+    const semaines = Array.from({ length: nombreDeSemaines }, (_, numero) => {
+      const sonLundi = ajouterJours(semaine, numero * 7)
+      const enregistre = planning(sonLundi)
+      const verrouillees = (enregistre.casesVerrouillees ?? []).flatMap((cle) =>
+        enregistre.vacations.filter(
+          (vacation) => `${vacation.collaborateurId}|${vacation.jour}` === cle,
+        ),
+      )
+
+      return {
+        semaine: sonLundi,
+        besoins: semaineDe(sonLundi).flatMap((jour) =>
+          rayons
+            .map((rayon) => besoinDuJour(jour, rayon.id))
+            .filter((besoin): besoin is NonNullable<typeof besoin> => besoin !== null),
+        ),
+        vacationsVerrouillees: verrouillees,
+      }
+    })
+
     generer(
       {
-        semaine,
+        semaines,
         rayons,
-        besoins: besoinsDeLaSemaine,
         collaborateurs: etat.collaborateurs,
         absences: absencesEffectives(etat),
         horairesTypes: etat.magasin.horairesTypes,
         parametres: etat.reglesParametres,
         vacationsAnterieures: historique(semaine),
         planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
-        vacationsVerrouillees,
         dureeMaximaleMs: 5000,
       },
       (resultat) => {
-        modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: resultat.vacations }))
-        setProposition(resultat)
+        for (const construite of resultat.semaines) {
+          modifierPlanning(construite.semaine, (avant) => ({
+            ...avant,
+            vacations: construite.resultat.vacations,
+          }))
+        }
+        const premiere = resultat.semaines[0]
+        if (premiere !== undefined) setProposition(premiere.resultat)
       },
     )
   }
@@ -419,6 +458,29 @@ export function Planning() {
           >
             {etatGeneration === 'en-cours' ? 'Calcul en cours…' : 'Proposer un planning'}
           </button>
+        )}
+
+        {!confirmationGeneration && (
+          <p>
+            <label className="champ champ--etroit">
+              <span className="champ__libelle">Nombre de semaines à construire</span>
+              <select
+                className="champ__saisie"
+                value={nombreDeSemaines}
+                onChange={(evenement) => setNombreDeSemaines(Number(evenement.target.value))}
+              >
+                {[1, 2, 3, 4].map((nombre) => (
+                  <option key={nombre} value={nombre}>
+                    {nombre === 1 ? 'Cette semaine seulement' : `${nombre} semaines d’affilée`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="champ__aide">
+              Au-delà d’une semaine, les samedis et les fermetures se répartissent d’une semaine
+              sur l’autre : celui qui a pris le samedi ne reprendra pas le suivant.
+            </span>
+          </p>
         )}
 
         {planningCourant.vacations.length > 0 && !confirmationGeneration && (
@@ -633,6 +695,11 @@ export function Planning() {
           </ul>
         )}
       </section>
+
+      <Equite
+        semaine={semaine}
+        toutesLesVacations={toutesLesVacations}
+      />
 
       <VueTousRayons
         semaine={semaine}

@@ -1460,3 +1460,43 @@ difficulté, et où passent les heures.
 **Raison.** Un compte (« 3 prêts ») ne sert à rien. Ce qu'on cherche, c'est
 **qui** on a déplacé et **d'où** on l'a pris — parce que le rayon d'origine s'en
 trouve affaibli, et que c'est la première chose à vérifier quand il va mal.
+
+## Lot 9 — Plusieurs semaines et équité sur quatre semaines (2 octobre 2026)
+
+### C-26 — La jonction entre deux semaines n'était pas contrôlée ❗
+**Ce qui n'allait pas.** Découvert en construisant plusieurs semaines d'affilée.
+Chaque semaine était vérifiée **seule** : un dimanche fini à 20 h 30 suivi d'un
+lundi commencé à 05 h 30 — neuf heures de repos au lieu de onze — passait donc
+inaperçu. Le défaut existait déjà en construisant semaine après semaine à la
+main, pas seulement en automatique.
+**Corrigé.** Le contrôle légal inclut désormais les **journées voisines**, y
+compris celles d'une autre semaine. Un test le vérifie : un dimanche tardif
+empêche un lundi matinal.
+
+### D-117 — L'équité se mesure sur quatre semaines, pas depuis toujours
+**Décision.** Les samedis, dimanches, ouvertures et fermetures sont comptés sur
+les **quatre dernières semaines**, et non sur les compteurs cumulés de la fiche.
+**Raison.** Les compteurs de la fiche comptent depuis l'embauche : quelqu'un
+arrivé il y a dix ans en aura mécaniquement plus que quelqu'un arrivé l'an
+dernier, sans qu'aucune injustice récente n'ait eu lieu. Ce qui se discute dans
+un service, c'est « ça fait trois samedis d'affilée ».
+**Quatre semaines :** assez pour lisser un aléa, assez court pour qu'un
+déséquilibre se corrige avant d'être vécu comme une habitude.
+**Pondération choisie.** Un dimanche pèse 1,5 samedi, une fermeture 0,75, une
+ouverture 0,5 — toutes les sujétions ne se valent pas. **Ces poids sont un
+point de départ à relire** : ils ne viennent d'aucun texte.
+
+### D-118 — Chaque semaine reçoit ce qui a été décidé pour les précédentes
+**Décision.** Construire quatre semaines d'affilée, c'est les construire **dans
+l'ordre**, chacune nourrie du résultat des précédentes.
+**Raison.** Calculées indépendamment, les quatre semaines seraient identiques —
+et la même personne prendrait quatre fois le samedi. Le report est ce qui fait
+tourner les sujétions.
+
+### D-119 — Le calcul de la série part entier dans le fil séparé
+**Décision.** La séquence complète (jusqu'à quatre semaines) est envoyée d'un
+bloc au fil séparé, besoins déjà calculés.
+**Raison.** Un Web Worker ne peut pas recevoir de fonction : les besoins sont
+donc préparés par l'écran et transmis comme données. Quatre semaines, c'est
+quatre fois le calcul : c'est précisément là que figer l'écran serait le plus
+pénible.

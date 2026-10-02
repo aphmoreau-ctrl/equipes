@@ -165,18 +165,31 @@ function affectationPermise(
     return false
   }
 
-  // Regles legales : on ne verifie que la personne concernee, c'est suffisant
-  // et beaucoup plus rapide.
-  const siennes = [
-    ...dejaPlacees.filter((autre) => autre.collaborateurId === collaborateur.id),
-    vacation,
-  ]
+  /*
+   * Regles legales : on ne verifie que la personne concernee, c'est suffisant
+   * et beaucoup plus rapide.
+   *
+   * Les journees VOISINES comptent, meme si elles appartiennent a une autre
+   * semaine : sans elles, un dimanche fini a 20h30 suivi d'un lundi commence a
+   * 05h30 passait inapercu, parce que chaque semaine etait controlee seule.
+   */
+  const siennesDeLaSemaine = dejaPlacees.filter(
+    (autre) => autre.collaborateurId === collaborateur.id,
+  )
+  const anterieures = (entrees.vacationsAnterieures ?? []).filter(
+    (autre) => autre.collaborateurId === collaborateur.id,
+  )
+  const voisines = anterieures.filter(
+    (autre) => Math.abs(ecartEnJours(autre.jour, vacation.jour)) <= 7,
+  )
+
+  const siennes = [...siennesDeLaSemaine, ...voisines, vacation]
   const infractions = verifier(
     contexteDeVerification(siennes, entrees.parametres, {
       collaborateurs: [collaborateur],
-      vacationsAnterieures: (entrees.vacationsAnterieures ?? []).filter(
-        (autre) => autre.collaborateurId === collaborateur.id,
-      ),
+      // Les voisines sont deja dans « siennes » : les compter deux fois
+      // fausserait la moyenne sur douze semaines.
+      vacationsAnterieures: anterieures.filter((autre) => !voisines.includes(autre)),
     }),
   )
   return !infractions.some((infraction) => infraction.severite === 'bloquante')
@@ -243,6 +256,14 @@ function tranchesCouvertesPar(horaire: HoraireType): number[] {
     couvertes.push(index)
   }
   return couvertes
+}
+
+/** Nombre de jours entre deux dates, signe. */
+function ecartEnJours(unJour: string, autreJour: string): number {
+  return Math.round(
+    (new Date(`${unJour}T00:00:00Z`).getTime() - new Date(`${autreJour}T00:00:00Z`).getTime()) /
+      86_400_000,
+  )
 }
 
 /** Duree minimale d'un poste, en minutes : on ne deplace personne pour moins. */

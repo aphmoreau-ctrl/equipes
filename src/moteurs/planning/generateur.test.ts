@@ -408,3 +408,39 @@ describe('verrouillage et relance', () => {
     expect(second.vacations).toEqual(premier.vacations)
   })
 })
+
+describe('jonction entre deux semaines', () => {
+  /*
+   * Garde-fou : chaque semaine etait controlee seule. Un dimanche fini a
+   * 20h30 suivi d'un lundi commence a 05h30 — neuf heures de repos — passait
+   * donc inapercu. Les journees voisines comptent maintenant.
+   */
+  it('refuse de commencer le lundi trop tôt après un dimanche tardif', () => {
+    const dimancheTardif: Vacation = {
+      id: 'veille',
+      collaborateurId: 'c-01',
+      rayonId: 'fruits-legumes',
+      jour: '2026-11-01',
+      debut: '13:30',
+      fin: '20:30',
+      pauseMinutes: 20,
+    }
+
+    const resultat = genererLePlanning(entrees({ vacationsAnterieures: [dimancheTardif] }))
+    const sonLundi = resultat.vacations.find(
+      (vacation) => vacation.collaborateurId === 'c-01' && vacation.jour === '2026-11-02',
+    )
+
+    if (sonLundi !== undefined) {
+      // S'il travaille le lundi, ce ne peut pas etre avant 07h30.
+      expect(sonLundi.debut >= '07:30').toBe(true)
+    }
+
+    const infractions = verifier(
+      contexteDeVerification([dimancheTardif, ...resultat.vacations], PARAMETRES_PAR_DEFAUT, {
+        collaborateurs: COLLABORATEURS_DEMO,
+      }),
+    )
+    expect(infractions.filter((i) => i.severite === 'bloquante')).toEqual([])
+  })
+})

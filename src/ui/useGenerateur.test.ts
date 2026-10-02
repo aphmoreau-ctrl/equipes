@@ -7,30 +7,34 @@ import { COLLABORATEURS_DEMO } from '../donnees/collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from '../donnees/demo'
 import { calculerBesoin } from '../moteurs/besoin'
 import { PARAMETRES_PAR_DEFAUT } from '../moteurs/regles'
-import type { EntreesGeneration } from '../moteurs/planning/generateur'
+import type { EntreesPlusieursSemaines } from '../moteurs/planning/plusieursSemaines'
 
 /** Donnees FICTIVES uniquement. */
 
 const SEMAINE = '2026-11-02'
 
-function entrees(): EntreesGeneration {
+function entrees(): EntreesPlusieursSemaines {
   const configuration = CONFIGURATIONS_DEMO.find((c) => c.rayonId === 'cave-vins')
   if (configuration === undefined) throw new Error('Rayon de test introuvable.')
 
   return {
-    semaine: SEMAINE,
+    semaines: [
+      {
+        semaine: SEMAINE,
+        besoins: semaineDe(SEMAINE).map((date) =>
+          calculerBesoin(configuration, {
+            date,
+            clientsParTranche: clientsParTranche(MAGASIN_DEMO, date),
+            tranchesOuvertes: tranchesOuvertes(MAGASIN_DEMO, date, 'cave-vins'),
+            meteo: 'normal',
+            coefficientEvenements: 1,
+            enPromotion: false,
+            saisiesQualite: [],
+          }),
+        ),
+      },
+    ],
     rayons: MAGASIN_DEMO.rayons.filter((rayon) => rayon.id === 'cave-vins'),
-    besoins: semaineDe(SEMAINE).map((date) =>
-      calculerBesoin(configuration, {
-        date,
-        clientsParTranche: clientsParTranche(MAGASIN_DEMO, date),
-        tranchesOuvertes: tranchesOuvertes(MAGASIN_DEMO, date, 'cave-vins'),
-        meteo: 'normal',
-        coefficientEvenements: 1,
-        enPromotion: false,
-        saisiesQualite: [],
-      }),
-    ),
     collaborateurs: COLLABORATEURS_DEMO,
     absences: [],
     horairesTypes: MAGASIN_DEMO.horairesTypes,

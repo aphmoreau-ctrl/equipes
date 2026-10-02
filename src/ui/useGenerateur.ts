@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  genererLePlanning,
-  type EntreesGeneration,
-  type ResultatGeneration,
-} from '../moteurs/planning/generateur'
+  genererPlusieursSemaines,
+  type EntreesPlusieursSemaines,
+  type ResultatPlusieursSemaines,
+} from '../moteurs/planning/plusieursSemaines'
 
 /**
  * Lance la generation dans un fil separe, pour que l'ecran reste vivant.
@@ -17,7 +17,7 @@ export type EtatGeneration = 'au-repos' | 'en-cours'
 
 interface Reponse {
   readonly ok: boolean
-  readonly resultat?: ResultatGeneration
+  readonly resultat?: ResultatPlusieursSemaines
   readonly message?: string
 }
 
@@ -34,13 +34,16 @@ export function useGenerateur() {
   }, [])
 
   const generer = useCallback(
-    (entrees: EntreesGeneration, surResultat: (resultat: ResultatGeneration) => void): void => {
+    (
+      entrees: EntreesPlusieursSemaines,
+      surResultat: (resultat: ResultatPlusieursSemaines) => void,
+    ): void => {
       setErreur(null)
       setEtat('en-cours')
 
       const auFilPrincipal = (): void => {
         try {
-          surResultat(genererLePlanning(entrees))
+          surResultat(genererPlusieursSemaines(entrees))
         } catch (echec) {
           setErreur(echec instanceof Error ? echec.message : 'Le calcul a échoué.')
         } finally {

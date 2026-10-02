@@ -1,4 +1,8 @@
-import { genererLePlanning, type EntreesGeneration, type ResultatGeneration } from './generateur'
+import {
+  genererPlusieursSemaines,
+  type EntreesPlusieursSemaines,
+  type ResultatPlusieursSemaines,
+} from './plusieursSemaines'
 
 /**
  * Calcul du planning dans un fil separe.
@@ -12,9 +16,9 @@ import { genererLePlanning, type EntreesGeneration, type ResultatGeneration } fr
  * moteur — le meme que celui couvert par les tests — et renvoie le resultat.
  */
 
-self.onmessage = (evenement: MessageEvent<EntreesGeneration>) => {
+self.onmessage = (evenement: MessageEvent<EntreesPlusieursSemaines>) => {
   try {
-    const resultat: ResultatGeneration = genererLePlanning(evenement.data)
+    const resultat: ResultatPlusieursSemaines = genererPlusieursSemaines(evenement.data)
     self.postMessage({ ok: true, resultat })
   } catch (erreur) {
     self.postMessage({

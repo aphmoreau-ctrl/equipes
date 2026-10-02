@@ -86,9 +86,9 @@ describe('ecran Besoin', () => {
     choisirLeJour(LUNDI)
     await screen.findByText('Courbe du besoin')
 
-    expect(screen.queryByText('×1.30')).not.toBeInTheDocument()
+    expect(screen.queryByText('×1,30')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Très chaud' }))
-    expect(screen.getByText('×1.30')).toBeInTheDocument()
+    expect(screen.getByText('×1,30')).toBeInTheDocument()
   })
 
   it('recalcule le besoin quand le rayon passe en promotion', async () => {
@@ -99,7 +99,7 @@ describe('ecran Besoin', () => {
     expect(screen.getByRole('button', { name: 'Pas de promotion' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Pas de promotion' }))
     expect(screen.getByRole('button', { name: 'Rayon en promotion' })).toBeInTheDocument()
-    expect(screen.getByText('×1.25')).toBeInTheDocument()
+    expect(screen.getByText('×1,25')).toBeInTheDocument()
   })
 
   it('enregistre une qualite a la reception et augmente le besoin', async () => {
@@ -112,7 +112,7 @@ describe('ecran Besoin', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Qualité C — Tri important' }))
 
     expect(screen.getByText(/Fraises/)).toBeInTheDocument()
-    expect(screen.getByText('×1.80')).toBeInTheDocument()
+    expect(screen.getByText('×1,80')).toBeInTheDocument()
   })
 
   it('n enregistre rien sans nom de produit', async () => {

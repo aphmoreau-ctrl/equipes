@@ -9,6 +9,7 @@ import {
 } from '../../moteurs/planning/scenarios'
 import { useDonnees } from '../DonneesProvider'
 import { ChampTexte } from '../composants/Champ'
+import { nombreEnTexte } from '../../domaine/nombres'
 
 /**
  * Scenarios : plusieurs versions d'une meme semaine, comparees cote a cote
@@ -146,9 +147,9 @@ export function Scenarios({
                       )}
                     </th>
                     <td>{Math.round(comparaison.couverture * 100)} %</td>
-                    <td>{comparaison.heuresPrevues.toFixed(1)}</td>
-                    <td>{comparaison.heuresManquantes.toFixed(1)}</td>
-                    <td>{comparaison.heuresSureffectif.toFixed(1)}</td>
+                    <td>{nombreEnTexte(comparaison.heuresPrevues)}</td>
+                    <td>{nombreEnTexte(comparaison.heuresManquantes)}</td>
+                    <td>{nombreEnTexte(comparaison.heuresSureffectif)}</td>
                     <td
                       className={
                         comparaison.reglesEnfreintes > 0 ? 'grille__anomalie' : undefined
@@ -156,7 +157,7 @@ export function Scenarios({
                     >
                       {comparaison.reglesEnfreintes}
                     </td>
-                    <td>{comparaison.ecartMoyenAuContrat.toFixed(1)}</td>
+                    <td>{nombreEnTexte(comparaison.ecartMoyenAuContrat)}</td>
                     <td>{comparaison.renforts}</td>
                   </tr>
                 ))}

@@ -8,6 +8,7 @@ import {
 } from '../../moteurs/besoin/cadences'
 import type { ConfigurationRayon, NiveauQualite } from '../../moteurs/besoin'
 import { useDonnees } from '../DonneesProvider'
+import { nombreEnTexte } from '../../domaine/nombres'
 
 const QUALITES: readonly { valeur: NiveauQualite | null; libelle: string }[] = [
   { valeur: null, libelle: 'Normale' },
@@ -251,7 +252,7 @@ export function Chrono({ configuration }: { readonly configuration: Configuratio
                   {mesure.quantite > 0 && (
                     <span className="champ__aide">
                       {' '}
-                      ({(60 / (duree / mesure.quantite)).toFixed(1)}{' '}
+                      ({nombreEnTexte(60 / (duree / mesure.quantite))}{' '}
                       {LIBELLES_UNITE[mesure.unite]} par heure)
                     </span>
                   )}

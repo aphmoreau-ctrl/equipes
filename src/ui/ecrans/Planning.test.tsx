@@ -114,8 +114,8 @@ describe('écran Planning', () => {
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
     // 05:30 a 12:30 moins 20 min de pause = 6,7 h, pour un contrat de 35 h.
-    expect(screen.getByText('6.7 h')).toBeInTheDocument()
-    expect(screen.getByText('-28.3')).toBeInTheDocument()
+    expect(screen.getByText('6,7 h')).toBeInTheDocument()
+    expect(screen.getByText('−28,3')).toBeInTheDocument()
   })
 })
 

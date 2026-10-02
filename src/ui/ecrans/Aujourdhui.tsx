@@ -46,6 +46,13 @@ export function Aujourdhui() {
   const toutesLesAbsences = absencesEffectives(etat)
   const absences = absencesDuJour(toutesLesAbsences, date)
 
+  /**
+   * Aucune vacation de la semaine : le planning n'est pas fait. Ce n'est pas la
+   * meme chose qu'un planning fait ou il reste des trous, et l'ecran ne doit pas
+   * alarmer pour un travail qui reste a faire.
+   */
+  const planningPasEncoreFait = planningCourant.vacations.length === 0
+
   const presents = etat.collaborateurs.filter(
     (collaborateur) =>
       collaborateur.actif &&
@@ -210,10 +217,16 @@ export function Aujourdhui() {
               ? 'Personne'
               : absences.map((absence) => nom(absence.collaborateurId)).join(', ')}
           </dd>
-          <dt>Rayons en manque</dt>
+          <dt>{planningPasEncoreFait ? 'Planning de la semaine' : 'Rayons en manque'}</dt>
           <dd>
-            {couvertures.filter((c) => c.couverture.trous.length > 0).length} sur{' '}
-            {couvertures.length}
+            {planningPasEncoreFait ? (
+              'Pas encore fait'
+            ) : (
+              <>
+                {couvertures.filter((c) => c.couverture.trous.length > 0).length} sur{' '}
+                {couvertures.length}
+              </>
+            )}
           </dd>
         </dl>
       </section>
@@ -365,26 +378,33 @@ export function Aujourdhui() {
 
       <section className="carte">
         <h2>Couverture par rayon</h2>
-        {couvertures.map(({ rayon, couverture }) => {
-          const plages = regrouperLesTrous(couverture.trous)
-          return (
-            <div key={rayon.id} className="ligne-rayon-jour">
-              <span className="ligne-rayon-jour__nom">{rayon.nom}</span>
-              {couverture.trous.length === 0 ? (
-                <span className="verdict verdict--bon">Couvert</span>
-              ) : (
-                <span className="verdict verdict--mauvais">
-                  {plages
-                    .map(
-                      (plage) =>
-                        `${enTexte(plage.debutMinutes)}–${enTexte(plage.finMinutes % 1440)}`,
-                    )
-                    .join(', ')}
-                </span>
-              )}
-            </div>
-          )
-        })}
+        {planningPasEncoreFait ? (
+          <p>
+            Aucune vacation n’est posée cette semaine. Rien n’est donc couvert : ce n’est pas une
+            anomalie, c’est le planning qui reste à faire, dans l’écran <strong>Planning</strong>.
+          </p>
+        ) : (
+          couvertures.map(({ rayon, couverture }) => {
+            const plages = regrouperLesTrous(couverture.trous)
+            return (
+              <div key={rayon.id} className="ligne-rayon-jour">
+                <span className="ligne-rayon-jour__nom">{rayon.nom}</span>
+                {couverture.trous.length === 0 ? (
+                  <span className="verdict verdict--bon">Couvert</span>
+                ) : (
+                  <span className="verdict verdict--mauvais">
+                    {plages
+                      .map(
+                        (plage) =>
+                          `${enTexte(plage.debutMinutes)}–${enTexte(plage.finMinutes % 1440)}`,
+                      )
+                      .join(', ')}
+                  </span>
+                )}
+              </div>
+            )
+          })
+        )}
       </section>
 
       <section className="carte">

@@ -43,6 +43,7 @@ import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
 import { Scenarios } from '../composants/Scenarios'
 import { DocumentImprimable, type TypeDocument } from '../composants/DocumentImprimable'
+import { heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 export function Planning() {
   const { etat, planning, modifierPlanning, historique, besoinDuJour } = useDonnees()
@@ -325,8 +326,8 @@ export function Planning() {
 
           <dt>Couverture du besoin</dt>
           <dd>
-            {Math.round(tauxGlobal * 100)} % — {besoinTotal.toFixed(1)} h nécessaires,{' '}
-            {presenceTotale.toFixed(1)} h prévues
+            {Math.round(tauxGlobal * 100)} % — {heuresEnTexte(besoinTotal)} nécessaires,{' '}
+            {heuresEnTexte(presenceTotale)} prévues
           </dd>
         </dl>
       </section>
@@ -379,7 +380,7 @@ export function Planning() {
               <dt>Vacations placées</dt>
               <dd>{proposition.vacations.length}</dd>
               <dt>Temps de calcul</dt>
-              <dd>{(proposition.dureeMs / 1000).toFixed(1)} s</dd>
+              <dd>{nombreEnTexte(proposition.dureeMs / 1000)} s</dd>
               <dt>Échanges retenus</dt>
               <dd>{proposition.ameliorations}</dd>
             </dl>

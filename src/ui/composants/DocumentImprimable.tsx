@@ -4,6 +4,7 @@ import type { Rayon } from '../../domaine/magasin'
 import type { Planning } from '../../domaine/planning'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
 import type { CouvertureJour } from '../../moteurs/indicateurs'
+import { heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Documents destines a SORTIR de l'application (cahier des charges §15).
@@ -130,7 +131,7 @@ export function DocumentImprimable({
                           </td>
                         )
                       })}
-                      <td className="document__total">{heuresDe(siennes).toFixed(1)} h</td>
+                      <td className="document__total">{heuresEnTexte(heuresDe(siennes))}</td>
                     </tr>
                   )
                 })}
@@ -164,7 +165,7 @@ export function DocumentImprimable({
                             </td>
                           )
                         })}
-                        <td className="document__total">{heuresDe(siennes).toFixed(1)} h</td>
+                        <td className="document__total">{heuresEnTexte(heuresDe(siennes))}</td>
                       </tr>
                     )
                   })}
@@ -201,8 +202,8 @@ export function DocumentImprimable({
                 return (
                   <tr key={rayon.id}>
                     <th scope="row">{rayon.nom}</th>
-                    <td>{besoin.toFixed(1)} h</td>
-                    <td>{prevu.toFixed(1)} h</td>
+                    <td>{heuresEnTexte(besoin)}</td>
+                    <td>{heuresEnTexte(prevu)}</td>
                     <td>{Math.round(taux * 100)} %</td>
                     <td>{budgetHeuresParRayon[rayon.id] ?? 0} h</td>
                   </tr>

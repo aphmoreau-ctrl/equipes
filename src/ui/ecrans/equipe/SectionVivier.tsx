@@ -15,17 +15,18 @@ import { competencesConnues } from '../../../moteurs/competences'
 import { bilanDesMissions, heuresTravaillees } from '../../../moteurs/vivier'
 import { useDonnees } from '../../DonneesProvider'
 import { ChampHeure, ChampNombre, ChampTexte, Interrupteur } from '../../composants/Champ'
+import { eurosEnTexte, nombreEnTexte } from '../../../domaine/nombres'
 
 const ORIGINES: readonly OrigineRenfort[] = ['interim', 'etudiant', 'ancien', 'autre']
 const MOTIFS: readonly MotifMission[] = ['remplacement', 'renfort', 'saison']
 const NIVEAUX: readonly NiveauCompetence[] = [0, 1, 2, 3]
 
 export function euros(valeur: number): string {
-  return `${valeur.toFixed(2).replace('.', ',')} €`
+  return eurosEnTexte(valeur)
 }
 
 function heuresEnTexte(valeur: number): string {
-  return `${valeur.toFixed(1).replace('.', ',')} h`
+  return `${nombreEnTexte(valeur, 1)} h`
 }
 
 /**

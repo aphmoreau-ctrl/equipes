@@ -1,5 +1,6 @@
 import { dateEnTexte, nomDuMois, semaineDe } from '../../domaine/calendrier'
 import type { ActionProposee, TableauDeBord } from '../../moteurs/indicateurs/pilotage'
+import { eurosEnTexte, heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 /**
  * Rapport destine au patron (cahier des charges §14 et §15).
@@ -31,7 +32,7 @@ export function RapportImprimable({
       : `${nomDuMois(Number(tableau.semaine.slice(5, 7)))} ${tableau.semaine.slice(0, 4)}`
 
   const pourcent = (valeur: number) => `${Math.round(valeur * 100)} %`
-  const heures = (valeur: number) => `${valeur.toFixed(1)} h`
+  const heures = (valeur: number) => `${heuresEnTexte(valeur)}`
 
   return (
     <div className="document">
@@ -75,7 +76,7 @@ export function RapportImprimable({
                 <th scope="row">Renforts extérieurs</th>
                 <td>{heures(tableau.heuresRenforts)}</td>
                 <th scope="row">Coût des renforts</th>
-                <td>{`${Math.round(tableau.coutRenforts).toLocaleString('fr-FR')} €`}</td>
+                <td>{eurosEnTexte(tableau.coutRenforts, 0)}</td>
               </tr>
             )}
             <tr>
@@ -90,19 +91,19 @@ export function RapportImprimable({
             </tr>
             <tr>
               <th scope="row">Polyvalence moyenne</th>
-              <td>{tableau.polyvalenceMoyenne.toFixed(1)} postes par personne</td>
+              <td>{nombreEnTexte(tableau.polyvalenceMoyenne)} postes par personne</td>
               <th scope="row">Postes fragiles</th>
               <td>{tableau.competencesFragiles}</td>
             </tr>
             {tableau.chiffreAffaires !== null && (
               <tr>
                 <th scope="row">Chiffre d’affaires</th>
-                <td>{Math.round(tableau.chiffreAffaires).toLocaleString('fr-FR')} €</td>
+                <td>{eurosEnTexte(tableau.chiffreAffaires, 0)}</td>
                 <th scope="row">Productivité</th>
                 <td>
                   {tableau.productivite === null
                     ? '—'
-                    : `${Math.round(tableau.productivite).toLocaleString('fr-FR')} € par heure`}
+                    : `${eurosEnTexte(tableau.productivite, 0)} par heure`}
                 </td>
               </tr>
             )}

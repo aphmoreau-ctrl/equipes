@@ -767,9 +767,11 @@ entretiens devient réglable depuis l'écran Alertes.
 l'appareil l'autorise) affiche le nombre d'alertes **« à traiter tout de
 suite »**, pas le total.
 **Raison.** Un chiffre qui ne descend jamais finit par ne plus être regardé.
-**Limite.** Sur iPhone et iPad, la pastille sur l'icône de l'écran d'accueil
-n'apparaît que si les notifications sont autorisées pour l'application ; elle
-n'est pas demandée pour l'instant. La pastille du menu, elle, est toujours là.
+**Limite levée (C-16).** Sur iPhone et iPad, la pastille sur l'icône de
+l'écran d'accueil n'apparaît que si les notifications sont autorisées pour
+l'application. L'autorisation se demande désormais depuis Paramètres →
+« Pastille sur l'icône ». La pastille du menu, elle, est toujours là, sans
+aucune autorisation.
 
 ### D-68 — La recherche est un écran, pas une barre permanente
 **Décision.** « Rechercher » est une entrée du menu (sous « Plus » sur
@@ -822,10 +824,10 @@ tolérance (C-04). Le coût estimé de la vacation est affiché.
 l'absent. La vacation disparaît des « Vacations à remplacer » et le renfort
 **compte dans la couverture du jour**. « Annuler » retire la mission.
 **Limite assumée.** Le renfort n'entre **pas** dans le contrôle des règles
-légales : son employeur (l'agence) en est responsable. Il n'apparaît pas non
-plus dans la grille du planning de la semaine — seulement sur l'écran du jour
-et dans l'historique des missions.
-**Alternative.** L'afficher aussi dans la grille du planning, en grisé.
+légales : son employeur (l'agence) en est responsable.
+**Limite levée (C-15).** Il figure maintenant aussi dans la grille du planning
+de la semaine, en grisé, et sur les documents imprimables — plus seulement sur
+l'écran du jour et dans l'historique des missions.
 
 ### D-73 — L'intérim entre au tableau de bord et au rapport
 **Décision.** Le tableau de bord affiche les heures et le coût des renforts
@@ -936,3 +938,30 @@ redemandé.
 jamais au lancement : une demande surgie à l'ouverture est refusée neuf fois
 sur dix, et ce refus est définitif. La pastille rouge dans le menu de
 l'application, elle, fonctionne partout sans aucune autorisation.
+
+### C-17 — L'écran du jour ne crie plus au manque quand le planning reste à faire
+**Ce qui n'allait pas.** Tant qu'aucune vacation n'était posée pour la semaine,
+l'écran « Aujourd'hui » annonçait « Rayons en manque : 7 sur 7 » et affichait
+sept lignes rouges couvrant toute la journée d'ouverture. C'est la première
+chose que l'on voit en ouvrant l'application : elle avait l'air en panne, alors
+qu'il n'y avait simplement rien d'enregistré.
+**Corrigé.** Quand la semaine ne contient aucune vacation, l'écran dit
+« Planning de la semaine : pas encore fait », et la couverture explique en une
+phrase que le travail reste à faire dans l'écran Planning. Dès qu'une seule
+vacation est posée, le décompte des rayons en manque revient. Rien n'est caché :
+c'est la même information, dite correctement.
+
+### C-18 — Les nombres s'écrivent à la française
+**Ce qui n'allait pas.** Partout dans l'application, les nombres à virgule
+s'affichaient à l'anglaise : « 794.5 h nécessaires », « 0.0 h prévues »,
+« -10.0 » d'écart au contrat, « ×1.30 » de coefficient. Sur les documents
+imprimés remis au patron et à l'équipe aussi.
+**Corrigé.** Un seul fichier (`src/domaine/nombres.ts`) met en forme tous les
+nombres affichés : « 794,5 h », « 0,0 h », « ×1,30 ». Les 55 affichages de
+l'application y passent désormais, documents imprimés compris.
+**Détails choisis.** Les écarts sont toujours signés et utilisent le vrai signe
+moins (« −28,3 », plus lisible à l'impression que le trait d'union), et un écart
+nul ne s'écrit jamais « −0,0 ». Les sommes portent une espace insécable
+(« 1 234,50 € ») pour qu'un montant ne soit jamais coupé en fin de ligne.
+L'export CSV, lui, garde la virgule décimale **sans** espace de milliers : c'est
+ce qu'un tableur français sait relire.

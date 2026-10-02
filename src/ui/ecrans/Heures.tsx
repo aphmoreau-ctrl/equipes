@@ -10,6 +10,7 @@ import {
 import { toutesLesVacations } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre } from '../composants/Champ'
+import { ecartEnTexte, heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 export function Heures() {
   const { etat, modifier } = useDonnees()
@@ -101,15 +102,15 @@ export function Heures() {
 
         <dl className="liste-faits">
           <dt>Heures prévues</dt>
-          <dd>{totaux.heuresPrevues.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(totaux.heuresPrevues)}</dd>
           <dt>Heures réalisées</dt>
-          <dd>{totaux.heuresRealisees.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(totaux.heuresRealisees)}</dd>
           <dt>Heures supplémentaires</dt>
-          <dd>{totaux.heuresSupplementaires.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(totaux.heuresSupplementaires)}</dd>
           <dt>Heures complémentaires</dt>
-          <dd>{totaux.heuresComplementaires.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(totaux.heuresComplementaires)}</dd>
           <dt>Heures de nuit</dt>
-          <dd>{totaux.heuresDeNuit.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(totaux.heuresDeNuit)}</dd>
         </dl>
       </section>
 
@@ -153,16 +154,15 @@ export function Heures() {
                           {element.nom}
                         </button>
                       </th>
-                      <td>{element.heuresPrevues.toFixed(1)}</td>
-                      <td>{element.heuresRealisees.toFixed(1)}</td>
+                      <td>{nombreEnTexte(element.heuresPrevues)}</td>
+                      <td>{nombreEnTexte(element.heuresRealisees)}</td>
                       <td className={element.ecart < 0 ? 'grille__ecart--haut' : undefined}>
-                        {element.ecart > 0 ? '+' : ''}
-                        {element.ecart.toFixed(1)}
+                        {ecartEnTexte(element.ecart)}
                       </td>
-                      <td>{element.heuresSupplementaires25.toFixed(1)}</td>
-                      <td>{element.heuresSupplementaires50.toFixed(1)}</td>
-                      <td>{element.heuresComplementaires.toFixed(1)}</td>
-                      <td>{element.heuresDeNuit.toFixed(1)}</td>
+                      <td>{nombreEnTexte(element.heuresSupplementaires25)}</td>
+                      <td>{nombreEnTexte(element.heuresSupplementaires50)}</td>
+                      <td>{nombreEnTexte(element.heuresComplementaires)}</td>
+                      <td>{nombreEnTexte(element.heuresDeNuit)}</td>
                       <td>{element.dimanchesTravailles}</td>
                       <td>{element.joursFeriesTravailles}</td>
                     </tr>

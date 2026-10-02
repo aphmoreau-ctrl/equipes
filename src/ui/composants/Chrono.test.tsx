@@ -76,7 +76,7 @@ describe('mode chrono', () => {
     // Le texte est coupe par des balises : on lit le contenu de la liste.
     const liste = screen.getByText('Dernières mesures').nextElementSibling
     expect(liste?.textContent).toContain('30 colis en 1 h')
-    expect(liste?.textContent).toContain('30.0 colis par heure')
+    expect(liste?.textContent).toContain('30,0 colis par heure')
   })
 
   it('permet d’annuler une mesure lancée par erreur', () => {

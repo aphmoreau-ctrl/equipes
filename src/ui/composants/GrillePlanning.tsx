@@ -2,6 +2,7 @@ import { nomAffiche, type Collaborateur } from '../../domaine/collaborateur'
 import { jourDeLaSemaine, nomDuJour } from '../../domaine/calendrier'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
 import type { Rayon } from '../../domaine/magasin'
+import { ecartEnTexte, heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Grille du planning : une ligne par personne, une colonne par jour.
@@ -130,11 +131,10 @@ export function GrillePlanning({
                 })}
 
                 <td className="grille__total">
-                  <span className="grille__heures">{heures.toFixed(1)} h</span>
+                  <span className="grille__heures">{heuresEnTexte(heures)}</span>
                   {Math.abs(ecart) >= 0.5 && (
                     <span className={ecart > 0 ? 'grille__ecart grille__ecart--haut' : 'grille__ecart'}>
-                      {ecart > 0 ? '+' : ''}
-                      {ecart.toFixed(1)}
+                      {ecartEnTexte(ecart)}
                     </span>
                   )}
                 </td>
@@ -188,7 +188,7 @@ export function GrillePlanning({
                   })}
 
                   <td className="grille__total">
-                    <span className="grille__heures">{heures.toFixed(1)} h</span>
+                    <span className="grille__heures">{heuresEnTexte(heures)}</span>
                   </td>
                 </tr>
               )

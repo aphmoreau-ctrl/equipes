@@ -13,6 +13,7 @@ import type {
   NatureCoefficient,
   TrancheBesoin,
 } from './types'
+import { nombreEnTexte } from '../../domaine/nombres'
 
 const NATURES: readonly NatureCoefficient[] = [
   'saison',
@@ -67,7 +68,7 @@ export function calculerBesoin(
       const postes = postesNecessaires(minutes)
       if (postes > bloc.postes + EPSILON) {
         alertes.push(
-          `« ${bloc.nom} » demande ${postes.toFixed(1)} postes en pointe, ` +
+          `« ${bloc.nom} » demande ${nombreEnTexte(postes)} postes en pointe, ` +
             `alors que le rayon en compte ${bloc.postes}. Élargissez la plage horaire ` +
             `ou ajoutez un poste.`,
         )

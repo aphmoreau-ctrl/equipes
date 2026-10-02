@@ -1,5 +1,6 @@
 import { TRANCHE_MINUTES, enTexte } from '../../domaine/temps'
 import type { BesoinJour, Bloc } from '../../moteurs/besoin'
+import { heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 /**
  * Courbe de besoin d'une journee, par tranche de 30 minutes.
@@ -94,7 +95,7 @@ export function CourbeBesoin({ besoin, blocs }: Proprietes) {
         aria-label={
           `Besoin du rayon par tranche de 30 minutes. ` +
           `Pointe à ${Math.max(...visibles.map((t) => t.personnes))} personnes. ` +
-          `${besoin.heuresTotal.toFixed(1)} heures de travail au total.`
+          `${nombreEnTexte(besoin.heuresTotal)} heures de travail au total.`
         }
       >
         {/* Graduations horizontales */}
@@ -178,14 +179,14 @@ export function CourbeBesoin({ besoin, blocs }: Proprietes) {
                 aria-hidden="true"
               />
               <span className="courbe__legende-nom">{bloc.nom}</span>
-              <span className="courbe__legende-valeur">{(minutes / 60).toFixed(1)} h</span>
+              <span className="courbe__legende-valeur">{heuresEnTexte((minutes / 60))}</span>
             </li>
           )
         })}
         <li className="courbe__legende-element">
           <span className="courbe__pastille courbe__pastille--marche" aria-hidden="true" />
           <span className="courbe__legende-nom">Personnes retenues</span>
-          <span className="courbe__legende-valeur">{besoin.heuresPresence.toFixed(1)} h</span>
+          <span className="courbe__legende-valeur">{heuresEnTexte(besoin.heuresPresence)}</span>
         </li>
       </ul>
     </div>

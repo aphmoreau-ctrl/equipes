@@ -7,6 +7,7 @@ import { configurationDeRayon, enPromotion, meteoDuJour, saisiesDuJour } from '.
 import { useDonnees } from '../DonneesProvider'
 import { CourbeBesoin } from '../composants/CourbeBesoin'
 import { Chrono } from '../composants/Chrono'
+import { heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 const METEOS: readonly { valeur: Meteo; libelle: string }[] = [
   { valeur: 'normal', libelle: 'Normal' },
@@ -264,7 +265,7 @@ export function Besoin() {
                   <dd>{dureeEnTexte(Math.round(besoin.minutesTotal))}</dd>
 
                   <dt>Présence nécessaire</dt>
-                  <dd>{besoin.heuresPresence.toFixed(1)} h</dd>
+                  <dd>{heuresEnTexte(besoin.heuresPresence)}</dd>
 
                   <dt>Pointe</dt>
                   <dd>{pointeDeLaJournee(besoin)} personnes en même temps</dd>
@@ -276,15 +277,15 @@ export function Besoin() {
                 <p className="champ__libelle">Coefficients appliqués</p>
                 <dl className="liste-faits">
                   <dt>Saison</dt>
-                  <dd>×{besoin.coefficientsAppliques.saison.toFixed(2)}</dd>
+                  <dd>×{nombreEnTexte(besoin.coefficientsAppliques.saison, 2)}</dd>
                   <dt>Météo</dt>
-                  <dd>×{besoin.coefficientsAppliques.meteo.toFixed(2)}</dd>
+                  <dd>×{nombreEnTexte(besoin.coefficientsAppliques.meteo, 2)}</dd>
                   <dt>Événements</dt>
-                  <dd>×{besoin.coefficientsAppliques.evenement.toFixed(2)}</dd>
+                  <dd>×{nombreEnTexte(besoin.coefficientsAppliques.evenement, 2)}</dd>
                   <dt>Promotion</dt>
-                  <dd>×{besoin.coefficientsAppliques.promotion.toFixed(2)}</dd>
+                  <dd>×{nombreEnTexte(besoin.coefficientsAppliques.promotion, 2)}</dd>
                   <dt>Qualité des arrivages</dt>
-                  <dd>×{besoin.coefficientsAppliques.qualite.toFixed(2)}</dd>
+                  <dd>×{nombreEnTexte(besoin.coefficientsAppliques.qualite, 2)}</dd>
                 </dl>
 
                 {besoin.alertes.map((alerte) => (

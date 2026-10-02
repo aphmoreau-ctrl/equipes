@@ -1,6 +1,7 @@
 import { jourDeLaSemaine } from '../../domaine/calendrier'
 import { duree } from '../../domaine/temps'
 import { nomRenfort, type Mission, type Renfort } from '../../domaine/vivier'
+import { eurosEnTexte } from '../../domaine/nombres'
 
 /**
  * Vivier exterieur (module 8) : classement des renforts pour une vacation,
@@ -142,7 +143,7 @@ export function classerRenforts(
     // Cout : a competence egale, le moins cher d'abord.
     score += (1 - renfort.coutHoraire / coutMaximum) * 20 + 5
     const coutEstime = arrondi(heures * renfort.coutHoraire)
-    atouts.push(`Coût estimé ${coutEstime.toFixed(2).replace('.', ',')} €`)
+    atouts.push(`Coût estimé ${eurosEnTexte(coutEstime)}`)
 
     if (renfort.contactAutorise) {
       score += 10

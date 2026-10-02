@@ -9,6 +9,7 @@ import {
   type Vacation,
 } from '../regles'
 import { penaliser, POIDS_PAR_DEFAUT, type PoidsPenalites } from './score'
+import { heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Scenarios : comparer plusieurs plannings d'une meme semaine (§9.4).
@@ -142,7 +143,7 @@ export function expliquerLaDifference(
 
   const heures = autre.heuresPrevues - reference.heuresPrevues
   if (Math.abs(heures) >= 0.5) {
-    differences.push(`${heures > 0 ? '+' : ''}${heures.toFixed(1)} h de travail prévu`)
+    differences.push(`${heures > 0 ? '+' : ''}${heuresEnTexte(heures)} de travail prévu`)
   }
 
   const regles = autre.reglesEnfreintes - reference.reglesEnfreintes
@@ -162,7 +163,7 @@ export function expliquerLaDifference(
   const ecart = autre.ecartMoyenAuContrat - reference.ecartMoyenAuContrat
   if (Math.abs(ecart) >= 0.5) {
     differences.push(
-      `${ecart > 0 ? '+' : ''}${ecart.toFixed(1)} h d’écart moyen aux contrats`,
+      `${ecart > 0 ? '+' : ''}${heuresEnTexte(ecart)} d’écart moyen aux contrats`,
     )
   }
 

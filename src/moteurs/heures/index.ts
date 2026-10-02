@@ -9,6 +9,7 @@ import {
   type ParametresRegles,
   type Vacation,
 } from '../regles'
+import { nombreEnTexte } from '../../domaine/nombres'
 
 /**
  * Heures et elements variables de paie (cahier des charges §11).
@@ -172,7 +173,7 @@ export function calculerLesElementsVariables(
 
 /** Arrondi a deux decimales, pour un export lisible. */
 function arrondir(valeur: number): string {
-  return valeur.toFixed(2).replace('.', ',')
+  return nombreEnTexte(valeur, 2)
 }
 
 /**

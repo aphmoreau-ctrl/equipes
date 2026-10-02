@@ -178,4 +178,30 @@ describe('absence imprévue', () => {
     expect(screen.getByText('Renforts extérieurs du jour')).toBeInTheDocument()
     expect(screen.queryByText('Vacations à remplacer')).not.toBeInTheDocument()
   })
+
+  it('ne crie pas au manque quand le planning de la semaine n’est pas fait', () => {
+    // Aucun planning enregistre : c'est l'etat d'un debut de semaine, pas une anomalie.
+    window.localStorage.setItem(
+      'equipes.donnees.v1',
+      JSON.stringify({ ...etatInitial(), demonstration: false }),
+    )
+    afficher()
+    choisirLeJour()
+
+    expect(screen.getByText('Planning de la semaine')).toBeInTheDocument()
+    expect(screen.getByText('Pas encore fait')).toBeInTheDocument()
+    expect(screen.queryByText('Rayons en manque')).not.toBeInTheDocument()
+    expect(screen.getByText(/le planning qui reste à faire/)).toBeInTheDocument()
+    // Aucun rayon ne doit etre affiche en rouge.
+    expect(document.querySelectorAll('.verdict--mauvais')).toHaveLength(0)
+  })
+
+  it('compte de nouveau les rayons en manque dès qu’une vacation est posée', () => {
+    preparerPlanning()
+    afficher()
+    choisirLeJour()
+
+    expect(screen.getByText('Rayons en manque')).toBeInTheDocument()
+    expect(screen.queryByText('Pas encore fait')).not.toBeInTheDocument()
+  })
 })

@@ -16,6 +16,7 @@ import {
   type DetailPenalites,
   type PoidsPenalites,
 } from './score'
+import { heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Generation automatique du planning (cahier des charges §9.3).
@@ -508,7 +509,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       )
     } else {
       restes.push(
-        `${nomDuRayon}, le ${besoin.date} : il manque encore ${(manque / 2).toFixed(1)} h ` +
+        `${nomDuRayon}, le ${besoin.date} : il manque encore ${heuresEnTexte((manque / 2))} ` +
           `de présence. Aucune affectation supplémentaire n’était possible sans enfreindre une règle.`,
       )
     }

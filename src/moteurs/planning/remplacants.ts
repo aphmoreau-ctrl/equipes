@@ -9,6 +9,7 @@ import {
 } from '../../domaine/collaborateur'
 import { estAbsent, type Absence } from '../../domaine/absence'
 import { dureeTravailEffectif, type Vacation } from '../regles'
+import { heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Recherche de remplacants (cahier des charges §10).
@@ -197,16 +198,16 @@ export function chercherDesRemplacants(contexte: Contexte): RechercheRemplacants
 
     if (restantes >= aAjouter) {
       score += 25
-      atouts.push(`${restantes.toFixed(1)} h encore disponibles au contrat`)
+      atouts.push(`${heuresEnTexte(restantes)} encore disponibles au contrat`)
     } else if (restantes > 0) {
       score += 5
       reserves.push(
-        `Dépasserait son contrat de ${(aAjouter - restantes).toFixed(1)} h` +
+        `Dépasserait son contrat de ${heuresEnTexte((aAjouter - restantes))}` +
           (collaborateur.tempsPlein ? ' (heures supplémentaires)' : ' (heures complémentaires)'),
       )
     } else {
       reserves.push(
-        `Est déjà à ${heuresPrevues.toFixed(1)} h pour un contrat de ${collaborateur.heuresHebdomadaires} h`,
+        `Est déjà à ${heuresEnTexte(heuresPrevues)} pour un contrat de ${collaborateur.heuresHebdomadaires} h`,
       )
     }
 

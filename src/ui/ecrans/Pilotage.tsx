@@ -11,6 +11,7 @@ import { bilanDesMissions } from '../../moteurs/vivier'
 import { useDonnees } from '../DonneesProvider'
 import { ChampNombre } from '../composants/Champ'
 import { RapportImprimable, type TypeRapport } from '../composants/RapportImprimable'
+import { ecartEnTexte, eurosEnTexte, heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
 export function Pilotage() {
   const { etat, modifier, planning, besoinDuJour, historique } = useDonnees()
@@ -150,10 +151,9 @@ export function Pilotage() {
 
           <dt>Heures prévues</dt>
           <dd>
-            {tableau.heuresPrevues.toFixed(1)} h — budget {tableau.heuresBudget} h (
+            {heuresEnTexte(tableau.heuresPrevues)} — budget {tableau.heuresBudget} h (
             <span className={tableau.ecartAuBudget > 0 ? 'verdict verdict--mauvais' : 'verdict verdict--bon'}>
-              {tableau.ecartAuBudget > 0 ? '+' : ''}
-              {tableau.ecartAuBudget.toFixed(1)} h
+              {ecartEnTexte(tableau.ecartAuBudget)} h
             </span>
             )
           </dd>
@@ -162,20 +162,20 @@ export function Pilotage() {
           <dd>{pourcent(tableau.couverture)}</dd>
 
           <dt>Heures supplémentaires</dt>
-          <dd>{tableau.heuresSupplementaires.toFixed(1)} h</dd>
+          <dd>{heuresEnTexte(tableau.heuresSupplementaires)}</dd>
 
           <dt>Renforts extérieurs</dt>
           <dd>
             {tableau.heuresRenforts === 0
               ? 'aucun'
-              : `${tableau.heuresRenforts.toFixed(1)} h, ${tableau.coutRenforts.toFixed(2).replace('.', ',')} €`}
+              : `${heuresEnTexte(tableau.heuresRenforts)}, ${eurosEnTexte(tableau.coutRenforts)}`}
           </dd>
 
           <dt>Absentéisme</dt>
           <dd>{pourcent(tableau.absenteisme)}</dd>
 
           <dt>Polyvalence moyenne</dt>
-          <dd>{tableau.polyvalenceMoyenne.toFixed(1)} postes par personne</dd>
+          <dd>{nombreEnTexte(tableau.polyvalenceMoyenne)} postes par personne</dd>
 
           <dt>Postes fragiles</dt>
           <dd>{tableau.competencesFragiles}</dd>
@@ -205,7 +205,7 @@ export function Pilotage() {
         </div>
         {tableau.productivite !== null && (
           <p className="champ__aide">
-            Productivité : <strong>{Math.round(tableau.productivite).toLocaleString('fr-FR')} €</strong>{' '}
+            Productivité : <strong>{eurosEnTexte(tableau.productivite, 0)}</strong>{' '}
             par heure travaillée.
           </p>
         )}

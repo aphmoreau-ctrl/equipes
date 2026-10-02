@@ -1,4 +1,4 @@
-import { ajouterJours, lundiDeLaSemaine } from '../../../domaine/calendrier'
+import { ajouterJours, jourEnTexte, lundiDeLaSemaine } from '../../../domaine/calendrier'
 import { dureeEnTexte } from '../../../domaine/temps'
 import { collaborateursConcernes, debutDe, finDe, instant, vacationsDe } from '../reperes'
 import type { Infraction, Regle, Vacation } from '../types'
@@ -36,8 +36,8 @@ export const reposQuotidien: Regle = {
           jour: suivante.jour,
           libelle: `Repos quotidien insuffisant : ${dureeEnTexte(Math.max(0, repos))}`,
           explication:
-            `Fin de service à ${precedente.fin} le ${precedente.jour}, reprise à ` +
-            `${suivante.debut} le ${suivante.jour} : ${dureeEnTexte(Math.max(0, repos))} ` +
+            `Fin de service à ${precedente.fin} le ${jourEnTexte(precedente.jour)}, reprise à ` +
+            `${suivante.debut} le ${jourEnTexte(suivante.jour)} : ${dureeEnTexte(Math.max(0, repos))} ` +
             `de repos au lieu des ${dureeEnTexte(minimum)} exigées` +
             (mineur ? ' pour un salarié de moins de 18 ans.' : '.'),
         })

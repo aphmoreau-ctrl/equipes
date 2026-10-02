@@ -303,6 +303,10 @@ describe('repos quotidien', () => {
     const repos = infractions.find((i) => i.regle === 'repos-quotidien')
     expect(repos).toBeDefined()
     expect(repos?.explication).toContain('9 h 30')
+    // Les dates se lisent en francais, jamais « 2026-11-02 ».
+    expect(repos?.explication).toContain('lundi 2 novembre')
+    expect(repos?.explication).toContain('mardi 3 novembre')
+    expect(repos?.explication).not.toMatch(/\d{4}-\d{2}-\d{2}/)
   })
 
   it('exige 12 h pour un salarié de moins de 18 ans', () => {

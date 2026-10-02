@@ -2,6 +2,7 @@ import { TRANCHE_MINUTES, TRANCHES_PAR_JOUR, duree, enMinutes, indexTranche } fr
 import { estAutonome, type Collaborateur } from '../../domaine/collaborateur'
 import type { BesoinJour } from '../besoin'
 import { dureeTravailEffectif, type Vacation } from '../regles'
+import { jourEnTexte } from '../../domaine/calendrier'
 
 /**
  * Indicateurs : couverture, sureffectif, equite, heures.
@@ -244,7 +245,7 @@ export function expliquerLeTrou(
   if (trou.ecart < 0) {
     const manque = -trou.ecart
     const phrase =
-      `${nomDuRayon}, le ${date} à ${heure} : il manque ${manque} personne${manque > 1 ? 's' : ''}. ` +
+      `${nomDuRayon}, le ${jourEnTexte(date)} à ${heure} : il manque ${manque} personne${manque > 1 ? 's' : ''}. ` +
       (disponibles.length === 0
         ? 'Personne n’est disponible sur ce créneau.'
         : `${disponibles.length} personne${disponibles.length > 1 ? 's' : ''} disponible${disponibles.length > 1 ? 's' : ''}.`)
@@ -257,7 +258,7 @@ export function expliquerLeTrou(
   const competence = trou.competencesManquantes[0] ?? ''
   const capables = disponibles.filter((collaborateur) => estAutonome(collaborateur, competence))
   return (
-    `${nomDuRayon}, le ${date} à ${heure} : personne d’autonome en « ${competence} ». ` +
+    `${nomDuRayon}, le ${jourEnTexte(date)} à ${heure} : personne d’autonome en « ${competence} ». ` +
     (capables.length === 0
       ? 'Aucun collaborateur disponible ne maîtrise ce poste.'
       : `${capables.length} personne${capables.length > 1 ? 's' : ''} pourrai${capables.length > 1 ? 'ent' : 't'} le tenir.`)

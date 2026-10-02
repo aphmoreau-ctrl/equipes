@@ -1,6 +1,7 @@
 import { dureeEnTexte } from '../../../domaine/temps'
 import { minutesInterditesAuxJeunes } from '../reperes'
 import type { Infraction, Regle } from '../types'
+import { jourEnTexte } from '../../../domaine/calendrier'
 
 /**
  * Jeunes travailleurs : interdiction de travailler la nuit.
@@ -29,7 +30,7 @@ export const jeuneTravailleur: Regle = {
         jour: vacation.jour,
         libelle: `Travail de nuit interdit : ${dureeEnTexte(minutes)}`,
         explication:
-          `La vacation de ${vacation.debut} à ${vacation.fin} le ${vacation.jour} comporte ` +
+          `La vacation de ${vacation.debut} à ${vacation.fin} le ${jourEnTexte(vacation.jour)} comporte ` +
           `${dureeEnTexte(minutes)} entre ${parametres.jeuneNuitDebut} et ` +
           `${parametres.jeuneNuitFin}, interdites aux salariés de moins de 18 ans.`,
       })

@@ -8,6 +8,7 @@ import {
 } from '../../domaine/faits'
 import type { Formation } from '../../domaine/formation'
 import type { Rayon } from '../../domaine/magasin'
+import { dateEnTexte } from '../../domaine/calendrier'
 
 /**
  * Recherche globale (cahier des charges §15).
@@ -132,7 +133,7 @@ function candidats(sources: SourcesRecherche): Candidat[] {
         id: `note-${note.id}`,
         type: 'note',
         titre: note.titre,
-        detail: `${LIBELLES_NOTE[note.type]} du ${note.date} · ${extrait(note.contenu, 60)}`,
+        detail: `${LIBELLES_NOTE[note.type]} du ${dateEnTexte(note.date)} · ${extrait(note.contenu, 60)}`,
         chemin: '/communication',
       },
       principal: note.titre,
@@ -176,7 +177,7 @@ function candidats(sources: SourcesRecherche): Candidat[] {
         id: `recrutement-${besoin.id}`,
         type: 'recrutement',
         titre: `${besoin.poste} — ${rayon}`,
-        detail: `${besoin.heuresHebdomadaires} h · souhaité le ${besoin.dateSouhaitee}`,
+        detail: `${besoin.heuresHebdomadaires} h · souhaité le ${dateEnTexte(besoin.dateSouhaitee)}`,
         chemin: '/equipe',
       },
       principal: besoin.poste,

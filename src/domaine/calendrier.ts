@@ -81,6 +81,18 @@ export function dateEnTexte(date: string): string {
   )} ${instant.getUTCFullYear()}`
 }
 
+/**
+ * « 2026-11-02 » devient « lundi 2 novembre », sans l'annee.
+ *
+ * Forme courte, pour les phrases ou la semaine est deja connue : un message de
+ * regle ou de couverture a l'interieur d'un planning. Partout ailleurs, l'annee
+ * compte : on utilise dateEnTexte.
+ */
+export function jourEnTexte(date: string): string {
+  const instant = enInstant(date)
+  return `${nomDuJour(jourDeLaSemaine(date))} ${instant.getUTCDate()} ${nomDuMois(moisDe(date))}`
+}
+
 /** Ajoute (ou retire, si le nombre est negatif) des jours a une date. */
 export function ajouterJours(date: string, nombre: number): string {
   const instant = enInstant(date)

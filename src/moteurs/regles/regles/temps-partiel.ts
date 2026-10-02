@@ -3,6 +3,7 @@ import { minutesHebdomadaires } from '../../../domaine/collaborateur'
 import { dureeTravailEffectif, grouperParJournee } from '../regroupement'
 import { collaborateursConcernes, debutDe, finDe, grouperParSemaine, vacationsDe } from '../reperes'
 import type { Infraction, Regle, Vacation } from '../types'
+import { jourEnTexte } from '../../../domaine/calendrier'
 
 /**
  * Temps partiel : nombre et duree des coupures dans une journee.
@@ -34,7 +35,7 @@ export const coupuresTempsPartiel: Regle = {
           jour: journee.jour,
           libelle: `${coupures.length} coupures dans la journée`,
           explication:
-            `La journée du ${journee.jour} comporte ${coupures.length} coupures, ` +
+            `La journée du ${jourEnTexte(journee.jour)} comporte ${coupures.length} coupures, ` +
             `alors que le maximum retenu est de ${parametres.coupuresMaximumParJour}.`,
         })
       }
@@ -48,7 +49,7 @@ export const coupuresTempsPartiel: Regle = {
             jour: journee.jour,
             libelle: `Coupure trop longue : ${dureeEnTexte(coupure)}`,
             explication:
-              `Une coupure de ${dureeEnTexte(coupure)} le ${journee.jour}, au-delà du ` +
+              `Une coupure de ${dureeEnTexte(coupure)} le ${jourEnTexte(journee.jour)}, au-delà du ` +
               `maximum de ${dureeEnTexte(parametres.dureeMaximaleCoupureMinutes)}.`,
           })
           break

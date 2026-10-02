@@ -7,6 +7,7 @@ import {
   estDansIntervalle,
   estDateValide,
   jourDeLaSemaine,
+  jourEnTexte,
   lundiDeLaSemaine,
   moisDe,
   nomDuJour,
@@ -125,5 +126,12 @@ describe('ajout de mois', () => {
   it('reste exact là où le calcul en jours dérivait', () => {
     // 24 mois valent 730 jours ici, pas 24 x 30 = 720.
     expect(ajouterMois('2024-10-01', 24)).not.toBe(ajouterJours('2024-10-01', 24 * 30))
+  })
+})
+
+describe('forme courte d’une date', () => {
+  it('donne le jour et le mois, sans l’année', () => {
+    expect(jourEnTexte('2026-11-02')).toBe('lundi 2 novembre')
+    expect(jourEnTexte('2026-10-03')).toBe('samedi 3 octobre')
   })
 })

@@ -965,3 +965,15 @@ nul ne s'écrit jamais « −0,0 ». Les sommes portent une espace insécable
 (« 1 234,50 € ») pour qu'un montant ne soit jamais coupé en fin de ligne.
 L'export CSV, lui, garde la virgule décimale **sans** espace de milliers : c'est
 ce qu'un tableur français sait relire.
+
+### C-19 — Les dates aussi s'écrivent en français
+**Ce qui n'allait pas.** Plusieurs messages affichaient la date telle qu'elle
+est stockée : « Fruits et légumes, le 2026-09-28 : il manque encore 7,5 h »,
+« 10 h 30 de travail effectif le 2026-11-02 ». Cela concernait les explications
+des règles légales, les manques de couverture, les résultats de recherche et le
+compte rendu de la proposition automatique.
+**Corrigé.** Deux formes, selon ce que la phrase doit porter : à l'intérieur
+d'une semaine de planning, la forme courte « samedi 3 octobre », puisque
+l'année est déjà connue ; partout ailleurs (échéances, notes, demandes), la
+forme complète « samedi 3 octobre 2026 ». Un test vérifie désormais qu'aucune
+explication de règle ne laisse passer une date brute.

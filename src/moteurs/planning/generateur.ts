@@ -1,5 +1,5 @@
 import { estAbsent, type Absence } from '../../domaine/absence'
-import { jourDeLaSemaine, semaineDe } from '../../domaine/calendrier'
+import { jourDeLaSemaine, jourEnTexte, semaineDe } from '../../domaine/calendrier'
 import { estAutonome, estDisponible, peutTravaillerDans, type Collaborateur } from '../../domaine/collaborateur'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
 import { duree, enMinutes } from '../../domaine/temps'
@@ -504,12 +504,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     const nomDuRayon = rayons.find((rayon) => rayon.id === besoin.rayonId)?.nom ?? besoin.rayonId
     if (critiques > 0) {
       restes.push(
-        `${nomDuRayon}, le ${besoin.date} : une compétence indispensable reste sans titulaire. ` +
+        `${nomDuRayon}, le ${jourEnTexte(besoin.date)} : une compétence indispensable reste sans titulaire. ` +
           `Personne de disponible ne la maîtrise, ou les règles légales l’interdisent.`,
       )
     } else {
       restes.push(
-        `${nomDuRayon}, le ${besoin.date} : il manque encore ${heuresEnTexte((manque / 2))} ` +
+        `${nomDuRayon}, le ${jourEnTexte(besoin.date)} : il manque encore ${heuresEnTexte((manque / 2))} ` +
           `de présence. Aucune affectation supplémentaire n’était possible sans enfreindre une règle.`,
       )
     }

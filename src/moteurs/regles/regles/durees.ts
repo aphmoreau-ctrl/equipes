@@ -1,4 +1,4 @@
-import { ajouterJours, lundiDeLaSemaine } from '../../../domaine/calendrier'
+import { ajouterJours, jourEnTexte, lundiDeLaSemaine } from '../../../domaine/calendrier'
 import { dureeEnTexte } from '../../../domaine/temps'
 import { dureeTravailEffectif, grouperParJournee } from '../regroupement'
 import { grouperParSemaine, vacationsDe, collaborateursConcernes } from '../reperes'
@@ -36,7 +36,7 @@ export const dureeMaximaleQuotidienne: Regle = {
           jour: journee.jour,
           libelle: `Journée trop longue : ${dureeEnTexte(total)} travaillées`,
           explication:
-            `${dureeEnTexte(total)} de travail effectif le ${journee.jour}, ` +
+            `${dureeEnTexte(total)} de travail effectif le ${jourEnTexte(journee.jour)}, ` +
             `soit ${dureeEnTexte(total - plafond)} de plus que le plafond de ` +
             `${dureeEnTexte(plafond)}` +
             (mineur ? ' (moins de 18 ans).' : enDerogation ? ' (dérogation exceptionnelle).' : '.'),

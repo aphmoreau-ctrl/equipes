@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Icone } from './Icone'
 import { useDonnees } from './DonneesProvider'
+import { poserLaPastille } from './composants/PastilleIcone'
 import { MODULES, modulesPrincipaux, modulesSecondaires } from './modules'
 import type { Module } from './modules'
 
@@ -25,18 +26,13 @@ export function useNombreUrgences(): number {
   const { alertes } = useDonnees()
   const nombre = alertes.filter((alerte) => alerte.gravite === 'urgent').length
 
-  // Pastille sur l'icone de l'application, quand l'appareil le permet
-  // (application installee ; sur iPhone et iPad, notifications autorisees).
+  /*
+   * Pastille sur l'icone de l'application. L'autorisation se demande depuis
+   * l'ecran Parametres, jamais d'elle-meme : une demande surgie au lancement
+   * est presque toujours refusee, et un refus est definitif.
+   */
   useEffect(() => {
-    const appareil = navigator as Navigator & {
-      setAppBadge?: (nombre: number) => Promise<void>
-      clearAppBadge?: () => Promise<void>
-    }
-    const action =
-      nombre > 0 ? appareil.setAppBadge?.(nombre) : appareil.clearAppBadge?.()
-    action?.catch(() => {
-      // Refuse par l'appareil : la pastille du menu suffit.
-    })
+    poserLaPastille(nombre)
   }, [nombre])
 
   return nombre

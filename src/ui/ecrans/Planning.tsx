@@ -11,6 +11,12 @@ import {
 import { estDisponible, nomAffiche, peutTravaillerDans } from '../../domaine/collaborateur'
 import { rayonsActifs } from '../../domaine/magasin'
 import {
+  LIBELLES_ORIGINE,
+  nomRenfort,
+  presenceDeRenfort,
+  vacationDeMission,
+} from '../../domaine/vivier'
+import {
   afficheEquipeImprimable,
   changerEtat,
   datePublication,
@@ -88,6 +94,43 @@ export function Planning() {
   const aConfirmer = infractions.filter((infraction) => infraction.severite === 'a-confirmer')
 
   // ------------------------------------------------------- Couverture
+  /*
+   * Renforts exterieurs en mission cette semaine.
+   *
+   * Ils comptent dans la couverture — ils sont reellement la — mais pas dans
+   * le controle des regles legales : leur temps de travail releve de leur
+   * employeur, pas du magasin.
+   */
+  const renfortsDeLaSemaine = useMemo(() => {
+    const duJour = etat.missions.filter(
+      (mission) =>
+        jours.includes(mission.date) &&
+        (filtreRayon === 'tous' || mission.rayonId === filtreRayon),
+    )
+
+    return [...new Set(duJour.map((mission) => mission.renfortId))]
+      .map((renfortId) => {
+        const renfort = etat.renforts.find((candidat) => candidat.id === renfortId)
+        if (renfort === undefined) return null
+        return {
+          id: renfort.id,
+          nom: nomRenfort(renfort),
+          origine: LIBELLES_ORIGINE[renfort.origine],
+          presence: presenceDeRenfort(renfort),
+          vacations: duJour
+            .filter((mission) => mission.renfortId === renfortId)
+            .map(vacationDeMission),
+        }
+      })
+      .filter((element): element is NonNullable<typeof element> => element !== null)
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  }, [etat.missions, etat.renforts, jours, filtreRayon])
+
+  const vacationsDesRenforts = useMemo(
+    () => renfortsDeLaSemaine.flatMap((renfort) => renfort.vacations),
+    [renfortsDeLaSemaine],
+  )
+
   const couvertures = useMemo(() => {
     const resultats = []
     for (const rayon of rayons) {
@@ -98,12 +141,25 @@ export function Planning() {
         resultats.push({
           rayon,
           jour,
-          couverture: calculerCouverture(besoin, planningCourant.vacations, etat.collaborateurs),
+          couverture: calculerCouverture(
+            besoin,
+            [...planningCourant.vacations, ...vacationsDesRenforts],
+            [...etat.collaborateurs, ...renfortsDeLaSemaine.map((renfort) => renfort.presence)],
+          ),
         })
       }
     }
     return resultats
-  }, [rayons, filtreRayon, jours, besoinDuJour, planningCourant.vacations, etat.collaborateurs])
+  }, [
+    rayons,
+    filtreRayon,
+    jours,
+    besoinDuJour,
+    planningCourant.vacations,
+    etat.collaborateurs,
+    vacationsDesRenforts,
+    renfortsDeLaSemaine,
+  ])
 
   const besoinTotal = couvertures.reduce((somme, c) => somme + c.couverture.heuresBesoin, 0)
   const presenceTotale = couvertures.reduce((somme, c) => somme + c.couverture.heuresPresence, 0)
@@ -364,6 +420,7 @@ export function Planning() {
           rayons={rayons}
           caseSelectionnee={caseChoisie}
           infractionsParPersonne={infractionsParPersonne}
+          renforts={renfortsDeLaSemaine}
           onChoisirCase={(collaborateurId, jour) =>
             setCaseChoisie(
               caseChoisie?.collaborateurId === collaborateurId && caseChoisie.jour === jour
@@ -564,6 +621,7 @@ export function Planning() {
                 couvertures={couvertures}
                 budgetHeuresParRayon={etat.magasin.budgetHeuresParRayon}
                 nomDuService={etat.magasin.services[0]?.nom ?? 'Frais'}
+                renforts={renfortsDeLaSemaine}
                 edite={aujourdhui()}
               />
             </div>

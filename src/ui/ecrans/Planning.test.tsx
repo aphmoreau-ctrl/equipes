@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import { aujourdhui, lundiDeLaSemaine } from '../../domaine/calendrier'
+import { etatInitial } from '../../donnees/etat'
 import { DonneesProvider } from '../DonneesProvider'
 import { Planning } from './Planning'
 
@@ -298,5 +300,70 @@ describe('scénarios', () => {
 
     afficher()
     expect(screen.getAllByText('Version A').length).toBeGreaterThan(0)
+  })
+})
+
+describe('renforts extérieurs dans le planning', () => {
+  /** Met un renfort en mission le lundi de la semaine affichée. */
+  function preparerUneMission(): void {
+    const base = etatInitial()
+    window.localStorage.setItem(
+      'equipes.donnees.v1',
+      JSON.stringify({
+        ...base,
+        demonstration: false,
+        missions: [
+          {
+            id: 'm-test',
+            renfortId: base.renforts[0]?.id ?? 'r-01',
+            date: lundiDeLaSemaine(aujourdhui()),
+            rayonId: 'fruits-legumes',
+            debut: '06:00',
+            fin: '13:00',
+            pauseMinutes: 20,
+            motif: 'renfort',
+            vacationCouverte: null,
+          },
+        ],
+      }),
+    )
+  }
+
+  it('n’affiche aucune ligne de renfort quand il n’y a pas de mission', () => {
+    afficher()
+    expect(screen.queryByText('Renforts extérieurs')).not.toBeInTheDocument()
+  })
+
+  it('affiche le renfort en mission dans la grille', () => {
+    preparerUneMission()
+    afficher()
+
+    expect(screen.getByText('Renforts extérieurs')).toBeInTheDocument()
+    expect(within(grille()).getAllByText('06:00–13:00').length).toBeGreaterThan(0)
+  })
+
+  it('explique que le renfort compte dans la couverture mais pas dans les règles', () => {
+    preparerUneMission()
+    afficher()
+    expect(
+      screen.getByText(/comptent dans la couverture du besoin, mais pas dans le contrôle/),
+    ).toBeInTheDocument()
+  })
+
+  it('ne compte pas le renfort dans le contrôle des règles', () => {
+    preparerUneMission()
+    afficher()
+    // Une seule mission ne peut enfreindre aucune regle : le planning reste conforme.
+    expect(screen.getByText('Aucune règle enfreinte')).toBeInTheDocument()
+  })
+
+  it('fait figurer le renfort sur le document remis', () => {
+    preparerUneMission()
+    afficher()
+    fireEvent.click(screen.getByRole('button', { name: /Dossier à présenter/ }))
+
+    const document_ = screen.getByText(/Service Frais — du/).closest('.document')
+    expect(document_?.textContent).toContain('06:00')
+    expect(document_?.textContent).toMatch(/Intérimaire|Étudiant|Ancien salarié/)
   })
 })

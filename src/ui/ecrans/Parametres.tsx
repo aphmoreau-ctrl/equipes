@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { dureeEnTexte } from '../../domaine/temps'
 import { PARAMETRES_PAR_DEFAUT, REGLES_IMPLEMENTEES } from '../../moteurs/regles'
 import { useDonnees } from '../DonneesProvider'
+import { ReglagePastille } from '../composants/PastilleIcone'
+import { useNombreUrgences } from '../Navigation'
 import { MODULES } from '../modules'
 import {
   SectionBudgets,
@@ -52,6 +54,7 @@ export function Parametres({
   onChangerCode,
 }: Proprietes) {
   const appareil = useEtatAppareil()
+  const urgences = useNombreUrgences()
   const { etat, reinitialiser } = useDonnees()
   const [confirmationCode, setConfirmationCode] = useState(false)
   const [confirmationDonnees, setConfirmationDonnees] = useState(false)
@@ -140,6 +143,11 @@ export function Parametres({
           et les accords du magasin. Elles deviendront modifiables ici même au lot 5, en même temps
           que le contrôle du planning.
         </p>
+      </section>
+
+      <section className="carte">
+        <h2>Pastille sur l’icône</h2>
+        <ReglagePastille nombre={urgences} />
       </section>
 
       <section className="carte">

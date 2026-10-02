@@ -905,3 +905,34 @@ dépassait même le temps accordé, ce qui bloquait trois publications de suite.
 n'est vidée que si change une donnée dont le besoin dépend — jamais quand vous
 posez une vacation. Le test est passé de 3,5 s à 1,4 s, et l'iPad en profite
 autant.
+
+### C-15 — Les renforts extérieurs apparaissent enfin sur le planning
+**Ce qui n'allait pas.** On pouvait confier une mission à un remplaçant du
+vivier ou à un intérimaire, mais le planning de la semaine ne le montrait pas :
+la grille restait creuse, la couverture du besoin l'ignorait, et le document
+remis au patron laissait croire à un trou d'effectif qui n'existait pas.
+**Corrigé.** Les renforts en mission forment une section « Renforts extérieurs »
+en bas de la grille, en grisé, avec leur origine (vivier ou agence). Ils
+**comptent dans la couverture du besoin** et figurent sur les deux documents
+imprimables.
+**Choix volontaire.** Ils restent **en dehors du contrôle des règles légales** :
+leur temps de travail, leurs repos et leurs plafonds relèvent de leur employeur
+(l'agence), pas du vôtre — l'application ne connaît pas leurs heures ailleurs
+et afficherait donc des contrôles faux. La grille le dit en clair sous le
+tableau. *Alternative possible :* leur appliquer les mêmes règles qu'aux
+salariés du magasin, au prix d'alertes mensongères.
+
+### C-16 — La pastille sur l'icône : une autorisation qu'il faut demander
+**Ce qui n'allait pas.** L'application posait le nombre d'alertes sur son icône
+d'écran d'accueil sans jamais demander l'autorisation nécessaire sur iPhone et
+iPad. Résultat : le chiffre n'apparaissait jamais, sans que rien ne l'explique.
+**Corrigé.** Un réglage « Pastille sur l'icône » dans Paramètres, avec un
+bouton pour accorder l'autorisation. Il dit noir sur blanc que l'application ne
+vous enverra **aucune notification** : l'autorisation ne sert qu'à poser le
+chiffre sur l'icône. Si vous avez déjà refusé, il indique le chemin dans les
+Réglages de l'appareil (Notifications → Équipes), car un refus ne peut pas être
+redemandé.
+**Choix volontaire.** La demande ne part **que** d'un appui sur ce bouton,
+jamais au lancement : une demande surgie à l'ouverture est refusée neuf fois
+sur dix, et ce refus est définitif. La pastille rouge dans le menu de
+l'application, elle, fonctionne partout sans aucune autorisation.

@@ -27,6 +27,17 @@ interface Proprietes {
   readonly couvertures: readonly { rayon: Rayon; jour: string; couverture: CouvertureJour }[]
   readonly budgetHeuresParRayon: Readonly<Record<string, number>>
   readonly nomDuService: string
+  /**
+   * Renforts exterieurs en mission cette semaine. Ils figurent sur le
+   * document : l'equipe doit savoir qui sera la, et le patron doit voir
+   * le recours a l'interim.
+   */
+  readonly renforts: readonly {
+    readonly id: string
+    readonly nom: string
+    readonly origine: string
+    readonly vacations: readonly Vacation[]
+  }[]
   /** Date d'edition du document. */
   readonly edite: string
 }
@@ -43,13 +54,18 @@ export function DocumentImprimable({
   couvertures,
   budgetHeuresParRayon,
   nomDuService,
+  renforts,
   edite,
 }: Proprietes) {
   const jours = semaineDe(planning.semaine)
   const dernierJour = jours[6] ?? planning.semaine
 
-  const rayonsConcernes = rayons.filter((rayon) =>
-    planning.vacations.some((vacation) => vacation.rayonId === rayon.id),
+  const rayonsConcernes = rayons.filter(
+    (rayon) =>
+      planning.vacations.some((vacation) => vacation.rayonId === rayon.id) ||
+      renforts.some((renfort) =>
+        renfort.vacations.some((vacation) => vacation.rayonId === rayon.id),
+      ),
   )
 
   return (
@@ -118,6 +134,40 @@ export function DocumentImprimable({
                     </tr>
                   )
                 })}
+
+                {renforts
+                  .filter((renfort) =>
+                    renfort.vacations.some((vacation) => vacation.rayonId === rayon.id),
+                  )
+                  .map((renfort) => {
+                    const siennes = renfort.vacations.filter(
+                      (vacation) => vacation.rayonId === rayon.id,
+                    )
+                    return (
+                      <tr key={renfort.id}>
+                        <th scope="row">
+                          {renfort.nom}
+                          <span className="document__mention"> ({renfort.origine})</span>
+                        </th>
+                        {jours.map((jour) => {
+                          const duJour = siennes.filter((vacation) => vacation.jour === jour)
+                          return (
+                            <td key={jour}>
+                              {duJour.length === 0
+                                ? '—'
+                                : duJour
+                                    .map(
+                                      (vacation) =>
+                                        `${vacation.debut}\u2009–\u2009${vacation.fin}`,
+                                    )
+                                    .join(' / ')}
+                            </td>
+                          )
+                        })}
+                        <td className="document__total">{heuresDe(siennes).toFixed(1)} h</td>
+                      </tr>
+                    )
+                  })}
               </tbody>
             </table>
           </section>

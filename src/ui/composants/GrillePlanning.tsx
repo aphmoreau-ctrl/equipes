@@ -17,6 +17,7 @@ export function GrillePlanning({
   rayons,
   caseSelectionnee,
   infractionsParPersonne,
+  renforts,
   onChoisirCase,
 }: {
   readonly collaborateurs: readonly Collaborateur[]
@@ -25,6 +26,18 @@ export function GrillePlanning({
   readonly rayons: readonly Rayon[]
   readonly caseSelectionnee: { collaborateurId: string; jour: string } | null
   readonly infractionsParPersonne: Readonly<Record<string, number>>
+  /**
+   * Renforts exterieurs en mission cette semaine : interimaires, etudiants,
+   * extras. Ils sont affiches pour qu'on voie qui est reellement la, mais
+   * leurs cases ne se modifient pas ici — une mission se gere depuis l'ecran
+   * du jour, et leur conformite legale releve de leur employeur.
+   */
+  readonly renforts: readonly {
+    readonly id: string
+    readonly nom: string
+    readonly origine: string
+    readonly vacations: readonly Vacation[]
+  }[]
   readonly onChoisirCase: (collaborateurId: string, jour: string) => void
 }) {
   function vacationsDe(collaborateurId: string, jour: string): Vacation[] {
@@ -129,7 +142,68 @@ export function GrillePlanning({
             )
           })}
         </tbody>
+
+        {renforts.length > 0 && (
+          <tbody className="grille__renforts">
+            <tr>
+              <th scope="row" colSpan={jours.length + 2} className="grille__intertitre">
+                Renforts extérieurs
+              </th>
+            </tr>
+
+            {renforts.map((renfort) => {
+              const heures =
+                renfort.vacations.reduce(
+                  (somme, vacation) => somme + dureeTravailEffectif(vacation),
+                  0,
+                ) / 60
+
+              return (
+                <tr key={renfort.id}>
+                  <th scope="row" className="grille__personne">
+                    <span className="grille__nom">{renfort.nom}</span>
+                    <span className="grille__contrat">{renfort.origine}</span>
+                  </th>
+
+                  {jours.map((jour) => {
+                    const duJour = renfort.vacations.filter((vacation) => vacation.jour === jour)
+                    return (
+                      <td key={jour}>
+                        <span className="case case--renfort">
+                          {duJour.length === 0 ? (
+                            <span className="case__repos">—</span>
+                          ) : (
+                            duJour.map((vacation) => (
+                              <span key={vacation.id} className="case__vacation">
+                                <span className="case__heures">
+                                  {vacation.debut}–{vacation.fin}
+                                </span>
+                                <span className="case__rayon">{nomDuRayon(vacation.rayonId)}</span>
+                              </span>
+                            ))
+                          )}
+                        </span>
+                      </td>
+                    )
+                  })}
+
+                  <td className="grille__total">
+                    <span className="grille__heures">{heures.toFixed(1)} h</span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        )}
       </table>
+
+      {renforts.length > 0 && (
+        <p className="champ__aide">
+          Les renforts extérieurs comptent dans la couverture du besoin, mais pas dans le contrôle
+          des règles légales : leur temps de travail relève de leur employeur. Leurs missions se
+          gèrent depuis l’écran « Aujourd’hui ».
+        </p>
+      )}
     </div>
   )
 }

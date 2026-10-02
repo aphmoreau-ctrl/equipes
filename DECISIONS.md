@@ -1500,3 +1500,33 @@ bloc au fil séparé, besoins déjà calculés.
 donc préparés par l'écran et transmis comme données. Quatre semaines, c'est
 quatre fois le calcul : c'est précisément là que figer l'écran serait le plus
 pénible.
+
+## Lot 10 — Contrôles avant validation et documents propres (2 octobre 2026)
+
+### D-120 — Un seul contrôle bloque : la loi
+**Décision.** Cinq contrôles sont faits avant validation — règles légales,
+compétences critiques, binômes de formation, écarts au contrat, compétences
+tenues par une seule personne — mais **un seul bloque** : une règle légale
+enfreinte interdit le passage à « Publié à l'équipe ».
+**Raison.** Les quatre autres relèvent d'un arbitrage qui vous appartient : un
+écart au contrat peut être assumé, une semaine creuse se décide. Une durée de
+travail illégale, non. Bloquer sur tout aurait rendu l'outil inutilisable ; ne
+bloquer sur rien l'aurait rendu dangereux.
+**Les étapes antérieures restent libres** : on peut parfaitement soumettre un
+planning imparfait à son patron pour en discuter. C'est la **diffusion à
+l'équipe** qui est protégée.
+
+### D-121 — Chaque contrôle qui alerte dit quoi faire
+**Décision.** Un contrôle qui n'est pas au vert porte toujours un conseil :
+« voyez les conflits, un prêt suffit souvent », « placez sur le même créneau
+quelqu'un capable de former », « prévoyez une formation ».
+**Raison.** Un voyant orange sans suite est une source d'angoisse, pas
+d'information.
+
+### D-122 — Un test reprend tous les écrans pour protéger les documents
+**Décision.** Un test unique vérifie qu'**aucun** des écrans ajoutés — conflits,
+équité, contrôles, feuilles de route, réglages — ne laisse passer un seul de
+ses libellés dans les deux documents sortants.
+**Raison.** Chaque écran ajouté est une occasion de rompre la règle absolue des
+documents sortants. Vérifier au cas par cas aurait fini par en oublier un ; la
+liste est désormais à un seul endroit, et elle grandira avec l'application.

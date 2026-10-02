@@ -42,6 +42,8 @@ import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
 import { Conflits } from '../composants/Conflits'
 import { VueTousRayons } from '../composants/VueTousRayons'
 import { Equite } from '../composants/Equite'
+import { ControlesValidation } from '../composants/ControlesValidation'
+import { controlerAvantValidation, peutSortir } from '../../moteurs/planning/controles'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -330,6 +332,21 @@ export function Planning() {
       ),
     [semaine, rayons, etat, besoinDuJour],
   )
+
+  /** Un planning illegal ne doit pas etre diffuse a l'equipe. */
+  const publicationAutorisee = useMemo(
+    () =>
+      peutSortir(
+        controlerAvantValidation({
+          besoins: besoinsDeLaSemaine,
+          vacations: planningCourant.vacations,
+          collaborateurs: etat.collaborateurs,
+          infractions,
+        }),
+      ),
+    [besoinsDeLaSemaine, planningCourant.vacations, etat.collaborateurs, infractions],
+  )
+
 
   const collaborateurChoisi = etat.collaborateurs.find(
     (collaborateur) => collaborateur.id === caseChoisie?.collaborateurId,
@@ -825,7 +842,18 @@ export function Planning() {
         )}
       </section>
 
-      <SuiviPlanning planning={planningCourant} onChanger={changerLeSuivi} />
+      <ControlesValidation
+        besoins={besoinsDeLaSemaine}
+        vacations={planningCourant.vacations}
+        infractions={infractions}
+      />
+
+      <SuiviPlanning
+        planning={planningCourant}
+        onChanger={changerLeSuivi}
+        publicationBloquee={!publicationAutorisee}
+        raisonDuBlocage="Une règle légale est enfreinte : corrigez-la avant de publier à l’équipe."
+      />
     </>
   )
 }

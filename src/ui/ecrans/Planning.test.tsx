@@ -89,7 +89,9 @@ describe('écran Planning', () => {
 
     expect(screen.getByText('Contrôle des règles')).toBeInTheDocument()
     // Sept jours d'affilee : interdit en soi (L3132-1), constat ferme.
-    expect(screen.getByText(/7 jours travaillés dans la semaine/)).toBeInTheDocument()
+    // Le constat apparait dans le controle des regles ET dans les controles
+    // avant validation : les deux disent la meme chose, a deux endroits.
+    expect(screen.getAllByText(/7 jours travaillés dans la semaine/).length).toBeGreaterThan(0)
     expect(screen.queryByText('Aucune règle enfreinte')).not.toBeInTheDocument()
   })
 

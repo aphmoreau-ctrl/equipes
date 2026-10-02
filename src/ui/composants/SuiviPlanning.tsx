@@ -24,10 +24,22 @@ export function SuiviPlanning({
   planning,
   titre = 'Suivi',
   onChanger,
+  publicationBloquee = false,
+  raisonDuBlocage,
 }: {
   readonly planning: Suivi
   readonly titre?: string
   readonly onChanger: (etat: EtatSuivi, date: string, remarques: string) => void
+  /**
+   * Interdit le passage a « Publié à l'équipe ».
+   *
+   * C'est la seule etape qui sort de l'application : un planning illegal ne
+   * doit pas etre affiche en salle de pause. Les autres etapes restent
+   * accessibles — on peut tres bien soumettre un planning imparfait pour en
+   * discuter.
+   */
+  readonly publicationBloquee?: boolean
+  readonly raisonDuBlocage?: string
 }) {
   const [etatChoisi, setEtatChoisi] = useState<EtatSuivi | null>(null)
   const [date, setDate] = useState(aujourdhui)
@@ -59,17 +71,27 @@ export function SuiviPlanning({
 
       <p className="champ__libelle">Étape suivante</p>
       <div className="groupe-boutons">
-        {suivants.map((etat) => (
-          <button
-            key={etat}
-            type="button"
-            className={etatChoisi === etat ? 'bouton bouton--principal' : 'bouton'}
-            onClick={() => setEtatChoisi(etatChoisi === etat ? null : etat)}
-          >
-            {LIBELLES_ETAT[etat]}
-          </button>
-        ))}
+        {suivants.map((etat) => {
+          const bloquee = publicationBloquee && etat === 'publie'
+          return (
+            <button
+              key={etat}
+              type="button"
+              className={etatChoisi === etat ? 'bouton bouton--principal' : 'bouton'}
+              disabled={bloquee}
+              onClick={() => setEtatChoisi(etatChoisi === etat ? null : etat)}
+            >
+              {LIBELLES_ETAT[etat]}
+            </button>
+          )
+        })}
       </div>
+
+      {publicationBloquee && suivants.includes('publie') && (
+        <p className="avis avis--attention">
+          {raisonDuBlocage ?? 'La publication à l’équipe est bloquée.'}
+        </p>
+      )}
 
       {etatChoisi !== null && (
         <>

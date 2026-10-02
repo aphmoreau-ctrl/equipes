@@ -171,3 +171,55 @@ describe('contenu de l’affichage équipe', () => {
     expect(texte).not.toMatch(/Publié à l’équipe|Brouillon|Soumis/)
   })
 })
+
+describe('les écrans ajoutés ne fuitent pas dans les documents', () => {
+  /*
+   * Regle absolue du projet : un document sortant ne porte ni note, ni statut,
+   * ni historique. Chaque ecran ajoute au planning est une occasion de la
+   * rompre — conflits, equite, controles, feuilles de route. Ce test les
+   * reprend tous, pour qu'aucun n'y echappe a l'avenir.
+   */
+  const INTERDITS = [
+    // Circuit de suivi
+    /Brouillon/,
+    /Soumis/,
+    /Publié à l’équipe/,
+    /remarques du patron/i,
+    // Conflits et solutions
+    /Conflits et solutions/,
+    /poste intenable/,
+    /Prêt entre rayons/,
+    /Formation à prévoir/,
+    // Equite
+    /Équité sur quatre semaines/,
+    /porte nettement plus que/,
+    // Controles avant validation
+    /Contrôles avant validation/,
+    /Écarts au contrat/,
+    /Compétences tenues par une seule personne/,
+    // Feuilles de route et reglages
+    /Feuilles de route/,
+    /Ce qui n’a trouvé personne/,
+    /Catalogue des tâches/,
+  ]
+
+  for (const type of ['dossier-patron', 'affichage-equipe'] as const) {
+    it(`garde le document « ${type} » propre`, () => {
+      afficher()
+      placerUneVacation()
+      if (type === 'affichage-equipe') publier()
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: type === 'dossier-patron' ? /Dossier à présenter/ : /Affichage équipe/,
+        }),
+      )
+
+      const texte = document_().textContent ?? ''
+      for (const interdit of INTERDITS) {
+        expect(texte, `« ${interdit} » ne doit pas figurer sur un document sortant`).not.toMatch(
+          interdit,
+        )
+      }
+    })
+  }
+})

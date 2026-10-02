@@ -1972,3 +1972,70 @@ select.champ__saisie {
   margin-top: 6px;
   min-height: 38px;
 }
+
+/* --------------------------------------------- Controles avant validation */
+.controles {
+  list-style: none;
+  margin: 12px 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controle {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 0;
+  border-top: 1px solid var(--bordure);
+}
+
+.controle:first-child {
+  border-top: none;
+}
+
+.controle__marque {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.controle--bon .controle__marque {
+  background: color-mix(in srgb, var(--succes) 16%, transparent);
+  color: var(--succes);
+}
+
+.controle--alerte .controle__marque {
+  background: color-mix(in srgb, var(--avertissement) 16%, transparent);
+  color: var(--avertissement);
+}
+
+.controle--bloquant .controle__marque {
+  background: color-mix(in srgb, var(--alerte) 16%, transparent);
+  color: var(--alerte);
+}
+
+.controle__corps {
+  display: grid;
+  gap: 2px;
+}
+
+.controle__titre {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.controle__detail {
+  font-size: 14px;
+}
+
+.controle__conseil {
+  font-size: 13px;
+  color: var(--texte-doux);
+}

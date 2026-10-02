@@ -1798,18 +1798,14 @@ select.champ__saisie {
   max-width: none;
 }
 
-/* Mention « a verifier » : une valeur de convention, pas de loi. */
-.etiquette {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  vertical-align: middle;
-}
-
+/*
+ * Mention « a verifier » : une valeur de convention, pas de loi.
+ * Elle reprend la forme de « .etiquette », definie plus haut, et n'en
+ * redefinit que ce qui change : la couleur et l'espace avant le titre.
+ */
 .etiquette--verifier {
+  margin-left: 8px;
+  vertical-align: middle;
   background: color-mix(in srgb, var(--avertissement) 14%, transparent);
   color: var(--avertissement);
 }

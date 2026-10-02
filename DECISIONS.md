@@ -1530,3 +1530,9 @@ ses libellés dans les deux documents sortants.
 **Raison.** Chaque écran ajouté est une occasion de rompre la règle absolue des
 documents sortants. Vérifier au cas par cas aurait fini par en oublier un ; la
 liste est désormais à un seul endroit, et elle grandira avec l'application.
+
+### C-27 — Une classe d'étiquette en double
+Repéré en relisant la feuille de style : la mention « à vérifier » ajoutée au
+lot 1b redéfinissait la classe `.etiquette`, déjà utilisée par la liste
+d'avancement des modules — elle en changeait donc l'allure sans qu'on l'ait
+demandé. Corrigé : la mention ne redéfinit plus que ce qui lui est propre.

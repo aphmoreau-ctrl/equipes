@@ -1397,3 +1397,41 @@ et déplacer quelqu'un d'une heure sans le lui demander n'est pas acceptable.
 aucun horaire type reçoit son propre horaire, calculé sur ses heures réelles.
 **Raison.** Sans cela, le moteur n'aurait pas su quelles tranches elle couvre,
 et aurait cru le besoin découvert là où quelqu'un travaille.
+
+## Lot 7 — Conflits et solutions classées (2 octobre 2026)
+
+### D-111 — Cinq solutions, classées par ce qu'elles coûtent
+**Décision.** Chaque conflit est accompagné de solutions, classées du moins
+coûteux au plus coûteux :
+1. **prêter** quelqu'un d'un autre rayon — gratuit, immédiat ;
+2. **décaler** un poste existant de 15 ou 30 minutes — gratuit, demande un accord ;
+3. **heures complémentaires** pour un temps partiel qui a de la marge ;
+4. **renfort extérieur** — un coût réel ;
+5. **former quelqu'un** — un coût différé, mais la seule qui règle le problème
+   pour de bon.
+**Raison.** Constater le manque ne sert à rien : la couverture le dit déjà.
+Ce qui manquait, c'est quoi faire, et dans quel ordre essayer.
+
+### D-112 — Seuls le prêt et le décalage s'appliquent d'un geste
+**Décision.** Le bouton « Appliquer » n'apparaît que sur le prêt et le
+décalage. Les heures complémentaires, les renforts et les formations sont
+affichés mais ne modifient rien.
+**Raison.** Les trois dernières engagent **quelqu'un d'autre** : on ne propose
+pas des heures complémentaires ni on n'appelle une agence depuis un bouton de
+planning. Elles se décident avec les personnes concernées, puis se saisissent
+dans les écrans prévus.
+**Alternative possible :** préparer la demande (un message, une mission) sans
+l'envoyer — à ajouter si le besoin s'en fait sentir.
+
+### D-113 — Les conflits se regroupent en plages, pas en quarts d'heure
+**Décision.** Les quarts d'heure consécutifs touchés par le même problème sont
+regroupés en une seule ligne : « Boucherie, 08:30–12:00 : personne pour
+“boucherie” — poste intenable ».
+**Raison.** Au quart d'heure, une matinée découverte produirait quatorze lignes
+identiques. Regroupées, elles tiennent en une.
+
+### D-114 — Un prêt dure au moins trois heures
+**Décision.** Une solution de prêt propose toujours au moins trois heures, même
+si le trou est plus court.
+**Raison.** La même règle que pour les postes courts : on ne fait pas traverser
+le magasin à quelqu'un pour trois quarts d'heure.

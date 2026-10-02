@@ -39,6 +39,7 @@ import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { useGenerateur } from '../useGenerateur'
 import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
+import { Conflits } from '../composants/Conflits'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -631,6 +632,15 @@ export function Planning() {
           </ul>
         )}
       </section>
+
+      <Conflits
+        semaine={semaine}
+        vacations={planningCourant.vacations}
+        besoinDuJour={besoinDuJour}
+        onAppliquer={(nouvelles) =>
+          modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: nouvelles }))
+        }
+      />
 
       <FeuillesDeRoute
         semaine={semaine}

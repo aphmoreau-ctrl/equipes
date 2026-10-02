@@ -1903,3 +1903,72 @@ select.champ__saisie {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
 }
+
+/* ----------------------------------------------------- Conflits et solutions */
+.conflits {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conflit {
+  border-left: 3px solid var(--avertissement);
+  background: color-mix(in srgb, var(--avertissement) 7%, transparent);
+  border-radius: 0 var(--rayon-petit) var(--rayon-petit) 0;
+  padding: 10px 14px;
+}
+
+.conflit--grave {
+  border-left-color: var(--alerte);
+  background: color-mix(in srgb, var(--alerte) 8%, transparent);
+}
+
+.conflit__titre {
+  margin: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.solutions {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.solution {
+  display: grid;
+  gap: 2px;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  padding: 8px 12px;
+}
+
+.solution__nature {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texte-doux);
+}
+
+.solution__libelle {
+  font-size: 15px;
+}
+
+.solution__detail {
+  font-size: 13px;
+  color: var(--texte-doux);
+}
+
+.solution .bouton {
+  justify-self: start;
+  margin-top: 6px;
+  min-height: 38px;
+}

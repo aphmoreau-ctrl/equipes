@@ -977,3 +977,23 @@ d'une semaine de planning, la forme courte « samedi 3 octobre », puisque
 l'année est déjà connue ; partout ailleurs (échéances, notes, demandes), la
 forme complète « samedi 3 octobre 2026 ». Un test vérifie désormais qu'aucune
 explication de règle ne laisse passer une date brute.
+
+### C-20 — Le dossier patron donne enfin le total réel de chaque personne
+**Ce qui n'allait pas.** Le document est organisé par rayon. Une personne qui
+tient deux rayons y figurait donc deux fois, avec deux totaux partiels
+(« 33,3 h » puis « 6,7 h ») : son total réel de la semaine n'apparaissait nulle
+part, et personne ne pouvait le reconstituer de tête.
+**Corrigé.** Un tableau « Total des heures par personne » en fin de dossier :
+prénom et initiale, heures du contrat, heures prévues, écart signé. Il ne
+figure que sur le dossier remis au patron, pas sur l'affichage équipe, et ne
+contient aucune note ni aucun statut — la règle des documents sortants reste
+entière.
+
+### C-21 — Expliquer une couverture qui paraît fausse
+**Ce qui n'allait pas.** Le tableau de couverture pouvait afficher
+« Charcuterie-traiteur : 120,5 h nécessaires, 143,0 h prévues, 91 % ». Un
+lecteur y voit une erreur de calcul.
+**Corrigé.** Une phrase sous le tableau : la couverture se mesure demi-heure par
+demi-heure, un rayon peut donc totaliser plus d'heures que nécessaire et rester
+découvert à certains moments. Le chiffre était juste ; il manquait de quoi le
+défendre devant le patron.

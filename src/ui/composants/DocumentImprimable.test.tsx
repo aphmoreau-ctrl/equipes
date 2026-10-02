@@ -65,6 +65,26 @@ describe('contenu du dossier à présenter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Dossier à présenter/ }))
   })
 
+  it('récapitule le total réel de chaque personne, tous rayons confondus', () => {
+    const doc = document_()
+    const recap = within(doc).getByRole('heading', { name: 'Total des heures par personne' })
+    const section = recap.closest('section') as HTMLElement
+
+    // Camille D. : contrat 35 h, une seule vacation du matin posee.
+    const ligne = within(section).getByRole('row', { name: /Camille D\./ })
+    expect(within(ligne).getByText('35 h')).toBeInTheDocument()
+    expect(ligne.textContent).toMatch(/\d+,\d h/)
+    // L'ecart est signe, avec un vrai signe moins.
+    expect(ligne.textContent).toMatch(/−\d+,\d/)
+  })
+
+  it('explique pourquoi un rayon peut dépasser le besoin et rester découvert', () => {
+    const doc = document_()
+    expect(
+      within(doc).getByText(/mesurée demi-heure par demi-heure/),
+    ).toBeInTheDocument()
+  })
+
   it('porte un en-tête neutre : service, période, date d’édition, version', () => {
     const doc = document_()
     expect(within(doc).getByText('Planning prévisionnel')).toBeInTheDocument()
@@ -74,8 +94,11 @@ describe('contenu du dossier à présenter', () => {
 
   it('montre le planning et les horaires', () => {
     const doc = document_()
-    expect(within(doc).getByText('Camille D.')).toBeInTheDocument()
-    expect(within(doc).getByText(/05:30/)).toBeInTheDocument()
+    const rayon = within(doc)
+      .getByRole('heading', { name: 'Fruits et légumes' })
+      .closest('section') as HTMLElement
+    expect(within(rayon).getByText('Camille D.')).toBeInTheDocument()
+    expect(within(rayon).getByText(/05:30/)).toBeInTheDocument()
   })
 
   it('montre les indicateurs utiles au patron', () => {

@@ -4,7 +4,7 @@ import type { Rayon } from '../../domaine/magasin'
 import type { Planning } from '../../domaine/planning'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
 import type { CouvertureJour } from '../../moteurs/indicateurs'
-import { heuresEnTexte } from '../../domaine/nombres'
+import { ecartEnTexte, heuresEnTexte } from '../../domaine/nombres'
 
 /**
  * Documents destines a SORTIR de l'application (cahier des charges §15).
@@ -60,6 +60,20 @@ export function DocumentImprimable({
 }: Proprietes) {
   const jours = semaineDe(planning.semaine)
   const dernierJour = jours[6] ?? planning.semaine
+
+  /**
+   * Total reel de la semaine pour chaque personne, tous rayons confondus.
+   * Classe par nom, comme les tableaux de rayon.
+   */
+  const personnesDeLaSemaine = collaborateurs
+    .map((collaborateur) => ({
+      collaborateur,
+      prevues: heuresDe(
+        planning.vacations.filter((vacation) => vacation.collaborateurId === collaborateur.id),
+      ),
+    }))
+    .filter(({ prevues }) => prevues > 0)
+    .sort((a, b) => nomAffiche(a.collaborateur).localeCompare(nomAffiche(b.collaborateur), 'fr'))
 
   const rayonsConcernes = rayons.filter(
     (rayon) =>
@@ -175,6 +189,37 @@ export function DocumentImprimable({
         )
       })}
 
+      {/*
+        Une personne peut tenir deux rayons : elle figure alors dans deux
+        tableaux, avec deux totaux partiels. Ce recapitulatif donne le total
+        reel de la semaine, que le patron ne pourrait pas reconstituer seul.
+      */}
+      {type === 'dossier-patron' && personnesDeLaSemaine.length > 0 && (
+        <section className="document__rayon">
+          <h2 className="document__rayon-titre">Total des heures par personne</h2>
+          <table className="document__tableau">
+            <thead>
+              <tr>
+                <th scope="col">Collaborateur</th>
+                <th scope="col">Contrat</th>
+                <th scope="col">Heures prévues</th>
+                <th scope="col">Écart</th>
+              </tr>
+            </thead>
+            <tbody>
+              {personnesDeLaSemaine.map(({ collaborateur, prevues }) => (
+                <tr key={collaborateur.id}>
+                  <th scope="row">{nomAffiche(collaborateur)}</th>
+                  <td>{collaborateur.heuresHebdomadaires} h</td>
+                  <td className="document__total">{heuresEnTexte(prevues)}</td>
+                  <td>{ecartEnTexte(prevues - collaborateur.heuresHebdomadaires)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       {/* Les indicateurs ne figurent que sur le dossier remis au patron. */}
       {type === 'dossier-patron' && couvertures.length > 0 && (
         <section className="document__rayon">
@@ -211,6 +256,10 @@ export function DocumentImprimable({
               })}
             </tbody>
           </table>
+          <p className="document__mention">
+            La couverture est mesurée demi-heure par demi-heure. Un rayon peut donc totaliser plus
+            d’heures que nécessaire tout en restant découvert à certains moments de la journée.
+          </p>
         </section>
       )}
 

@@ -1315,11 +1315,19 @@ sont testés.
 
 ### D-102 — Les cinq secondes sont vérifiées par un test
 **Décision.** Un test échoue si la génération du planning complet (neuf rayons,
-26 personnes, sept jours) dépasse **cinq secondes**.
+26 personnes, sept jours) ne **rend pas la main** en cinq secondes, ou si ce
+qu'elle rend n'est pas utilisable (moins de cinq rayons servis, ou une règle
+bloquante enfreinte).
 **Raison.** C'est une exigence du cahier des charges, et une exigence de ce
-genre ne tient que si une machine la vérifie à chaque publication. Le serveur
-de publication étant plus lent qu'un Mac, la marge mesurée là-bas est une
-marge réelle sur iPad.
+genre ne tient que si une machine la vérifie à chaque publication.
+**Correction du 2 octobre, après le lot 8.** La première version de ce test
+laissait au moteur quinze secondes, puis exigeait qu'il en prenne moins de
+cinq. C'était une mauvaise question : le moteur **n'a pas de fin**, il améliore
+tant qu'il trouve mieux, et il consomme donc tout le temps qu'on lui donne.
+Avec les décalages ajoutés au lot 6, il a commencé à utiliser ses quinze
+secondes — et le test a échoué, à juste titre. Ce qui est garanti, et ce que le
+test vérifie désormais, c'est qu'avec **le budget réel de l'écran** (cinq
+secondes), il rend la main à l'heure et rend un planning utilisable.
 
 ## Lot 5 — Feuilles de route (2 octobre 2026)
 

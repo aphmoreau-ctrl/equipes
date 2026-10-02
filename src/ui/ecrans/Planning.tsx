@@ -40,6 +40,7 @@ import { useDonnees } from '../DonneesProvider'
 import { useGenerateur } from '../useGenerateur'
 import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
 import { Conflits } from '../composants/Conflits'
+import { VueTousRayons } from '../composants/VueTousRayons'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -632,6 +633,12 @@ export function Planning() {
           </ul>
         )}
       </section>
+
+      <VueTousRayons
+        semaine={semaine}
+        vacations={planningCourant.vacations}
+        besoinDuJour={besoinDuJour}
+      />
 
       <Conflits
         semaine={semaine}

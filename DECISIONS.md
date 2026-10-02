@@ -1435,3 +1435,20 @@ identiques. Regroupées, elles tiennent en une.
 si le trou est plus court.
 **Raison.** La même règle que pour les postes courts : on ne fait pas traverser
 le magasin à quelqu'un pour trois quarts d'heure.
+
+## Lot 8 — Vue tous rayons, prêts, budget (2 octobre 2026)
+
+### D-115 — Un tableau d'une ligne par rayon, et un total
+**Décision.** La vue « Tous les rayons » donne, pour chaque rayon : la
+couverture en pourcentage (vert au-dessus de 95 %, rouge sous 80 %), les heures
+nécessaires, les heures prévues, le budget et l'écart signé. Une ligne de total
+ferme le tableau.
+**Raison.** C'est la vue qu'on regarde en premier le lundi matin : qui est en
+difficulté, et où passent les heures.
+
+### D-116 — Les prêts sont nommés, pas comptés
+**Décision.** Les prêts entre rayons sont listés par personne : « Camille D. —
+6,7 h depuis Fruits et légumes vers Crèmerie ».
+**Raison.** Un compte (« 3 prêts ») ne sert à rien. Ce qu'on cherche, c'est
+**qui** on a déplacé et **d'où** on l'a pris — parce que le rayon d'origine s'en
+trouve affaibli, et que c'est la première chose à vérifier quand il va mal.

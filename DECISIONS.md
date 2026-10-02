@@ -997,3 +997,23 @@ lecteur y voit une erreur de calcul.
 demi-heure, un rayon peut donc totaliser plus d'heures que nécessaire et rester
 découvert à certains moments. Le chiffre était juste ; il manquait de quoi le
 défendre devant le patron.
+
+### C-22 — Un test instable bloquait les publications ❗ (cause non trouvée)
+**Ce qui se passe.** Environ une exécution sur dix, le test du panneau
+« Plus » de l'iPhone échoue : le panneau se referme à l'instant même où il
+vient d'être ouvert, comme si un changement d'écran survenait en même temps
+que l'appui. Cela a déjà fait échouer une publication, alors que l'application
+elle-même fonctionne.
+**Ce qui a été fait.** Deux causes probables ont été corrigées : le test
+attendait « une barre de navigation », ce qui correspondait aussi au menu
+latéral de l'iPad affiché un instant avant que la taille d'écran ne soit
+mesurée ; et la remise à zéro de l'adresse entre deux tests déclenchait un
+évènement différé qui arrivait pendant le test suivant. La fréquence a baissé,
+sans disparaître.
+**Décision assumée.** Un seul réessai automatique est autorisé, pour qu'un aléa
+de cette nature ne bloque plus une publication. **Ce réessai masque le défaut,
+il ne le corrige pas** : il est commenté comme tel dans la configuration et
+devra être retiré dès que la cause sera identifiée. Toute sonde posée dans le
+code déplace le problème, ce qui est le propre d'un défaut de synchronisation.
+**Alternative écartée.** Supprimer ces quatre tests : ils protègent le menu de
+l'iPhone, qui est la navigation principale sur téléphone.

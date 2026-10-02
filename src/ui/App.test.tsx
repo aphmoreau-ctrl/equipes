@@ -47,7 +47,14 @@ function valider(): void {
 
 beforeEach(() => {
   window.localStorage.clear()
-  window.location.hash = ''
+  /*
+   * Remettre l'adresse a zero SANS declencher « hashchange ».
+   * « window.location.hash = '' » declenche l'evenement de facon differee :
+   * il arrivait pendant le test SUIVANT, faisait croire a un changement
+   * d'ecran et refermait aussitot le panneau « Plus » a peine ouvert. D'ou
+   * un echec au hasard, qui a deja bloque une publication.
+   */
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
   simulerEcran('colonne')
 })
 
@@ -354,7 +361,14 @@ describe('barre d onglets de l iPhone', () => {
     await screen.findByText('Entrez votre code')
     taperAuClavier('4242')
     valider()
-    await screen.findByRole('navigation')
+    /*
+     * Attendre le bouton « Plus » lui-meme, et non une barre de navigation
+     * quelconque : « navigation » correspond aussi au menu lateral de l'iPad,
+     * affiche un instant avant que la disposition ne soit mesuree. Les tests
+     * agissaient alors sur une barre d'onglets pas encore en place, et
+     * echouaient au hasard — ce qui a deja bloque une publication.
+     */
+    await screen.findByRole('button', { name: 'Plus' })
   })
 
   it('affiche quatre onglets et un bouton « Plus »', () => {
@@ -373,10 +387,10 @@ describe('barre d onglets de l iPhone', () => {
     expect(screen.queryByRole('link', { name: /Paramètres/ })).not.toBeInTheDocument()
   })
 
-  it('ouvre la liste de tous les autres modules', () => {
+  it('ouvre la liste de tous les autres modules', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
 
-    const panneau = screen.getByRole('dialog', { name: 'Autres modules' })
+    const panneau = await screen.findByRole('dialog', { name: 'Autres modules' })
     const titres = within(panneau)
       .getAllByRole('link')
       .map((lien) => lien.textContent ?? '')
@@ -397,24 +411,24 @@ describe('barre d onglets de l iPhone', () => {
 
   it('ouvre l ecran choisi et referme le panneau', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
-    const panneau = screen.getByRole('dialog', { name: 'Autres modules' })
+    const panneau = await screen.findByRole('dialog', { name: 'Autres modules' })
     fireEvent.click(within(panneau).getByRole('link', { name: /Paramètres/ }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Paramètres' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('referme le panneau avec la touche Échap', () => {
+  it('referme le panneau avec la touche Échap', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('referme le panneau en touchant a cote', () => {
+  it('referme le panneau en touchant a cote', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Plus' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer le menu' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Fermer le menu' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 

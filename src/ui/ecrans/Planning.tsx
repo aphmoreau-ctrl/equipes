@@ -38,6 +38,7 @@ import { alertesDAnticipation, anticiper } from '../../moteurs/indicateurs/antic
 import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
 import { useGenerateur } from '../useGenerateur'
+import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -580,6 +581,12 @@ export function Planning() {
           </ul>
         )}
       </section>
+
+      <FeuillesDeRoute
+        semaine={semaine}
+        vacations={planningCourant.vacations}
+        besoinDuJour={besoinDuJour}
+      />
 
       <section className="carte">
         <h2>Documents</h2>

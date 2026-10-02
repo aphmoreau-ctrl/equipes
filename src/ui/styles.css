@@ -1624,8 +1624,39 @@ select.champ__saisie {
   }
 
   .document,
-  .document * {
+  .document *,
+  .a-imprimer,
+  .a-imprimer * {
     visibility: visible;
+  }
+
+  /*
+   * Feuilles de route : portrait, une carte par personne, jamais coupee en
+   * deux. Elles ne sortent que si l'on a demande leur impression.
+   */
+  .a-imprimer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+  }
+
+  .a-imprimer .feuilles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .a-imprimer .feuille {
+    background: none;
+    border: 1px solid #999;
+  }
+
+  .a-imprimer .champ,
+  .a-imprimer .bouton {
+    display: none;
   }
 
   .document {
@@ -1781,4 +1812,56 @@ select.champ__saisie {
 .etiquette--verifier {
   background: color-mix(in srgb, var(--avertissement) 14%, transparent);
   color: var(--avertissement);
+}
+
+/* ------------------------------------------------------ Feuilles de route
+ * Une carte par personne, rangees en colonnes sur iPad et sur Mac, en une
+ * seule colonne sur iPhone. A l'impression, chaque feuille reste entiere.
+ */
+.feuilles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.feuille {
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  padding: 10px 12px;
+  break-inside: avoid;
+}
+
+.feuille__nom {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.feuille__lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feuille__ligne {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  font-size: 15px;
+}
+
+.feuille__heure {
+  font-variant-numeric: tabular-nums;
+  color: var(--texte-doux);
+  white-space: nowrap;
+}
+
+.feuille__rayon {
+  grid-column: 2;
+  font-size: 13px;
+  color: var(--texte-doux);
 }

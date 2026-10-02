@@ -1320,3 +1320,42 @@ sont testés.
 genre ne tient que si une machine la vérifie à chaque publication. Le serveur
 de publication étant plus lent qu'un Mac, la marge mesurée là-bas est une
 marge réelle sur iPad.
+
+## Lot 5 — Feuilles de route (2 octobre 2026)
+
+### D-103 — La feuille de route se déduit, elle ne se saisit pas
+**Décision.** La feuille de route de chacun est **calculée** à partir du
+planning et du besoin : le besoin dit combien de minutes chaque tâche demande à
+chaque quart d'heure, et ces minutes sont réparties entre les personnes
+présentes. Aucune saisie.
+**Raison.** Vous saisissez déjà le planning et le catalogue ; demander en plus
+qui fait quoi, heure par heure, aurait doublé le travail pour une information
+que l'application sait déduire.
+**Alternative possible :** une répartition modifiable à la main, à ajouter si
+la proposition ne tombe pas juste sur le terrain.
+
+### D-104 — Une seule tâche à la fois, et seulement si on sait la faire
+**Décision.** Sur un quart d'heure donné, une personne tient **une** tâche. Elle
+ne reçoit que des tâches dont elle a le niveau — la règle du binôme s'applique
+(un niveau 1 accompagné d'un niveau 3), **sauf pour les compétences critiques**,
+qui n'admettent aucune exception.
+**Raison.** Un boucher qualifié au comptoir ne se remplace pas par quelqu'un en
+formation, même accompagné.
+**Départage.** À capacité égale, la personne dont l'identifiant vient en premier
+— arbitraire, mais stable : le même planning donne toujours la même feuille.
+
+### D-105 — Ce qui n'a trouvé personne est dit, et pourquoi
+**Décision.** Les tâches non affectées sont listées, totalisées en heures, avec
+leur raison : **« personne de présent n'a la compétence requise »** ou
+**« tout le monde était déjà occupé »**.
+**Raison.** Les deux manques ne se corrigent pas pareil : le premier demande une
+formation ou un prêt entre rayons, le second une personne de plus. Ils seront
+repris dans l'écran Conflits, au lot 7.
+
+### D-106 — Les feuilles s'impriment en portrait, deux par page
+**Décision.** Le bouton « Imprimer les feuilles du jour » bascule l'écran en
+mode impression : deux feuilles par page, aucune jamais coupée en deux, et
+les boutons et menus disparaissent.
+**Raison.** Ces feuilles se distribuent le matin. Elles ne portent ni statut de
+suivi, ni note, ni commentaire — ce sont des documents sortants, soumis à la
+même règle que les autres.

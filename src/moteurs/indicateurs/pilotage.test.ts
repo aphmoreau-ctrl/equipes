@@ -1,3 +1,9 @@
+import {
+  TRANCHE_MINUTES,
+  TRANCHES_PAR_JOUR,
+  enMinutes,
+  indexTranche,
+} from '../../domaine/temps'
 import { describe, expect, it } from 'vitest'
 import type { Absence } from '../../domaine/absence'
 import type { Collaborateur } from '../../domaine/collaborateur'
@@ -79,13 +85,21 @@ describe('tableau de bord', () => {
   it('mesure la couverture quand le besoin est connu', () => {
     const besoin: BesoinJour = {
       rayonId: 'fruits-legumes', date: '2026-11-02',
-      tranches: Array.from({ length: 48 }, (_, index) => ({
-        index, debutMinutes: index * 30, minutesParBloc: {},
-        minutesTotal: index >= 12 && index < 26 ? 30 : 0,
-        personnes: index >= 12 && index < 26 ? 1 : 0,
-        competences: [], competencesCritiques: [],
-    niveauxMinimum: {},
-      })),
+      // Une personne de 06:00 a 13:00, comme la vacation de l'equipe fictive.
+      tranches: Array.from({ length: TRANCHES_PAR_JOUR }, (_, index) => {
+        const besoinDeLaTranche =
+          index >= indexTranche(enMinutes('06:00')) && index < indexTranche(enMinutes('13:00'))
+        return {
+          index,
+          debutMinutes: index * TRANCHE_MINUTES,
+          minutesParBloc: {},
+          minutesTotal: besoinDeLaTranche ? TRANCHE_MINUTES : 0,
+          personnes: besoinDeLaTranche ? 1 : 0,
+          competences: [],
+          competencesCritiques: [],
+          niveauxMinimum: {},
+        }
+      }),
       minutesTotal: 420, heuresTotal: 7, heuresPresence: 7,
       coefficientsAppliques: { saison: 1, meteo: 1, evenement: 1, promotion: 1, qualite: 1 },
       alertes: [],

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Collaborateur } from '../../domaine/collaborateur'
-import { TRANCHES_PAR_JOUR, enMinutes } from '../../domaine/temps'
+import { TRANCHES_PAR_JOUR, TRANCHE_MINUTES, enMinutes } from '../../domaine/temps'
 import type { BesoinJour } from '../besoin'
 import type { Vacation } from '../regles'
 import {
@@ -60,7 +60,7 @@ function personne(modifications: Partial<Collaborateur> = {}): Collaborateur {
 /** Besoin fictif : deux personnes de 06:00 a 08:00, une de 08:00 a 09:00. */
 function besoinDemo(): BesoinJour {
   const tranches = Array.from({ length: TRANCHES_PAR_JOUR }, (_, index) => {
-    const debutMinutes = index * 30
+    const debutMinutes = index * TRANCHE_MINUTES
     let personnes = 0
     let competences: string[] = []
     if (debutMinutes >= enMinutes('06:00') && debutMinutes < enMinutes('08:00')) {
@@ -73,7 +73,7 @@ function besoinDemo(): BesoinJour {
       index,
       debutMinutes,
       minutesParBloc: {},
-      minutesTotal: personnes * 30,
+      minutesTotal: personnes * TRANCHE_MINUTES,
       personnes,
       competences,
       competencesCritiques: [],
@@ -96,10 +96,10 @@ function besoinDemo(): BesoinJour {
 describe('couverture d une tranche par une vacation', () => {
   it('reconnaît une tranche couverte', () => {
     const v = vacation({ debut: '06:00', fin: '09:00' })
-    expect(couvreLaTranche(v, 12)).toBe(true) // 06:00
-    expect(couvreLaTranche(v, 17)).toBe(true) // 08:30
-    expect(couvreLaTranche(v, 18)).toBe(false) // 09:00, la vacation est finie
-    expect(couvreLaTranche(v, 11)).toBe(false) // 05:30
+    expect(couvreLaTranche(v, 24)).toBe(true) // 06:00
+    expect(couvreLaTranche(v, 34)).toBe(true) // 08:30
+    expect(couvreLaTranche(v, 36)).toBe(false) // 09:00, la vacation est finie
+    expect(couvreLaTranche(v, 23)).toBe(false) // 05:45
   })
 })
 

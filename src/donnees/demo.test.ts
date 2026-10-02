@@ -43,7 +43,7 @@ describe('magasin de demonstration', () => {
 })
 
 describe('frequentation de demonstration', () => {
-  it('decrit la journee en 48 tranches', () => {
+  it('decrit la journee en 48 demi-heures, etalees ensuite au quart d’heure', () => {
     expect(MAGASIN_DEMO.frequentation.profilHoraire).toHaveLength(48)
   })
 
@@ -61,8 +61,8 @@ describe('frequentation de demonstration', () => {
 
   it('n attend aucun client quand le magasin est ferme', () => {
     const parTranche = clientsParTranche(MAGASIN_DEMO, '2026-11-02')
-    expect(parTranche[10]).toBe(0) // 05:00
-    expect(parTranche[45]).toBe(0) // 22:30
+    expect(parTranche[20]).toBe(0) // 05:00
+    expect(parTranche[90]).toBe(0) // 22:30
   })
 
   it('attend plus de clients le samedi que le mardi', () => {
@@ -148,7 +148,7 @@ describe('besoin calcule sur les donnees de demonstration', () => {
     const besoin = calculerBesoin(CONFIGURATION_FRUITS_LEGUMES, contexteDemo('2026-11-02'))
     expect(besoin.heuresTotal).toBeGreaterThan(5)
     expect(besoin.heuresTotal).toBeLessThan(60)
-    expect(besoin.tranches).toHaveLength(48)
+    expect(besoin.tranches).toHaveLength(96)
   })
 
   it('demande plus de monde le samedi que le mardi', () => {

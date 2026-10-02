@@ -162,7 +162,7 @@ describe('besoin calcule pour chaque rayon', () => {
   it('tient compte de la presence minimum au comptoir meme sans client', () => {
     // Dimanche matin : le magasin ouvre de 09:00 a 12:30.
     const besoin = calculerBesoin(MODELE_BOUCHERIE, contexteDemo('2026-11-08', 'boucherie'))
-    const trancheDimancheMatin = besoin.tranches[19] // 09:30
+    const trancheDimancheMatin = besoin.tranches[38] // 09:30
     expect(trancheDimancheMatin?.personnes).toBeGreaterThanOrEqual(1)
   })
 

@@ -1,5 +1,10 @@
 import { estDansIntervalle, jourDeLaSemaine, type JourSemaine } from './calendrier'
-import { TRANCHES_PAR_JOUR, enMinutes, indexTranche } from './temps'
+import {
+  MINUTES_PAR_JOUR,
+  TRANCHES_PAR_JOUR,
+  enMinutes,
+  indexTranche,
+} from './temps'
 
 /**
  * Description du magasin : services, rayons, horaires, frequentation,
@@ -93,7 +98,7 @@ export function horairesDuJour(magasin: Magasin, date: string, rayonId?: string)
   return magasin.horaires[jour]
 }
 
-/** Numeros des tranches de 30 min pendant lesquelles le magasin est ouvert. */
+/** Numeros des tranches pendant lesquelles le magasin est ouvert. */
 export function tranchesOuvertes(magasin: Magasin, date: string, rayonId?: string): Set<number> {
   const horaires = horairesDuJour(magasin, date, rayonId)
   const ouvertes = new Set<number>()
@@ -111,21 +116,42 @@ export function clientsDuJour(magasin: Magasin, date: string): number {
 }
 
 /**
- * Repartition des clients sur les 48 tranches de la journee.
+ * Etale un profil horaire sur le nombre de tranches voulu.
+ *
+ * Un profil enregistre avant le passage au quart d'heure compte 48 valeurs,
+ * une par demi-heure. Plutot que d'obliger a tout ressaisir, chaque valeur est
+ * repartie sur les tranches qu'elle recouvre : une demi-heure a 6 % devient
+ * deux quarts d'heure a 3 %. Le total est conserve.
+ */
+export function profilEtale(
+  profil: readonly number[],
+  tranches: number = TRANCHES_PAR_JOUR,
+): number[] {
+  if (profil.length === tranches) return [...profil]
+  if (profil.length === 0) return new Array<number>(tranches).fill(0)
+
+  const minutesParValeur = MINUTES_PAR_JOUR / profil.length
+  return Array.from({ length: tranches }, (_, index) => {
+    const minute = (index * MINUTES_PAR_JOUR) / tranches
+    const source = Math.min(Math.floor(minute / minutesParValeur), profil.length - 1)
+    // La valeur d'origine se partage entre les tranches qu'elle recouvre.
+    return ((profil[source] ?? 0) * profil.length) / tranches
+  })
+}
+
+/**
+ * Repartition des clients sur les tranches de la journee.
  * Le profil horaire est normalise : meme s'il ne totalise pas exactement 100,
  * la somme des clients par tranche reste egale au total du jour.
  */
 export function clientsParTranche(magasin: Magasin, date: string): number[] {
   const total = clientsDuJour(magasin, date)
-  const profil = magasin.frequentation.profilHoraire
+  const profil = profilEtale(magasin.frequentation.profilHoraire)
   const sommeProfil = profil.reduce((somme, part) => somme + part, 0)
 
   if (sommeProfil <= 0) return new Array<number>(TRANCHES_PAR_JOUR).fill(0)
 
-  return Array.from({ length: TRANCHES_PAR_JOUR }, (_, index) => {
-    const part = profil[index] ?? 0
-    return (total * part) / sommeProfil
-  })
+  return profil.map((part) => (total * part) / sommeProfil)
 }
 
 /** Evenements du calendrier qui touchent ce rayon ce jour-la. */

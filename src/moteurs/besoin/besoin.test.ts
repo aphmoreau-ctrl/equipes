@@ -66,22 +66,22 @@ function tacheFixe(modifications: Partial<Bloc> = {}): Bloc {
 
 describe('nombre de personnes sur une tranche', () => {
   it('applique la formule du cahier des charges', () => {
-    // 30 min de travail sur 30 min de tranche, tolerance 0,2 : une personne.
-    expect(personnesNecessaires(30, 0, 0.2)).toBe(1)
-    expect(personnesNecessaires(60, 0, 0.2)).toBe(2)
-    expect(personnesNecessaires(90, 0, 0.2)).toBe(3)
+    // 15 min de travail sur une tranche de 15 min, tolerance 0,2 : une personne.
+    expect(personnesNecessaires(15, 0, 0.2)).toBe(1)
+    expect(personnesNecessaires(30, 0, 0.2)).toBe(2)
+    expect(personnesNecessaires(45, 0, 0.2)).toBe(3)
   })
 
   it('absorbe les petites quantites grace a la tolerance', () => {
-    // 6 minutes = 0,2 personne : absorbe. 7 minutes : une personne.
-    expect(personnesNecessaires(6, 0, 0.2)).toBe(0)
-    expect(personnesNecessaires(7, 0, 0.2)).toBe(1)
+    // 3 minutes = 0,2 personne sur un quart d'heure : absorbe. 4 min : une.
+    expect(personnesNecessaires(3, 0, 0.2)).toBe(0)
+    expect(personnesNecessaires(4, 0, 0.2)).toBe(1)
   })
 
   it('ne descend jamais sous la presence minimum pendant l ouverture', () => {
     expect(personnesNecessaires(0, 1, 0.2)).toBe(1)
-    expect(personnesNecessaires(5, 2, 0.2)).toBe(2)
-    expect(personnesNecessaires(90, 1, 0.2)).toBe(3)
+    expect(personnesNecessaires(2, 2, 0.2)).toBe(2)
+    expect(personnesNecessaires(45, 1, 0.2)).toBe(3)
   })
 
   it('ne renvoie jamais un nombre negatif', () => {
@@ -89,8 +89,8 @@ describe('nombre de personnes sur une tranche', () => {
   })
 
   it('suit une tolerance modifiee par l utilisateur', () => {
-    expect(personnesNecessaires(35, 0, 0)).toBe(2)
-    expect(personnesNecessaires(35, 0, 0.5)).toBe(1)
+    expect(personnesNecessaires(18, 0, 0)).toBe(2)
+    expect(personnesNecessaires(18, 0, 0.5)).toBe(1)
   })
 })
 
@@ -98,8 +98,8 @@ describe('nombre de personnes sur une tranche', () => {
 
 describe('repartition sur une plage horaire', () => {
   it('couvre exactement les tranches de la plage', () => {
-    expect(tranchesDeLaPlage({ debut: '06:00', fin: '08:00' })).toEqual([12, 13, 14, 15])
-    expect(tranchesDeLaPlage({ debut: '06:00', fin: '06:30' })).toEqual([12])
+    expect(tranchesDeLaPlage({ debut: '06:00', fin: '07:00' })).toEqual([24, 25, 26, 27])
+    expect(tranchesDeLaPlage({ debut: '06:00', fin: '06:15' })).toEqual([24])
   })
 
   it('refuse une plage ou la fin precede le debut', () => {
@@ -108,8 +108,9 @@ describe('repartition sur une plage horaire', () => {
 
   it('partage les minutes a parts egales', () => {
     const reparti = repartirSurLaPlage(120, { debut: '06:00', fin: '08:00' })
-    expect(reparti[12]).toBe(30)
-    expect(reparti[15]).toBe(30)
+    // Huit quarts d'heure : quinze minutes de travail dans chacun.
+    expect(reparti[24]).toBe(15)
+    expect(reparti[31]).toBe(15)
     expect(reparti.reduce((somme, valeur) => somme + valeur, 0)).toBe(120)
   })
 
@@ -227,16 +228,16 @@ describe('calcul de chaque type de bloc', () => {
 
   it('reassort : proportionnel aux clients presents', () => {
     const clients = new Array<number>(TRANCHES_PAR_JOUR).fill(0)
-    clients[20] = 200 // 10:00
-    clients[21] = 100
+    clients[40] = 200 // 10:00
+    clients[41] = 100
     const bloc: Bloc = {
       id: 'rea', nom: 'Réassort', type: 'reassort', actif: true, jours,
       plage: { debut: '09:00', fin: '12:00' }, competences: [], coefficients: [],
       minutesPour100Clients: 10,
     }
     const minutes = minutesBrutesDuBloc(bloc, configuration(), contexte({ clientsParTranche: clients }))
-    expect(minutes[20]).toBe(20)
-    expect(minutes[21]).toBe(10)
+    expect(minutes[40]).toBe(20)
+    expect(minutes[41]).toBe(10)
     expect(minutes.reduce((s, v) => s + v, 0)).toBe(30)
   })
 
@@ -301,11 +302,11 @@ describe('calcul du besoin d une journee', () => {
     tacheFixe({ id: 'commandes', nom: 'Commandes', minutes: 60, plage: { debut: '06:00', fin: '07:00' } }),
   ]
 
-  it('rend une valeur pour chacune des 48 tranches', () => {
+  it('rend une valeur pour chacune des 96 tranches', () => {
     const besoin = calculerBesoin(configuration({ blocs }), contexte())
-    expect(besoin.tranches).toHaveLength(48)
+    expect(besoin.tranches).toHaveLength(96)
     expect(besoin.tranches[0]?.debutMinutes).toBe(0)
-    expect(besoin.tranches[47]?.debutMinutes).toBe(enMinutes('23:30'))
+    expect(besoin.tranches[95]?.debutMinutes).toBe(enMinutes('23:45'))
   })
 
   it('additionne les minutes de tous les blocs', () => {
@@ -316,10 +317,12 @@ describe('calcul du besoin d une journee', () => {
 
   it('decompose le travail bloc par bloc', () => {
     const besoin = calculerBesoin(configuration({ blocs }), contexte())
-    const trancheSixHeures = besoin.tranches[12]
-    expect(trancheSixHeures?.minutesParBloc['temperatures']).toBe(30)
-    expect(trancheSixHeures?.minutesParBloc['commandes']).toBe(30)
-    expect(trancheSixHeures?.minutesTotal).toBe(60)
+    // 06:00 : les 30 min de temperatures tiennent en deux quarts d'heure,
+    // les 60 min de commandes en quatre.
+    const trancheSixHeures = besoin.tranches[24]
+    expect(trancheSixHeures?.minutesParBloc['temperatures']).toBe(15)
+    expect(trancheSixHeures?.minutesParBloc['commandes']).toBe(15)
+    expect(trancheSixHeures?.minutesTotal).toBe(30)
     expect(trancheSixHeures?.personnes).toBe(2)
   })
 
@@ -338,18 +341,18 @@ describe('calcul du besoin d une journee', () => {
       plage: { debut: '06:00', fin: '06:30' },
     })
     const besoin = calculerBesoin(configuration({ blocs: [avecCompetence] }), contexte())
-    expect(besoin.tranches[12]?.competences).toEqual(['découpe', 'hygiène'])
-    expect(besoin.tranches[20]?.competences).toEqual([])
+    expect(besoin.tranches[24]?.competences).toEqual(['découpe', 'hygiène'])
+    expect(besoin.tranches[40]?.competences).toEqual([])
   })
 
   it('impose la presence minimum pendant les heures d ouverture', () => {
-    const ouvertures = new Set([16, 17, 18]) // 08:00 a 09:30
+    const ouvertures = new Set([32, 33, 34, 35, 36, 37]) // 08:00 a 09:30
     const besoin = calculerBesoin(
       configuration({ blocs: [], presenceMinimum: 1 }),
       contexte({ tranchesOuvertes: ouvertures }),
     )
-    expect(besoin.tranches[16]?.personnes).toBe(1)
-    expect(besoin.tranches[15]?.personnes).toBe(0)
+    expect(besoin.tranches[32]?.personnes).toBe(1)
+    expect(besoin.tranches[31]?.personnes).toBe(0)
     expect(besoin.heuresPresence).toBeCloseTo(1.5, 10)
   })
 

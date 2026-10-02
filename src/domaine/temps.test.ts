@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MINUTES_PAR_JOUR,
+  TRANCHES_PAR_JOUR,
+  TRANCHE_MINUTES,
   chevauchement,
   debutDeTranche,
   duree,
@@ -8,8 +11,6 @@ import {
   enTexte,
   estHeureValide,
   indexTranche,
-  MINUTES_PAR_JOUR,
-  TRANCHES_PAR_JOUR,
   tranchesCouvertes,
 } from './temps'
 
@@ -98,26 +99,27 @@ describe('chevauchement', () => {
   })
 })
 
-describe('tranches de 30 minutes', () => {
-  it('compte 48 tranches par jour', () => {
-    expect(TRANCHES_PAR_JOUR).toBe(48)
+describe('tranches de 15 minutes', () => {
+  it('compte 96 tranches par jour', () => {
+    expect(TRANCHE_MINUTES).toBe(15)
+    expect(TRANCHES_PAR_JOUR).toBe(96)
   })
 
   it('situe une minute dans sa tranche', () => {
     expect(indexTranche(0)).toBe(0)
-    expect(indexTranche(29)).toBe(0)
-    expect(indexTranche(30)).toBe(1)
-    expect(indexTranche(enMinutes('08:00'))).toBe(16)
-    expect(debutDeTranche(16)).toBe(enMinutes('08:00'))
+    expect(indexTranche(14)).toBe(0)
+    expect(indexTranche(15)).toBe(1)
+    expect(indexTranche(enMinutes('08:00'))).toBe(32)
+    expect(debutDeTranche(32)).toBe(enMinutes('08:00'))
   })
 
   it('liste les tranches touchees par un intervalle', () => {
-    expect(tranchesCouvertes(enMinutes('08:00'), enMinutes('09:00'))).toEqual([16, 17])
-    expect(tranchesCouvertes(enMinutes('08:00'), enMinutes('08:30'))).toEqual([16])
+    expect(tranchesCouvertes(enMinutes('08:00'), enMinutes('09:00'))).toEqual([32, 33, 34, 35])
+    expect(tranchesCouvertes(enMinutes('08:00'), enMinutes('08:15'))).toEqual([32])
     // Entierement contenu dans une seule tranche.
-    expect(tranchesCouvertes(enMinutes('08:05'), enMinutes('08:25'))).toEqual([16])
+    expect(tranchesCouvertes(enMinutes('08:05'), enMinutes('08:12'))).toEqual([32])
     // A cheval sur deux tranches, meme de quelques minutes : les deux comptent.
-    expect(tranchesCouvertes(enMinutes('08:20'), enMinutes('08:40'))).toEqual([16, 17])
+    expect(tranchesCouvertes(enMinutes('08:10'), enMinutes('08:20'))).toEqual([32, 33])
   })
 
   it('ne renvoie rien pour un intervalle vide ou inverse', () => {

@@ -2,7 +2,7 @@ import { estAbsent, type Absence } from '../../domaine/absence'
 import { jourDeLaSemaine, jourEnTexte, semaineDe } from '../../domaine/calendrier'
 import { estAutonome, estDisponible, peutTravaillerDans, type Collaborateur } from '../../domaine/collaborateur'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
-import { duree, enMinutes } from '../../domaine/temps'
+import { TRANCHES_PAR_JOUR, duree, enMinutes } from '../../domaine/temps'
 import type { BesoinJour } from '../besoin'
 import { contexteDeVerification, verifier, type ParametresRegles, type Vacation } from '../regles'
 import {
@@ -198,12 +198,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     const autonomes = new Map<string, Int16Array>()
     for (const tranche of besoin.tranches) {
       for (const competence of tranche.competencesCritiques) {
-        if (!autonomes.has(competence)) autonomes.set(competence, new Int16Array(48))
+        if (!autonomes.has(competence)) autonomes.set(competence, new Int16Array(TRANCHES_PAR_JOUR))
       }
     }
     creneaux.set(cle(besoin.rayonId, besoin.date), {
       besoin,
-      presents: new Int16Array(48),
+      presents: new Int16Array(TRANCHES_PAR_JOUR),
       autonomes,
     })
   }
@@ -217,7 +217,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     const pauseFin = pauseDebut + horaire.pauseMinutes
 
     const couvertes: number[] = []
-    for (let index = 0; index < 48; index += 1) {
+    for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
       const debutTranche = index * 30
       const finTranche = debutTranche + 30
       if (!(debutH < finTranche && finH > debutTranche)) continue
@@ -333,7 +333,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
         if (exigeantSurLeBesoin) {
           let resteAFaire = false
-          for (let index = 0; index < 48 && !resteAFaire; index += 1) {
+          for (let index = 0; index < TRANCHES_PAR_JOUR && !resteAFaire; index += 1) {
             const attendu = creneau.besoin.tranches[index]?.personnes ?? 0
             if (attendu > (creneau.presents[index] ?? 0)) resteAFaire = true
             for (const competence of creneau.besoin.tranches[index]?.competencesCritiques ?? []) {

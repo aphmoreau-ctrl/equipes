@@ -1212,3 +1212,35 @@ l'écran aurait demandé un formulaire différent par type. Pour celles-là, le
 plus simple est de partir d'une tâche existante du même genre et de la
 modifier. **Alternative possible :** un formulaire par type de tâche, plus
 complet et plus lourd.
+
+## Lot 2 — La charge se calcule au quart d'heure (2 octobre 2026)
+
+### D-95 — La tranche passe de 30 à 15 minutes
+**Décision.** Le besoin, la couverture et le contrôle se calculent désormais par
+tranches de **15 minutes** : 96 tranches par jour au lieu de 48.
+**Raison.** La demi-heure lissait les détails qui comptent dans un service
+frais : une fournée qui sort à 06 h 45, un comptoir qui ouvre à 08 h 30, une
+remise de commande drive de dix minutes. Elle faisait apparaître du besoin là
+où il n'y en avait pas, et en masquait ailleurs.
+**Ce qui ne change pas.** Le **travail à faire** reste identique : le test
+`besoins-inchanges.test.ts` passe sans modification, parce que le total des
+minutes d'une tâche ne dépend pas de la finesse du découpage.
+**Ce qui change.** La **présence nécessaire** peut légèrement baisser : moins
+d'arrondi perdu. C'est le bénéfice recherché.
+**Vos plannings enregistrés ne sont pas touchés** : une vacation reste une
+heure de début et une heure de fin.
+
+### D-96 — Un profil de fréquentation ancien est étalé, pas perdu
+**Décision.** Le profil horaire enregistré avant ce changement compte 48
+valeurs, une par demi-heure. Il est **étalé automatiquement** sur les 96
+tranches : une demi-heure à 6 % devient deux quarts d'heure à 3 %.
+**Raison.** Obliger à ressaisir 96 valeurs à la main aurait été absurde. Le
+total est conservé à l'identique.
+**Alternative possible :** une saisie au quart d'heure dans Paramètres, à
+ajouter si la précision de la demi-heure ne suffit plus.
+
+### D-97 — Les barres de la courbe s'affinent d'autant
+**Décision.** La largeur d'une barre de la courbe de besoin suit la finesse du
+calcul : deux fois plus de barres, deux fois plus fines.
+**Raison.** Sans cela, la courbe devenait deux fois plus large et illisible sur
+iPhone.

@@ -12,8 +12,15 @@ export type Minutes = number
 export const MINUTES_PAR_HEURE = 60
 export const MINUTES_PAR_JOUR = 24 * MINUTES_PAR_HEURE
 
-/** Le besoin et la couverture sont calcules par tranches de 30 minutes. */
-export const TRANCHE_MINUTES = 30
+/**
+ * Le besoin et la couverture sont calcules par tranches de 15 minutes.
+ *
+ * Le quart d'heure est la bonne maille pour un service frais : une remise de
+ * commande drive dure dix minutes, une fournee sort a 06:45, un comptoir
+ * ouvre a 08:30. La demi-heure lissait ces details et faisait apparaitre des
+ * besoins la ou il n'y en avait pas — et l'inverse.
+ */
+export const TRANCHE_MINUTES = 15
 export const TRANCHES_PAR_JOUR = MINUTES_PAR_JOUR / TRANCHE_MINUTES
 
 const FORMAT_HEURE = /^([01]\d|2[0-3]):([0-5]\d)$/

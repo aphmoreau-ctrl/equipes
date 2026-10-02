@@ -32,7 +32,13 @@ export function couleurDuBloc(index: number): string {
   return COULEURS[index % COULEURS.length] ?? COULEURS[0]
 }
 
-const LARGEUR_TRANCHE = 17
+/*
+ * Largeur d'une barre. Elle suit la finesse du calcul : au quart d'heure il y
+ * a deux fois plus de barres qu'a la demi-heure, elles sont donc deux fois
+ * plus fines. La courbe garde ainsi la meme largeur a l'ecran, lisible sur
+ * iPad comme sur iPhone.
+ */
+const LARGEUR_TRANCHE = Math.max(6, Math.round((17 * TRANCHE_MINUTES) / 30))
 const HAUTEUR = 230
 const MARGE_GAUCHE = 30
 const MARGE_DROITE = 8
@@ -131,7 +137,7 @@ export function CourbeBesoin({ besoin, blocs }: Proprietes) {
                     key={bloc.id}
                     x={x(position) + 1}
                     y={haut}
-                    width={LARGEUR_TRANCHE - 2}
+                    width={Math.max(2, LARGEUR_TRANCHE - 1)}
                     height={Math.max(0, bas - haut)}
                     fill={couleurDuBloc(indexBloc)}
                     opacity={0.85}

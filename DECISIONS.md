@@ -1274,3 +1274,49 @@ légales : c'est la seule place qui connaît qui est présent sur quelle tranche
 et avec quel niveau exigé.
 **Précision.** Un accompagnant de niveau 2 ne suffit pas à former — mais s'il
 est là, il tient la tâche lui-même, donc rien n'est signalé.
+
+## Lot 4 — Postes et affectation (2 octobre 2026)
+
+### C-25 — Le générateur comptait encore en demi-heures ❗
+**Ce qui n'allait pas.** Au passage au quart d'heure (lot 2), le générateur a
+gardé son propre calcul de tranches, écrit en dur sur 30 minutes. Il croyait
+donc couvrir des créneaux qu'il ne couvrait pas, et plaçait les pauses au
+mauvais endroit. Aucun test ne l'a vu : chacun vérifiait son côté du mur.
+**Corrigé.** Le générateur utilise la même maille que tout le reste. Et surtout,
+un test croise désormais les deux chemins : le manque mesuré par le générateur
+doit être **exactement** celui mesuré par le calcul de couverture, rayon par
+rayon et jour par jour. Si l'un dérive, le test casse.
+
+### D-100 — Des postes courts, taillés sur le besoin
+**Décision.** En plus des horaires types du magasin (7 h), le générateur
+propose des postes de **3, 4 et 5 heures**, calés sur le début et sur la fin du
+besoin réel de chaque rayon.
+**Raison.** La cave demande environ trois heures par jour. Avec seulement des
+journées de sept heures, le générateur devait choisir entre ne personne y
+mettre et y mettre quelqu'un pour le double du besoin. **Trois heures minimum**,
+comme le demande la spécification : on ne déplace personne pour moins.
+**Détail légal.** Un poste de moins de six heures n'ouvre droit à aucune pause
+(L3121-33) : ces postes n'en portent donc pas. Un test vérifie l'inverse —
+toute vacation de six heures ou plus en a une.
+**Limite connue.** Au plus huit formes de postes courts sont retenues, pour que
+le calcul reste sous les cinq secondes.
+
+### D-101 — Le calcul se fait dans un fil séparé
+**Décision.** La proposition de planning est calculée dans un **Web Worker** :
+l'écran reste utilisable pendant le calcul, et le bouton affiche « Calcul en
+cours… ».
+**Raison.** Sur iPad, plusieurs secondes de calcul dans le fil principal
+figent l'écran : plus de défilement, plus de réponse au doigt, et iOS finit par
+croire que l'application a planté.
+**Repli assumé.** Si le navigateur ne sait pas créer de fil, ou si sa création
+échoue, le calcul se fait quand même dans le fil principal : mieux vaut un
+écran figé quelques secondes qu'un bouton qui ne fait rien. Les deux chemins
+sont testés.
+
+### D-102 — Les cinq secondes sont vérifiées par un test
+**Décision.** Un test échoue si la génération du planning complet (neuf rayons,
+26 personnes, sept jours) dépasse **cinq secondes**.
+**Raison.** C'est une exigence du cahier des charges, et une exigence de ce
+genre ne tient que si une machine la vérifie à chaque publication. Le serveur
+de publication étant plus lent qu'un Mac, la marge mesurée là-bas est une
+marge réelle sur iPad.

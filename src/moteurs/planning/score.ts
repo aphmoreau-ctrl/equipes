@@ -18,7 +18,7 @@ import { couvreLaTranche } from '../indicateurs'
 export interface PoidsPenalites {
   /** Par heure d'ecart aux heures du contrat, en plus ou en moins. */
   readonly ecartAuContrat: number
-  /** Par personne en trop sur une tranche de 30 min. */
+  /** Par personne en trop sur une tranche. */
   readonly sureffectif: number
   /** Par vacation effectuee hors du rayon principal. */
   readonly rayonSecondaire: number
@@ -28,7 +28,7 @@ export interface PoidsPenalites {
   readonly irregularite: number
   /** Par vacation qui differe du planning de la semaine precedente. */
   readonly changement: number
-  /** Par personne manquante sur une tranche de 30 min. Le plus lourd. */
+  /** Par personne manquante sur une tranche. Le plus lourd. */
   readonly manque: number
   /** Prime accordee a la couverture d'une competence critique. */
   readonly competenceCritique: number
@@ -214,7 +214,7 @@ export function penaliser(
   }
 }
 
-/** Nombre de tranches de 30 min couvertes par une vacation. */
+/** Nombre de tranches couvertes par une vacation. */
 export function tranchesCouvertesPar(vacation: Vacation): number {
   return Math.round(dureeTravailEffectif(vacation) / TRANCHE_MINUTES)
 }

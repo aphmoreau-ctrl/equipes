@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { semaineDe } from '../../domaine/calendrier'
+import { duree } from '../../domaine/temps'
 import { clientsParTranche, tranchesOuvertes } from '../../domaine/magasin'
 import { COLLABORATEURS_DEMO } from '../../donnees/collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from '../../donnees/demo'
 import { calculerBesoin, type BesoinJour } from '../besoin'
 import { contexteDeVerification, PARAMETRES_PAR_DEFAUT, verifier } from '../regles'
-import { genererLePlanning, type EntreesGeneration } from './generateur'
+import { genererLePlanning, postesCourts, type EntreesGeneration } from './generateur'
 import { manqueRestant } from './score'
+import { calculerCouverture } from '../indicateurs'
 
 /** Donnees FICTIVES uniquement. */
 
@@ -188,6 +190,28 @@ describe('plusieurs rayons à la fois', () => {
     expect(rayonsUtilises.size).toBeGreaterThan(2)
   })
 
+  it('tient les cinq secondes exigées sur tout le service', () => {
+    /*
+     * Le cahier des charges demande moins de cinq secondes sur iPad. Le
+     * serveur de publication est environ trois fois plus lent qu'un Mac, et un
+     * iPad se situe entre les deux : on verifie donc largement en dessous,
+     * pour que la marge reste reelle sur l'appareil d'Arnaud.
+     */
+    const rayonIds = MAGASIN_DEMO.rayons.map((rayon) => rayon.id)
+    const donnees = entrees({
+      rayons: MAGASIN_DEMO.rayons,
+      besoins: besoinsDeLaSemaine(rayonIds),
+      dureeMaximaleMs: 15000,
+    })
+
+    const depart = Date.now()
+    const resultat = genererLePlanning(donnees)
+    const ecoule = Date.now() - depart
+
+    expect(resultat.dureeMs).toBeLessThan(5000)
+    expect(ecoule).toBeLessThan(5000)
+  })
+
   it('ne viole aucune règle même sur tout le service', () => {
     const rayonIds = MAGASIN_DEMO.rayons.map((rayon) => rayon.id)
     const resultat = genererLePlanning(
@@ -204,5 +228,83 @@ describe('plusieurs rayons à la fois', () => {
     ).filter((infraction) => infraction.severite === 'bloquante')
 
     expect(bloquantes.map((i) => `${i.collaborateurId} ${i.libelle}`)).toEqual([])
+  })
+})
+
+describe('le générateur compte les tranches comme le calcul de couverture', () => {
+  /*
+   * Garde-fou : le generateur tient ses propres compteurs de presence, tranche
+   * par tranche. S'ils ne suivent pas la meme maille que le calcul de
+   * couverture, il croit couvrir ce qu'il ne couvre pas. C'est exactement ce
+   * qui est arrive au passage de la demi-heure au quart d'heure.
+   */
+  it('annonce la même couverture que le calcul de couverture', () => {
+    const donnees = entrees()
+    const resultat = genererLePlanning(donnees)
+
+    for (const besoin of donnees.besoins) {
+      const duJour = resultat.vacations.filter(
+        (vacation) => vacation.rayonId === besoin.rayonId && vacation.jour === besoin.date,
+      )
+      const couverture = calculerCouverture(besoin, duJour, COLLABORATEURS_DEMO)
+
+      // Le manque mesure par le score et celui mesure par la couverture
+      // doivent concorder : ce sont deux chemins vers la meme verite.
+      const manqueParLeScore = manqueRestant(besoin, duJour)
+      const manqueParLaCouverture = couverture.tranches.reduce(
+        (somme, tranche) => somme + Math.max(0, tranche.besoin - tranche.presents),
+        0,
+      )
+      expect(
+        manqueParLeScore,
+        `${besoin.rayonId} le ${besoin.date} : le générateur et la couverture ne comptent pas pareil`,
+      ).toBe(manqueParLaCouverture)
+    }
+  })
+
+  it('donne une pause à toute vacation de six heures ou plus', () => {
+    const resultat = genererLePlanning(entrees())
+    expect(resultat.vacations.length).toBeGreaterThan(0)
+
+    for (const vacation of resultat.vacations) {
+      const amplitude = duree(vacation.debut, vacation.fin)
+      if (amplitude >= 6 * 60) {
+        expect(
+          vacation.pauseMinutes,
+          `${vacation.debut}–${vacation.fin} dépasse six heures sans pause`,
+        ).toBeGreaterThanOrEqual(20)
+      }
+    }
+  })
+
+  it('propose des postes courts quand le besoin ne remplit pas une journée', () => {
+    const courts = postesCourts(entrees().besoins)
+    expect(courts.length).toBeGreaterThan(0)
+
+    for (const poste of courts) {
+      const amplitude = duree(poste.debut, poste.fin)
+      // Jamais moins de trois heures : on ne déplace personne pour moins.
+      expect(amplitude).toBeGreaterThanOrEqual(3 * 60)
+      expect(amplitude).toBeLessThan(6 * 60)
+      // Moins de six heures : aucune pause légale n'est due.
+      expect(poste.pauseMinutes).toBe(0)
+    }
+  })
+
+  it('place effectivement des postes courts dans un petit rayon', () => {
+    // La cave demande environ trois heures par jour : une journée entière y
+    // serait du sureffectif pur.
+    const resultat = genererLePlanning(
+      entrees({
+        rayons: MAGASIN_DEMO.rayons.filter((rayon) => rayon.id === 'cave-vins'),
+        besoins: besoinsDeLaSemaine(['cave-vins']),
+      }),
+    )
+    expect(resultat.vacations.length).toBeGreaterThan(0)
+
+    const courtes = resultat.vacations.filter(
+      (vacation) => duree(vacation.debut, vacation.fin) < 6 * 60,
+    )
+    expect(courtes.length).toBeGreaterThan(0)
   })
 })

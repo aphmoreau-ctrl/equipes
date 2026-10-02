@@ -8,7 +8,14 @@ import {
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
-import { TRANCHES_PAR_JOUR, duree, enMinutes } from '../../domaine/temps'
+import {
+  MINUTES_PAR_JOUR,
+  TRANCHE_MINUTES,
+  TRANCHES_PAR_JOUR,
+  duree,
+  enMinutes,
+  enTexte,
+} from '../../domaine/temps'
 import type { BesoinJour } from '../besoin'
 import { contexteDeVerification, verifier, type ParametresRegles, type Vacation } from '../regles'
 import {
@@ -172,6 +179,60 @@ function affectationPermise(
  * 3. on tente enfin des echanges tant qu'ils ameliorent le score, dans la
  *    limite du temps accorde.
  */
+/** Duree minimale d'un poste, en minutes : on ne deplace personne pour moins. */
+const DUREE_MINIMALE_POSTE = 3 * 60
+
+/** Durees proposees pour un poste court, de la plus courte a la plus longue. */
+const DUREES_POSTES_COURTS = [DUREE_MINIMALE_POSTE, 4 * 60, 5 * 60]
+
+/** Au-dela, le planning devient illisible et le calcul trop long. */
+const MAXIMUM_POSTES_COURTS = 8
+
+/**
+ * Postes courts, tailles sur le besoin reel.
+ *
+ * Les horaires types du magasin font sept heures. Un rayon qui ne demande que
+ * trois heures de travail — la cave, un dimanche de boulangerie — se voyait
+ * donc attribuer une journee entiere, ou rien du tout. Ces postes de 3 a 5 h
+ * se calent sur le debut et sur la fin du besoin, et comblent cet entre-deux.
+ *
+ * Moins de six heures : aucune pause legale n'est due (L3121-33).
+ */
+export function postesCourts(besoins: readonly BesoinJour[]): HoraireType[] {
+  const formes = new Map<string, HoraireType>()
+
+  for (const besoin of besoins) {
+    const avecBesoin = besoin.tranches.filter((tranche) => tranche.personnes > 0)
+    if (avecBesoin.length === 0) continue
+
+    const premier = avecBesoin[0]?.index ?? 0
+    const dernier = avecBesoin[avecBesoin.length - 1]?.index ?? 0
+    const debutBesoin = premier * TRANCHE_MINUTES
+    const finBesoin = (dernier + 1) * TRANCHE_MINUTES
+
+    for (const minutes of DUREES_POSTES_COURTS) {
+      // Un poste cale sur le debut du besoin, un autre sur sa fin.
+      for (const debut of [debutBesoin, Math.max(0, finBesoin - minutes)]) {
+        if (debut + minutes > MINUTES_PAR_JOUR) continue
+        const cle = `${debut}|${minutes}`
+        if (formes.has(cle)) continue
+        formes.set(cle, {
+          id: `court-${debut}-${minutes}`,
+          nom: `${enTexte(debut)}–${enTexte(debut + minutes)}`,
+          debut: enTexte(debut),
+          fin: enTexte(debut + minutes),
+          pauseMinutes: 0,
+          pauseDebut: enTexte(debut),
+        })
+      }
+    }
+  }
+
+  return [...formes.values()]
+    .sort((a, b) => a.debut.localeCompare(b.debut) || a.fin.localeCompare(b.fin))
+    .slice(0, MAXIMUM_POSTES_COURTS)
+}
+
 export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneration {
   const debutCalcul = Date.now()
   const limite = entrees.dureeMaximaleMs ?? DUREE_MAXIMALE_PAR_DEFAUT
@@ -182,7 +243,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   const equipe = [...entrees.collaborateurs]
     .filter((collaborateur) => collaborateur.actif)
     .sort((a, b) => a.id.localeCompare(b.id))
-  const horaires = [...entrees.horairesTypes].sort((a, b) => a.debut.localeCompare(b.debut))
+  const horaires = [
+    ...entrees.horairesTypes,
+    ...postesCourts(entrees.besoins),
+  ].sort((a, b) => a.debut.localeCompare(b.debut) || a.id.localeCompare(b.id))
 
   const moyenne = sujetionMoyenne(equipe)
   const reperesPrecedents = new Set(
@@ -198,7 +262,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   interface EtatCreneau {
     readonly besoin: BesoinJour
-    /** Nombre de personnes presentes, par tranche de 30 min. */
+    /** Nombre de personnes presentes, tranche par tranche. */
     readonly presents: Int16Array
     /** Nombre de personnes autonomes presentes, par competence critique et par tranche. */
     readonly autonomes: Map<string, Int16Array>
@@ -231,11 +295,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
     const couvertes: number[] = []
     for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
-      const debutTranche = index * 30
-      const finTranche = debutTranche + 30
+      const debutTranche = index * TRANCHE_MINUTES
+      const finTranche = debutTranche + TRANCHE_MINUTES
       if (!(debutH < finTranche && finH > debutTranche)) continue
+      // Une personne en pause sur la moitie de la tranche ne couvre pas.
       const enPause = Math.min(finTranche, pauseFin) - Math.max(debutTranche, pauseDebut)
-      if (enPause >= 15) continue
+      if (enPause >= TRANCHE_MINUTES / 2) continue
       couvertes.push(index)
     }
     tranchesDe.set(horaire.id, couvertes)

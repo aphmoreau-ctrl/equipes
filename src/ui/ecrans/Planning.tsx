@@ -37,7 +37,7 @@ import {
 import { alertesDAnticipation, anticiper } from '../../moteurs/indicateurs/anticipation'
 import { absencesEffectives } from '../../donnees/etat'
 import { useDonnees } from '../DonneesProvider'
-import { genererLePlanning } from '../../moteurs/planning/generateur'
+import { useGenerateur } from '../useGenerateur'
 import type { ResultatGeneration } from '../../moteurs/planning/generateur'
 import { GrillePlanning } from '../composants/GrillePlanning'
 import { SuiviPlanning } from '../composants/SuiviPlanning'
@@ -56,6 +56,7 @@ export function Planning() {
   )
   const [documentAffiche, setDocumentAffiche] = useState<TypeDocument | null>(null)
   const [proposition, setProposition] = useState<ResultatGeneration | null>(null)
+  const { etat: etatGeneration, erreur: erreurGeneration, generer } = useGenerateur()
   const [confirmationGeneration, setConfirmationGeneration] = useState(false)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
@@ -213,22 +214,25 @@ export function Planning() {
   }
 
   function proposerUnPlanning(): void {
-    const resultat = genererLePlanning({
-      semaine,
-      rayons,
-      besoins: besoinsDeLaSemaine,
-      collaborateurs: etat.collaborateurs,
-      absences: absencesEffectives(etat),
-      horairesTypes: etat.magasin.horairesTypes,
-      parametres: etat.reglesParametres,
-      vacationsAnterieures: historique(semaine),
-      planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
-      dureeMaximaleMs: 5000,
-    })
-
-    modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: resultat.vacations }))
-    setProposition(resultat)
     setConfirmationGeneration(false)
+    generer(
+      {
+        semaine,
+        rayons,
+        besoins: besoinsDeLaSemaine,
+        collaborateurs: etat.collaborateurs,
+        absences: absencesEffectives(etat),
+        horairesTypes: etat.magasin.horairesTypes,
+        parametres: etat.reglesParametres,
+        vacationsAnterieures: historique(semaine),
+        planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
+        dureeMaximaleMs: 5000,
+      },
+      (resultat) => {
+        modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: resultat.vacations }))
+        setProposition(resultat)
+      },
+    )
   }
 
   function changerLeSuivi(nouvelEtat: EtatSuivi, date: string, remarques: string): void {
@@ -373,14 +377,25 @@ export function Planning() {
           <button
             type="button"
             className="bouton bouton--principal"
+            disabled={etatGeneration === 'en-cours'}
             onClick={() =>
               planningCourant.vacations.length === 0
                 ? proposerUnPlanning()
                 : setConfirmationGeneration(true)
             }
           >
-            Proposer un planning
+            {etatGeneration === 'en-cours' ? 'Calcul en cours…' : 'Proposer un planning'}
           </button>
+        )}
+
+        {etatGeneration === 'en-cours' && (
+          <p className="champ__aide" role="status">
+            Le calcul se fait à côté : vous pouvez continuer à utiliser l’application.
+          </p>
+        )}
+
+        {erreurGeneration !== null && (
+          <p className="avis avis--attention">{erreurGeneration}</p>
         )}
 
         {proposition !== null && (

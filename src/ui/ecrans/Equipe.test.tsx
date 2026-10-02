@@ -88,13 +88,21 @@ describe('ecran Equipe', () => {
 
   it('ajoute puis retire un collaborateur', () => {
     afficher(<Equipe />)
+
+    // La fiche n'existe qu'une fois la fenetre remplie et enregistree.
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter un collaborateur' }))
-    expect(within(sectionFiches()).getByText('Nouveau X.')).toBeInTheDocument()
+    const fenetre = screen.getByRole('dialog', { name: 'Nouveau collaborateur' })
+    fireEvent.change(within(fenetre).getByLabelText('Prénom'), { target: { value: 'Noémie' } })
+    fireEvent.change(within(fenetre).getByLabelText('Initiale du nom'), { target: { value: 'T.' } })
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer' }))
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Fermer' }))
+
+    expect(within(sectionFiches()).getByText('Noémie T.')).toBeInTheDocument()
     expect(screen.getByText(/21 personnes/)).toBeInTheDocument()
 
-    const carte = fiche('Nouveau X.')
+    const carte = fiche('Noémie T.')
     fireEvent.click(within(carte).getByRole('button', { name: 'Retirer de l’effectif' }))
-    expect(within(sectionFiches()).queryByText('Nouveau X.')).not.toBeInTheDocument()
+    expect(within(sectionFiches()).queryByText('Noémie T.')).not.toBeInTheDocument()
     expect(screen.getByText(/20 personnes/)).toBeInTheDocument()
   })
 

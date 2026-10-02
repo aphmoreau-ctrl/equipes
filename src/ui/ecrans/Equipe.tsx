@@ -20,6 +20,10 @@ import {
   SectionSuiviIndividuel,
 } from './equipe/SectionsRH'
 import { SectionVivier } from './equipe/SectionVivier'
+import {
+  NouveauCollaborateur,
+  type BrouillonCollaborateur,
+} from './equipe/NouveauCollaborateur'
 
 const COMPETENCES_CONNUES = [
   'réception',
@@ -41,6 +45,7 @@ export function Equipe() {
   const { etat, modifier } = useDonnees()
   const rayons = rayonsActifs(etat.magasin)
   const [filtre, setFiltre] = useState('tous')
+  const [fenetreOuverte, setFenetreOuverte] = useState(false)
 
   const equipe = etat.collaborateurs
     .filter((collaborateur) => collaborateur.actif)
@@ -62,7 +67,11 @@ export function Equipe() {
     }))
   }
 
-  function ajouter(): void {
+  /**
+   * Enregistre la fiche saisie dans la fenetre. Tout ce qui n'y figure pas
+   * prend une valeur de depart raisonnable, modifiable ensuite dans la fiche.
+   */
+  function enregistrerNouveau(brouillon: BrouillonCollaborateur): void {
     const identifiant = `c-${Date.now()}`
     modifier((precedent) => ({
       ...precedent,
@@ -71,21 +80,26 @@ export function Equipe() {
         ...precedent.collaborateurs,
         {
           id: identifiant,
-          prenom: 'Nouveau',
-          initiale: 'X.',
+          prenom: brouillon.prenom,
+          initiale: brouillon.initiale,
           serviceId: 'frais',
-          rayonPrincipal: filtre === 'tous' ? (rayons[0]?.id ?? '') : filtre,
-          rayonsSecondaires: [],
+          rayonPrincipal: brouillon.rayonPrincipal,
+          rayonsSecondaires: [...brouillon.rayonsSecondaires],
           poste: 'Employé commercial',
           statut: 'employe',
           niveauClassification: 'Niveau 2',
-          contrat: 'cdi',
-          heuresHebdomadaires: 35,
-          tempsPlein: true,
-          dateEntree: new Date().toISOString().slice(0, 10),
+          contrat: brouillon.contrat,
+          heuresHebdomadaires: brouillon.heuresHebdomadaires,
+          tempsPlein: brouillon.heuresHebdomadaires >= 35,
+          dateEntree: brouillon.dateEntree,
           finPeriodeEssai: null,
-          finContrat: null,
-          disponibilites: [],
+          finContrat: brouillon.finContrat,
+          // Un repos fixe se traduit par une journee declaree non disponible.
+          disponibilites: brouillon.reposFixes.map((jour) => ({
+            jour,
+            disponible: false,
+            plage: null,
+          })),
           competences: {},
           habilitations: [],
           compteursEquite: {
@@ -417,10 +431,19 @@ export function Equipe() {
           </Depliant>
         ))}
 
-        <button type="button" className="bouton" onClick={ajouter}>
+        <button type="button" className="bouton" onClick={() => setFenetreOuverte(true)}>
           Ajouter un collaborateur
         </button>
       </section>
+
+      {fenetreOuverte && (
+        <NouveauCollaborateur
+          rayons={rayons}
+          rayonParDefaut={filtre === 'tous' ? (rayons[0]?.id ?? '') : filtre}
+          onEnregistrer={enregistrerNouveau}
+          onFermer={() => setFenetreOuverte(false)}
+        />
+      )}
 
       <SectionSuiviIndividuel />
       <SectionVivier />

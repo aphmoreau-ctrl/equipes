@@ -1017,3 +1017,55 @@ devra être retiré dès que la cause sera identifiée. Toute sonde posée dans 
 code déplace le problème, ce qui est le propre d'un défaut de synchronisation.
 **Alternative écartée.** Supprimer ces quatre tests : ils protègent le menu de
 l'iPhone, qui est la navigation principale sur téléphone.
+
+### À FAIRE après le lot 2 — trouver la vraie cause de C-22
+Le réessai automatique autorisé en C-22 est un contournement. Après le lot 2
+(calcul de la charge et des besoins), reprendre le test instable du panneau
+« Plus » de l'iPhone, trouver pourquoi le panneau se referme à l'instant où il
+s'ouvre, corriger, puis **retirer `retry: 1` de `vitest.config.ts`**.
+Demandé par Arnaud le 2 octobre 2026.
+
+## Lot 0 — Fenêtre « Nouveau collaborateur » (2 octobre 2026)
+
+### D-78 — Rien n'est créé tant que la fenêtre n'est pas enregistrée
+**Ce qui changeait.** « Ajouter un collaborateur » créait aussitôt une fiche
+« Nouveau X. » dans l'effectif, à corriger ensuite. On saisissait à l'aveugle,
+et une fiche vide restait dans l'équipe si l'on changeait d'avis — elle comptait
+dans les effectifs et dans les heures.
+**Décision.** La fiche n'existe qu'au moment où vous touchez « Enregistrer ».
+**Alternative possible :** garder la création immédiate avec une fiche
+« brouillon » exclue des calculs — plus compliqué, pour le même résultat.
+
+### D-79 — Un champ « initiale » que la spécification ne demandait pas
+**Décision.** La fenêtre comporte un petit champ « Initiale du nom » à côté du
+prénom.
+**Raison.** Vous avez confirmé le RGPD « prénom + initiale » (« Camille D. »).
+Sans ce champ, chaque nouvelle fiche s'appellerait « Noémie » tout court, et
+deux Noémie seraient impossibles à distinguer sur un planning affiché.
+Il reste **facultatif** : rien ne bloque si vous ne le remplissez pas.
+
+### D-80 — Les dates apparaissent aussi pour l'apprentissage
+**Décision.** Les dates de début et de fin s'affichent pour **CDD, Intérim et
+Apprenti**, alors que la spécification ne citait que CDD et Intérim.
+**Raison.** Un contrat d'apprentissage est à durée déterminée. Sans date de fin,
+les alertes de fin de contrat et les contrôles légaux propres aux apprentis
+seraient aveugles. **Alternative :** suivre la spécification à la lettre et
+saisir la date ensuite dans la fiche.
+
+### D-81 — Les jours de repos fixes sont des journées non disponibles
+**Décision.** Les jours cochés L M M J V S D sont enregistrés comme des
+disponibilités « non disponible » pour ces jours.
+**Raison.** L'application possède déjà cette notion, utilisée par le générateur
+de planning et par les contrôles. Créer un second réglage « repos fixe » aurait
+fait deux sources de vérité qui peuvent se contredire.
+
+### C-23 — Les boutons verts devenaient illisibles au survol de la souris ❗
+**Ce qui n'allait pas.** Découvert en vérifiant la nouvelle fenêtre : au survol
+à la souris, **tous** les boutons principaux de l'application (le vert foncé)
+repassaient en gris clair tout en gardant leur texte blanc. Le libellé
+disparaissait. Sur iPad cela ne se voit pas — au doigt, il n'y a pas de survol —
+mais sur Mac, chaque bouton important devenait vide au passage de la souris.
+**Cause.** En CSS, la règle de survol commune était plus forte que celle du
+bouton principal et reprenait le dessus sur sa couleur de fond.
+**Corrigé.** Le bouton principal redonne sa couleur au survol, et s'éclaircit
+légèrement pour rester vivant.

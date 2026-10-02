@@ -435,6 +435,11 @@ button {
   background: color-mix(in srgb, var(--avertissement) 10%, transparent);
 }
 
+.avis--succes {
+  border-left-color: var(--succes);
+  background: color-mix(in srgb, var(--succes) 10%, transparent);
+}
+
 .bouton {
   display: inline-flex;
   align-items: center;
@@ -458,8 +463,15 @@ button {
   color: var(--accent-texte);
 }
 
+/*
+ * Le fond doit etre redonne ici : « .bouton:hover » est plus specifique que
+ * « .bouton--principal » et repeignait le bouton en gris clair, tout en
+ * gardant le texte blanc. Au survol a la souris, sur Mac, le libelle de tous
+ * les boutons principaux disparaissait.
+ */
 .bouton--principal:hover {
-  filter: brightness(1.1);
+  background: var(--accent);
+  filter: brightness(1.15);
 }
 
 .bouton:disabled {
@@ -1481,6 +1493,128 @@ select.champ__saisie {
   font-size: 10px;
   color: #555555;
   text-align: center;
+}
+
+/* ------------------------------------------- Fenetre « Nouveau collaborateur »
+ * Sur iPad et Mac : fenetre centree, fond assombri. Sur iPhone : panneau qui
+ * monte du bas, atteignable au pouce. La bascule se fait a la meme taille
+ * d'ecran que le menu lateral, pour que l'application reste coherente.
+ */
+
+.voile--fenetre {
+  z-index: 41;
+  cursor: default;
+}
+
+.fenetre {
+  position: fixed;
+  z-index: 42;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(88dvh, 820px);
+  display: flex;
+  flex-direction: column;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  box-shadow: 0 20px 60px rgb(16 24 20 / 28%);
+}
+
+.fenetre__entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.fenetre__titre {
+  margin: 0;
+  font-size: 19px;
+}
+
+.fenetre__fermer {
+  flex: 0 0 auto;
+}
+
+.fenetre__corps {
+  overflow-y: auto;
+  padding: 4px 18px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fenetre__pied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--bordure);
+  background: var(--fond);
+  border-radius: 0 0 var(--rayon) var(--rayon);
+}
+
+.fenetre__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.fenetre__identite,
+.fenetre__dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.fenetre__identite .champ {
+  flex: 1 1 180px;
+}
+
+/* Boutons a toucher : un rayon, un contrat. Ils passent a la ligne. */
+.choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.jours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.bouton--jour {
+  min-width: var(--cible-tactile);
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px), (max-height: 599px) {
+  .fenetre {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: var(--rayon) var(--rayon) 0 0;
+    border-bottom: none;
+  }
+
+  .fenetre__pied {
+    border-radius: 0;
+    padding-bottom: calc(12px + var(--marge-bas));
+  }
 }
 
 @media print {

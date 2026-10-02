@@ -10,33 +10,32 @@ Application web installable (PWA) de **gestion complète des équipes**, décrit
 
 ## Méthode de travail (obligatoire)
 
-**Méthode en vigueur depuis le 30 septembre 2026 : construction continue.**
-Elle remplace l'ancienne méthode « une étape, une validation ».
+**Méthode en vigueur depuis le 2 octobre 2026 : accord avant chaque lot.**
+Elle remplace la « construction continue » du 30 septembre, qui enchaînait les
+lots sans rien demander.
 
-1. **Construire lot après lot jusqu'au bout de la feuille de route**, sans
-   s'arrêter pour demander une validation entre les lots.
-2. **Après chaque lot** : tests automatiques qui passent, données fictives de
-   démonstration à jour, publication sur GitHub Pages, puis **enchaîner
-   directement sur le lot suivant**.
-3. **Point non précisé** : ne pas attendre. Choisir la solution la plus
-   raisonnable et conforme au cahier des charges, puis la consigner dans
-   `DECISIONS.md` (décision, raison, alternative possible). Arnaud relira tout
-   à la fin.
-4. **Ne s'arrêter que pour ce qui exige réellement son intervention** (créer le
-   projet Firebase, se connecter à un compte). Dans ce cas : préparer tout le
-   reste, expliquer exactement quoi faire, et **continuer les autres lots en
-   attendant**.
-5. Le **moteur de besoin** et le **moteur de planning** restent du code pur,
+1. **Avant chaque lot** : présenter ce qui va être fait, montrer la maquette
+   quand il s'agit d'un écran, et **attendre l'accord d'Arnaud**.
+2. **À l'intérieur d'un lot validé : avancer sans s'arrêter.** Pas de validation
+   à chaque petite étape, pas de question sur un détail — le lot est validé,
+   il se termine.
+3. **Fin de lot** : tests automatiques qui passent, données fictives de
+   démonstration à jour, publication sur GitHub Pages, puis **présenter le lot
+   suivant et attendre l'accord**.
+4. **Point non précisé à l'intérieur d'un lot** : ne pas attendre. Choisir la
+   solution la plus raisonnable et conforme au cahier des charges, puis la
+   consigner dans `DECISIONS.md` (décision, raison, alternative possible).
+5. **Ne s'arrêter en cours de lot que pour ce qui exige réellement son
+   intervention** (créer le projet Firebase, se connecter à un compte). Dans ce
+   cas : préparer tout le reste et expliquer exactement quoi faire.
+6. Le **moteur de besoin** et le **moteur de planning** restent du code pur,
    séparé de l'interface, **couvert par des tests** (règles légales, cas
    limites). Aucun lot n'est terminé si un test échoue.
-6. Commits fréquents, messages en français, jamais de travail non publié.
-7. Ne jamais supprimer ni réécrire une grosse partie sans l'expliquer dans
+7. Commits fréquents, messages en français, jamais de travail non publié.
+8. Ne jamais supprimer ni réécrire une grosse partie sans l'expliquer dans
    `DECISIONS.md`.
-8. **À la fin** : un résumé clair — ce qui est fait, comment le tester sur iPad
-   et sur iPhone, et la liste des décisions à relire.
-
-Les affinements se feront une fois l'ensemble fonctionnel, avant la mise en
-service.
+9. **À la fin d'une série de lots** : un résumé clair — ce qui est fait, comment
+   le tester sur iPad et sur iPhone, et la liste des décisions à relire.
 
 ## Règles absolues
 - **Outil strictement personnel** : l'application est utilisée par Arnaud seul. **Aucun accès patron ni tiers** — jamais de compte, de partage en lecture seule ni de lien de consultation, même « plus tard ». Le patron valide **en dehors de l'application** ; Arnaud renseigne lui-même le **circuit de suivi** (§9.6 du cahier des charges : Brouillon → Soumis → Validé / À corriger → Publié à l'équipe, avec historique).

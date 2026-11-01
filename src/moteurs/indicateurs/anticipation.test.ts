@@ -65,6 +65,10 @@ describe('capacité d’une personne', () => {
     expect(capaciteDeLaPersonne(personne({ finContrat: '2026-10-31' }), '2026-11-02', [])).toBe(0)
   })
 
+  it('compte une personne dont la date d’entrée n’est pas encore saisie', () => {
+    expect(capaciteDeLaPersonne(personne({ dateEntree: '' }), '2026-11-02', [])).toBe(35)
+  })
+
   it('vaut zéro pour quelqu’un sorti de l’effectif', () => {
     expect(capaciteDeLaPersonne(personne({ actif: false }), '2026-11-02', [])).toBe(0)
   })

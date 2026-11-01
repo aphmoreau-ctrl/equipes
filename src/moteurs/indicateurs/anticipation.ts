@@ -43,7 +43,8 @@ export function capaciteDeLaPersonne(
   const jours = semaineDe(semaine)
   const dernierJour = jours[6] ?? semaine
 
-  if (estAvant(dernierJour, collaborateur.dateEntree)) return 0
+  // Date d'entree pas encore saisie (equipe importee) : la personne est la.
+  if (collaborateur.dateEntree !== '' && estAvant(dernierJour, collaborateur.dateEntree)) return 0
   if (collaborateur.finContrat !== null && estAvant(collaborateur.finContrat, semaine)) return 0
 
   const joursAbsents = jours

@@ -179,8 +179,9 @@ export function ordreDesDeparts(
   return demandes
     .map((demande) => ({
       collaborateurId: demande.collaborateurId,
+      // Date d'entree inconnue : classee apres toutes les dates connues.
       anciennete:
-        collaborateurs.find((candidat) => candidat.id === demande.collaborateurId)?.dateEntree ??
+        collaborateurs.find((candidat) => candidat.id === demande.collaborateurId)?.dateEntree ||
         '9999-12-31',
       demandeeLe: demande.demandeeLe,
     }))

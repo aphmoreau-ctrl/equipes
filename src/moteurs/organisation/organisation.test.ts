@@ -37,9 +37,8 @@ describe('points à définir', () => {
 
   it('relève l’effectif de semaine et les heures de fin de la préparation traiteur', () => {
     expect(libelles).toContain('Préparation traiteur & charcuterie : minimum et cible du lundi au vendredi.')
-    expect(libelles).toContain(
-      'Préparation traiteur & charcuterie : heure de fin du lundi au samedi à confirmer.',
-    )
+    // Les heures de fin sont connues : 12 h en semaine, 13 h 30 le samedi.
+    expect(libelles.some((l) => l.includes('heure de fin'))).toBe(false)
   })
 
   it('relève les personnes à désigner quand l’équipe n’est pas encore là', () => {

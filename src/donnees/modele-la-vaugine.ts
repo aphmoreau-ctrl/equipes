@@ -93,10 +93,10 @@ export const HORAIRES_RAYONS: Readonly<Record<string, HorairesSemaine>> = {
   [RAYON.cuisineMobile]: semaine([
     FERME, FERME, FERME, FERME, h('10:00', '19:00'), h('10:00', '18:00'), FERME,
   ]),
-  // Fin a 12 h ou 13 h 30 selon le jour : A DEFINIR (horairesAConfirmer).
+  // Fin a 12 h du lundi au vendredi, 13 h 30 le samedi (Arnaud, 1er novembre 2026).
   [RAYON.preparationTraiteur]: semaine([
-    h('06:00', '13:30'), h('06:00', '13:30'), h('06:00', '13:30'), h('06:00', '13:30'),
-    h('06:00', '13:30'), h('06:00', '13:30'), FERME,
+    h('06:00', '12:00'), h('06:00', '12:00'), h('06:00', '12:00'), h('06:00', '12:00'),
+    h('06:00', '12:00'), h('06:00', '13:30'), FERME,
   ]),
 }
 // Boucherie Trad et Boucherie LS partagent les memes horaires.
@@ -125,7 +125,7 @@ export const RAYONS_LA_VAUGINE: readonly Rayon[] = [
     'Préparation traiteur & charcuterie',
     8,
     HORAIRES_RAYONS[RAYON.preparationTraiteur] as HorairesSemaine,
-    { vente: false, horairesAConfirmer: LUNDI_AU_SAMEDI },
+    { vente: false },
   ),
 ]
 
@@ -407,11 +407,11 @@ const GRILLES: Readonly<Record<string, GrilleEffectifs>> = {
     competence: COMPETENCE.preparationTraiteur,
     // Effectif de semaine A DEFINIR ; le samedi, une personne (rotation).
     jours: {
-      1: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }],
-      2: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }],
-      3: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }],
-      4: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }],
-      5: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }],
+      1: [{ debut: '06:00', fin: '12:00', minimum: null, cible: null }],
+      2: [{ debut: '06:00', fin: '12:00', minimum: null, cible: null }],
+      3: [{ debut: '06:00', fin: '12:00', minimum: null, cible: null }],
+      4: [{ debut: '06:00', fin: '12:00', minimum: null, cible: null }],
+      5: [{ debut: '06:00', fin: '12:00', minimum: null, cible: null }],
       6: [{ debut: '06:00', fin: '13:30', minimum: 1, cible: 1 }],
       7: [],
     },

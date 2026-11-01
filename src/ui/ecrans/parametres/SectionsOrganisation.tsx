@@ -29,7 +29,12 @@ import {
   type PointADefinir,
 } from '../../../moteurs/organisation'
 import { useDonnees } from '../../DonneesProvider'
-import { appliquerGrillesDuWeekEnd, journeesARemplir } from '../../../donnees/grilles-week-end'
+import {
+  appliquerGrillesDuWeekEnd,
+  appliquerHorairesDeLaPreparation,
+  horairesDeLaPreparationAAppliquer,
+  journeesARemplir,
+} from '../../../donnees/grilles-week-end'
 import { ChampHeure, ChampNombre, ChampTexte, Depliant, Interrupteur } from '../../composants/Champ'
 
 /**
@@ -307,6 +312,22 @@ export function SectionEffectifs() {
         <strong>cible</strong> est souhaitée : elle peut être atteinte avec des renforts. Un champ
         vide reste « à définir ».
       </p>
+
+      {horairesDeLaPreparationAAppliquer(etat) && (
+        <div className="avis">
+          <p>
+            <strong>Horaires de la préparation traiteur</strong> : fin à 12 h du lundi au vendredi,
+            13 h 30 le samedi. La grille du rayon suit.
+          </p>
+          <button
+            type="button"
+            className="bouton bouton--principal"
+            onClick={() => modifier((precedent) => appliquerHorairesDeLaPreparation(precedent))}
+          >
+            Appliquer ces horaires
+          </button>
+        </div>
+      )}
 
       {journeesARemplir(etat) > 0 && (
         <div className="avis">

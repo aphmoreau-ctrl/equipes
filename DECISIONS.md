@@ -2013,3 +2013,13 @@ La section « Réunions » ne garde que ce qui ne dépend d'aucun rayon.
 **Limite.** Le générateur ne force pas encore la présence d'une personne
 désignée dans la plage de sa tâche : le contrôle de la semaine signale une
 tâche nommée qui n'a pas assez de créneaux possibles.
+
+### D-160 — Préparation traiteur : fin à 12 h, 13 h 30 le samedi (réponse d'Arnaud)
+La préparation traiteur va de 6 h à **12 h du lundi au vendredi**, et de 6 h
+à **13 h 30 le samedi** (fermée le dimanche). Modèle de départ mis à jour ;
+sur l'iPad, un bouton « Appliquer ces horaires » (Fiche rayon) les reporte,
+grille du rayon comprise.
+**Conséquence à connaître** : un apprenti mineur qui ne tient que la
+préparation ne peut plus faire 36 h 75 : 6 h par jour en semaine, 5 jours au
+plus (deux jours de repos consécutifs), soit 31 h 30 au mieux. Le planning le
+signale ; à voir avec la RH (contrat, ou un second rayon pour lui).

@@ -114,6 +114,13 @@ const resultat = genererLePlanning(entrees)
 describe('chacun fait ses heures', () => {
   it('chacun fait ses heures, à un quart d’heure près, sauf l’apprenti à l’école', () => {
     for (const collaborateur of etat.collaborateurs) {
+      // Yvon, mineur, ne tient que la preparation (6 h-12 h en semaine) et ne
+      // peut pas travailler plus de 5 jours : 31 h 30 au plus. Le manque est dit.
+      if (collaborateur.prenom === 'Yvon') {
+        expect(heuresDe(resultat, collaborateur.id)).toBeCloseTo(31.5, 1)
+        expect(resultat.restesAExpliquer.some((r) => r.startsWith('Yvon'))).toBe(true)
+        continue
+      }
       // Ulysse a un jour d'ecole : 36 h 75 x 5/6 a faire au magasin.
       const vise =
         collaborateur.prenom === 'Ulysse'
@@ -122,7 +129,9 @@ describe('chacun fait ses heures', () => {
       expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeCloseTo(vise, 0)
       expect(Math.abs(heuresDe(resultat, collaborateur.id) - vise), collaborateur.prenom).toBeLessThanOrEqual(0.25)
     }
-    expect(resultat.restesAExpliquer.filter((r) => r.includes('à faire cette semaine'))).toEqual([])
+    expect(
+      resultat.restesAExpliquer.filter((r) => r.includes('à faire cette semaine') && !r.startsWith('Yvon')),
+    ).toEqual([])
   })
 
   it('un congé payé vaut un jour ouvrable : contrat / 6', () => {

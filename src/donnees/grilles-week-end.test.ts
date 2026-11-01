@@ -58,3 +58,39 @@ describe('grilles du week-end', () => {
     expect(fl.jours[7]?.[0]?.debut).toBe('07:00')
   })
 })
+
+describe('horaires de la préparation traiteur', () => {
+  it('fin à 12 h en semaine, 13 h 30 le samedi, grille comprise', async () => {
+    const { appliquerHorairesDeLaPreparation, horairesDeLaPreparationAAppliquer } = await import('./grilles-week-end')
+    const etat = construireEtatReel([{ prenom: 'Abel', statut: 'employe', heures: 36.75, principaux: [RAYON.preparationTraiteur] }])
+    // Donnees importees avant la reponse : 13 h 30 partout, a confirmer.
+    const ancien = {
+      ...etat,
+      magasin: {
+        ...etat.magasin,
+        rayons: etat.magasin.rayons.map((r) =>
+          r.id === RAYON.preparationTraiteur
+            ? {
+                ...r,
+                horairesAConfirmer: [1, 2, 3, 4, 5, 6] as const,
+                horairesPropres: { ...r.horairesPropres!, 1: { ouvert: true, ouverture: '06:00', fermeture: '13:30' } },
+              }
+            : r,
+        ),
+      },
+      configurations: etat.configurations.map((c) =>
+        c.rayonId === RAYON.preparationTraiteur
+          ? { ...c, grilleEffectifs: { ...c.grilleEffectifs!, jours: { ...c.grilleEffectifs!.jours, 1: [{ debut: '06:00', fin: '13:30', minimum: null, cible: null }] } } }
+          : c,
+      ),
+    }
+    expect(horairesDeLaPreparationAAppliquer(ancien)).toBe(true)
+    const apres = appliquerHorairesDeLaPreparation(ancien)
+    const rayon = apres.magasin.rayons.find((r) => r.id === RAYON.preparationTraiteur)!
+    expect(rayon.horairesPropres![1].fermeture).toBe('12:00')
+    expect(rayon.horairesPropres![6].fermeture).toBe('13:30')
+    expect(rayon.horairesAConfirmer).toEqual([])
+    expect(apres.configurations.find((c) => c.rayonId === RAYON.preparationTraiteur)!.grilleEffectifs!.jours[1]![0]!.fin).toBe('12:00')
+    expect(horairesDeLaPreparationAAppliquer(apres)).toBe(false)
+  })
+})

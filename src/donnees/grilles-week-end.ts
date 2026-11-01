@@ -1,6 +1,6 @@
 import type { JourSemaine } from '../domaine/calendrier'
 import type { EtatApplication } from './etat'
-import { AFFLUENCE_SAMEDI, GRILLES_WEEK_END } from './modele-la-vaugine'
+import { AFFLUENCE_SAMEDI, GRILLES_WEEK_END, HORAIRES_RAYONS, RAYON } from './modele-la-vaugine'
 
 /**
  * Applique les grilles du week-end proposees (vendredi, samedi, dimanche)
@@ -56,5 +56,45 @@ export function appliquerGrillesDuWeekEnd(etat: EtatApplication): ResultatWeekEn
     },
     journees,
     affluenceSamedi,
+  }
+}
+
+/**
+ * Horaires de la preparation traiteur donnes par Arnaud : fin a 12 h du
+ * lundi au vendredi, 13 h 30 le samedi. Ne s'applique que si ces horaires
+ * sont encore « a confirmer » dans les donnees de l'iPad.
+ */
+export function horairesDeLaPreparationAAppliquer(etat: EtatApplication): boolean {
+  const rayon = etat.magasin.rayons.find((r) => r.id === RAYON.preparationTraiteur)
+  return rayon !== undefined && (rayon.horairesAConfirmer ?? []).length > 0
+}
+
+export function appliquerHorairesDeLaPreparation(etat: EtatApplication): EtatApplication {
+  if (!horairesDeLaPreparationAAppliquer(etat)) return etat
+  const horaires = HORAIRES_RAYONS[RAYON.preparationTraiteur]
+  if (horaires === undefined) return etat
+  return {
+    ...etat,
+    magasin: {
+      ...etat.magasin,
+      rayons: etat.magasin.rayons.map((rayon) =>
+        rayon.id === RAYON.preparationTraiteur
+          ? { ...rayon, horairesPropres: horaires, horairesAConfirmer: [] }
+          : rayon,
+      ),
+    },
+    // Les creneaux de la grille suivent : ils s'arretent a la nouvelle heure de fin.
+    configurations: etat.configurations.map((configuration) => {
+      const grille = configuration.grilleEffectifs
+      if (configuration.rayonId !== RAYON.preparationTraiteur || grille === undefined) return configuration
+      const jours = { ...grille.jours } as Record<JourSemaine, (typeof grille.jours)[JourSemaine]>
+      for (const jour of [1, 2, 3, 4, 5, 6, 7] as const) {
+        const fin = horaires[jour].fermeture
+        jours[jour] = (jours[jour] ?? null)?.map((creneau) =>
+          creneau.fin > fin ? { ...creneau, fin } : creneau,
+        ) ?? null
+      }
+      return { ...configuration, grilleEffectifs: { ...grille, jours } }
+    }),
   }
 }

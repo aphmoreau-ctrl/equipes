@@ -1,4 +1,6 @@
 import { TRANCHE_MINUTES, TRANCHES_PAR_JOUR, debutDeTranche } from '../../domaine/temps'
+import { jourDeLaSemaine } from '../../domaine/calendrier'
+import { effectifDeLaTranche } from './effectifs'
 import {
   coefficientDuBloc,
   minutesDuBloc,
@@ -58,6 +60,8 @@ export function calculerBesoin(
 ): BesoinJour {
   const blocsActifs = configuration.blocs.filter((bloc) => bloc.actif)
   const alertes: string[] = []
+  const grille = configuration.grilleEffectifs
+  const jour = grille === undefined ? null : jourDeLaSemaine(contexte.date)
 
   // Minutes de chaque bloc, tranche par tranche.
   const contributions = new Map<string, number[]>()
@@ -113,13 +117,29 @@ export function calculerBesoin(
       ...blocsActifs.map((bloc) => presenceMinimumDuBloc(bloc, contexte, index)),
       0,
     )
-    const personnes = personnesNecessaires(
+    let personnes = personnesNecessaires(
       minutesDeLaTranche,
       presenceMinimum,
       configuration.tolerance,
     )
 
-    if (minutesDeLaTranche > 0 && personnes === 0) tranchesSansPersonne += 1
+    // Grille d'effectifs : elle REMPLACE le nombre deduit du volume (D-123).
+    let cible: number | undefined
+    if (grille !== undefined && jour !== null) {
+      const effectif = effectifDeLaTranche(grille, jour, index)
+      personnes = effectif.minimum
+      cible = effectif.cible
+      if (effectif.cible > 0) {
+        competences.add(grille.competence)
+        critiques.add(grille.competence)
+        niveauxMinimum[grille.competence] = Math.max(
+          niveauxMinimum[grille.competence] ?? 0,
+          2,
+        ) as NiveauCompetence
+      }
+    } else if (minutesDeLaTranche > 0 && personnes === 0) {
+      tranchesSansPersonne += 1
+    }
 
     minutesTotal += minutesDeLaTranche
     personnesCumulees += personnes
@@ -133,6 +153,7 @@ export function calculerBesoin(
       competences: [...competences].sort(),
       competencesCritiques: [...critiques].sort(),
       niveauxMinimum,
+      ...(cible === undefined ? {} : { cible }),
     })
   }
 

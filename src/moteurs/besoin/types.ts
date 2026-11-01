@@ -1,6 +1,7 @@
 import type { JourSemaine } from '../../domaine/calendrier'
 import type { Minutes } from '../../domaine/temps'
 import type { NiveauCompetence } from '../../domaine/collaborateur'
+import type { GrilleEffectifs } from '../../domaine/organisation'
 
 /**
  * Calcul du besoin : pour chaque rayon, chaque jour et chaque tranche de
@@ -217,6 +218,12 @@ export interface ConfigurationRayon {
   readonly coefficientsSaison: Readonly<Record<number, number>>
   /** Coefficient applique quand le rayon est en promotion. */
   readonly coefficientPromotion: number
+  /**
+   * Effectifs voulus, saisis directement (minimum et cible). Quand ils
+   * existent, ils REMPLACENT le nombre de personnes deduit du volume de
+   * travail (D-123) ; les blocs ne servent plus qu'aux feuilles de route.
+   */
+  readonly grilleEffectifs?: GrilleEffectifs
 }
 
 /** Une reception constatee, saisie d'un geste au moment de la livraison. */
@@ -255,6 +262,11 @@ export interface TrancheBesoin {
   readonly competencesCritiques: readonly string[]
   /** Niveau minimum exige pour chaque competence de la tranche. */
   readonly niveauxMinimum: Readonly<Record<string, NiveauCompetence>>
+  /**
+   * Effectif souhaite, au-dela du minimum (« personnes »). Present seulement
+   * pour un rayon qui a une grille d'effectifs.
+   */
+  readonly cible?: number
 }
 
 export interface BesoinJour {

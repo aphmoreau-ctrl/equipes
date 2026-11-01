@@ -28,6 +28,7 @@ import { COLLABORATEURS_DEMO } from './collaborateurs-demo'
 import { CONFIGURATIONS_DEMO, MAGASIN_DEMO } from './demo'
 import { MISSIONS_DEMO, RENFORTS_DEMO } from './vivier-demo'
 import type { Competence } from '../domaine/competence'
+import { ORGANISATION_VIDE, type OrganisationPlanning } from '../domaine/organisation'
 import { COMPETENCES_DEMO } from './competences-demo'
 
 /**
@@ -99,6 +100,16 @@ export interface EtatApplication {
   readonly meteoParDate: Readonly<Record<string, Meteo>>
   /** Rayons en promotion, par date. */
   readonly promotionsParDate: Readonly<Record<string, readonly string[]>>
+  /**
+   * Organisation du planning : affluence, taches nommees, rotisserie,
+   * rotations, regles internes (regles du planning v2).
+   */
+  readonly organisation: OrganisationPlanning
+  /**
+   * Credit d'heures a recuperer, en minutes, par collaborateur. Positif = la
+   * personne a des heures a recuperer.
+   */
+  readonly creditsHeures: Readonly<Record<string, number>>
   /** Les donnees affichees sont-elles celles de la demonstration ? */
   readonly demonstration: boolean
 }
@@ -141,6 +152,8 @@ export function etatInitial(): EtatApplication {
     saisiesQualite: [],
     meteoParDate: {},
     promotionsParDate: {},
+    organisation: ORGANISATION_VIDE,
+    creditsHeures: {},
     demonstration: true,
   }
 }

@@ -1,4 +1,5 @@
 import {
+  estDateValide,
   ajouterJours,
   ajouterMois,
   dateEnTexte,
@@ -254,6 +255,8 @@ export function alertesDEntretien(
   const alertes: Alerte[] = []
 
   for (const collaborateur of collaborateurs.filter((candidat) => candidat.actif)) {
+    // Date d'entree pas encore renseignee (equipe importee) : rien a calculer.
+    if (!estDateValide(collaborateur.dateEntree)) continue
     for (const type of ['professionnel', 'bilan-6-ans'] as const) {
       const realises = entretiens
         .filter(

@@ -50,9 +50,10 @@ describe('feuilles de route dans l’écran Planning', () => {
     placerUneVacation()
     const feuilles = section()
 
-    fireEvent.change(within(feuilles).getByLabelText('Jour'), {
-      target: { value: '2026-10-03' },
-    })
+    // Le samedi de la semaine affichee, quelle que soit la date du jour.
+    const choix = within(feuilles).getByLabelText('Jour') as HTMLSelectElement
+    const samedi = choix.options[5]?.value ?? ''
+    fireEvent.change(choix, { target: { value: samedi } })
     expect(within(feuilles).getByText(/Personne n’est prévu ce jour-là/)).toBeInTheDocument()
   })
 

@@ -1,4 +1,5 @@
 import type { JourSemaine } from './calendrier'
+import type { Fonction } from './organisation'
 import type { Minutes } from './temps'
 
 /**
@@ -137,6 +138,78 @@ export interface Collaborateur {
   /** Contact pour les remplacements, seulement si la personne l'a accepte. */
   readonly contactAutorise: boolean
   readonly actif: boolean
+
+  /*
+   * Champs apparus avec les regles du planning v2. Tous FACULTATIFS : une
+   * fiche enregistree avant eux reste valable telle quelle.
+   */
+
+  /**
+   * Autres rayons ou la personne est TITULAIRE, en plus du rayon principal
+   * (un boucher a la fois Boucherie Trad et Boucherie LS).
+   */
+  readonly autresRayonsPrincipaux?: readonly string[]
+  /**
+   * Rayons tenus en DEPANNAGE seulement : en dernier recours, quand personne
+   * d'autre n'est disponible, et pour une courte duree.
+   */
+  readonly rayonsDepannage?: readonly string[]
+  /** Fonctions tenues : manager, responsable (reunion trad). */
+  readonly fonctions?: readonly Fonction[]
+  /**
+   * Cadre au forfait : hors calcul d'heures, compte seulement comme presence.
+   */
+  readonly forfait?: boolean
+  /** Poste du matin : simple preference, ou contrainte a respecter. */
+  readonly posteDuMatin?: PosteDuMatin
+  /**
+   * Jours d'ecole de chaque semaine (apprentis), non planifiables en magasin.
+   * Absent = pas encore renseigne ; liste vide = aucun.
+   */
+  readonly joursEcole?: readonly JourSemaine[]
+}
+
+export type PosteDuMatin = 'non' | 'preference' | 'contrainte'
+
+export const LIBELLES_POSTE_DU_MATIN: Readonly<Record<PosteDuMatin, string>> = {
+  non: 'Indifférent',
+  preference: 'Plutôt le matin (préférence)',
+  contrainte: 'Le matin uniquement (contrainte)',
+}
+
+/**
+ * Place d'un rayon pour une personne, dans l'ordre ou le planning la sollicite :
+ * titulaire d'abord, renfort ensuite, depannage en dernier recours.
+ */
+export type RangDansRayon = 'principal' | 'secondaire' | 'depannage'
+
+export function rangDansRayon(
+  collaborateur: Collaborateur,
+  rayonId: string,
+): RangDansRayon | null {
+  if (rayonsPrincipaux(collaborateur).includes(rayonId)) return 'principal'
+  if (collaborateur.rayonsSecondaires.includes(rayonId)) return 'secondaire'
+  if ((collaborateur.rayonsDepannage ?? []).includes(rayonId)) return 'depannage'
+  return null
+}
+
+/** Rayons ou la personne est titulaire : le principal, puis les autres. */
+export function rayonsPrincipaux(collaborateur: Collaborateur): string[] {
+  return [collaborateur.rayonPrincipal, ...(collaborateur.autresRayonsPrincipaux ?? [])]
+}
+
+export function aLaFonction(collaborateur: Collaborateur, fonction: Fonction): boolean {
+  return (collaborateur.fonctions ?? []).includes(fonction)
+}
+
+/** Cadre au forfait : ses heures ne se comptent pas. */
+export function horsCalculDHeures(collaborateur: Collaborateur): boolean {
+  return collaborateur.forfait === true
+}
+
+/** Jour d'ecole habituel ce jour de la semaine ? */
+export function estJourDEcole(collaborateur: Collaborateur, jour: JourSemaine): boolean {
+  return (collaborateur.joursEcole ?? []).includes(jour)
 }
 
 /** La personne est-elle en formation en centre ce jour-la ? */
@@ -156,7 +229,8 @@ export function estMineur(collaborateur: { readonly trancheAge: TrancheAge }): b
 
 /** « Camille D. » — la seule forme d'identite affichee dans l'application. */
 export function nomAffiche(collaborateur: Collaborateur): string {
-  return `${collaborateur.prenom} ${collaborateur.initiale}`
+  // L'initiale peut manquer : on n'affiche pas alors d'espace en trop.
+  return `${collaborateur.prenom} ${collaborateur.initiale}`.trim()
 }
 
 /** Minutes de travail prevues au contrat, par semaine. */
@@ -196,9 +270,13 @@ export function estAutonome(collaborateur: Collaborateur, competence: string): b
   return niveauDeCompetence(collaborateur, competence) >= 2
 }
 
-/** Rayons ou la personne peut intervenir : le principal et les secondaires. */
+/**
+ * Rayons ou la personne peut intervenir : ceux dont elle est titulaire, puis
+ * ses renforts. Le depannage n'y figure PAS : il ne se propose qu'en dernier
+ * recours, explicitement (voir rangDansRayon).
+ */
 export function rayonsPossibles(collaborateur: Collaborateur): string[] {
-  return [collaborateur.rayonPrincipal, ...collaborateur.rayonsSecondaires]
+  return [...rayonsPrincipaux(collaborateur), ...collaborateur.rayonsSecondaires]
 }
 
 /** Vrai si la personne peut travailler dans ce rayon. */

@@ -17,6 +17,7 @@ export {
   personnesNecessaires,
   pointeDeLaJournee,
 } from './calcul'
+export { effectifDeLaTranche, type EffectifTranche } from './effectifs'
 export type {
   BesoinJour,
   Bloc,

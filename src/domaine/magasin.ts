@@ -36,6 +36,13 @@ export interface Rayon {
   readonly actif: boolean
   /** Horaires propres au comptoir du rayon ; null = ceux du magasin. */
   readonly horairesPropres: HorairesSemaine | null
+  /**
+   * Rayon de vente (par defaut) ou activite de production sans obligation de
+   * presence en vente, comme la preparation traiteur.
+   */
+  readonly vente?: boolean
+  /** Jours dont les horaires sont encore provisoires, a confirmer. */
+  readonly horairesAConfirmer?: readonly JourSemaine[]
 }
 
 export interface Frequentation {

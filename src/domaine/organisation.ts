@@ -75,6 +75,42 @@ export interface GrilleEffectifs {
    * = aucun remplissage provisoire.
    */
   readonly joursVidesRemplisPar?: Partial<Readonly<Record<JourSemaine, JourSemaine>>>
+  /**
+   * Remballe de chaque jour : debut, duree et effectif propres. null = A
+   * DEFINIR. Absent (donnees anterieures) = a definir aussi.
+   */
+  readonly remballe?: Partial<Readonly<Record<JourSemaine, RemballeDuJour | null>>>
+  /**
+   * A l'ouverture et a la fermeture du rayon, au moins un TITULAIRE (pas un
+   * renfort seul). Absent = oui.
+   */
+  readonly titulaireOuvertureFermeture?: boolean
+}
+
+/** La remballe d'un rayon un jour donne. */
+export interface RemballeDuJour {
+  readonly debut: string
+  readonly dureeMinutes: number
+  readonly minimum: number
+  readonly cible: number
+}
+
+/** Les trois phases d'une journee de rayon. */
+export type PhaseDuJour = 'preparation' | 'vente' | 'remballe'
+
+export const LIBELLES_PHASE: Readonly<Record<PhaseDuJour, string>> = {
+  preparation: 'Préparation',
+  vente: 'Vente',
+  remballe: 'Remballe',
+}
+
+/** Debut de la vente : 8 h 30 tous les jours. */
+export const DEBUT_DE_LA_VENTE = '08:30'
+
+/** Phase d'un creneau : avant 8 h 30 la preparation, ensuite la vente. */
+export function phaseDuCreneau(creneau: { readonly fin: string }): PhaseDuJour {
+  const [h, m] = creneau.fin.split(':').map(Number) as [number, number]
+  return h * 60 + m <= 8 * 60 + 30 ? 'preparation' : 'vente'
 }
 
 /** Vendredi et samedi, tant qu'ils sont vides, prennent la cible du jeudi. */

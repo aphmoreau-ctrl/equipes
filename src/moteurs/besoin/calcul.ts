@@ -189,6 +189,7 @@ export function calculerBesoin(
     heuresPresence: (personnesCumulees * TRANCHE_MINUTES) / 60,
     coefficientsAppliques,
     alertes,
+    ...(grille === undefined ? {} : { titulaireAuxBornes: grille.titulaireOuvertureFermeture !== false }),
   }
 }
 

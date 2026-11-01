@@ -419,6 +419,19 @@ const GRILLES: Readonly<Record<string, GrilleEffectifs>> = {
   },
 }
 
+/**
+ * Remballe a definir chaque jour d'ouverture d'un rayon de vente. Debut et
+ * duree propres a chaque rayon et a chaque jour : Arnaud les renseignera.
+ */
+function remballeADefinir(rayonId: string): Partial<Record<JourSemaine, null>> {
+  const horaires = HORAIRES_RAYONS[rayonId] ?? HORAIRES_BOUCHERIE
+  const remballe: Partial<Record<JourSemaine, null>> = {}
+  for (const jour of [1, 2, 3, 4, 5, 6, 7] as const) {
+    if (horaires[jour].ouvert) remballe[jour] = null
+  }
+  return remballe
+}
+
 /** Configuration d'un rayon pilote par sa grille : aucun bloc de charge. */
 function configuration(rayonId: string): ConfigurationRayon {
   return {
@@ -431,7 +444,10 @@ function configuration(rayonId: string): ConfigurationRayon {
     coefficientsMeteo: { normal: 1, chaud: 1, 'tres-chaud': 1, froid: 1, pluie: 1 },
     coefficientsSaison: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1, 12: 1 },
     coefficientPromotion: 1,
-    grilleEffectifs: GRILLES[rayonId] as GrilleEffectifs,
+    grilleEffectifs:
+      rayonId === RAYON.preparationTraiteur
+        ? (GRILLES[rayonId] as GrilleEffectifs)
+        : { ...(GRILLES[rayonId] as GrilleEffectifs), remballe: remballeADefinir(rayonId) },
   }
 }
 
@@ -472,15 +488,6 @@ export const TACHE = {
 
 export const ROTATION_SAMEDI_PREPARATION = 'samedi-preparation-traiteur'
 
-const RAYONS_REMBALLE: readonly (readonly [string, string])[] = [
-  [RAYON.fruitsLegumes, COMPETENCE.fruitsLegumes],
-  [RAYON.maree, COMPETENCE.maree],
-  [RAYON.charcuterieFromage, COMPETENCE.charcuterieFromage],
-  [RAYON.boucherieTrad, COMPETENCE.boucherieTrad],
-  [RAYON.boucherieLs, COMPETENCE.boucherieLs],
-  [RAYON.fraicheDecoupe, COMPETENCE.fraicheDecoupe],
-  [RAYON.cuisineMobile, COMPETENCE.cuisineMobile],
-]
 
 export const TACHES_LA_VAUGINE: readonly TachePlanifiee[] = [
   tache({
@@ -536,16 +543,6 @@ export const TACHES_LA_VAUGINE: readonly TachePlanifiee[] = [
     moment: { type: 'heure', heure: '08:00' },
     dureeMinutes: 5,
   }),
-  ...RAYONS_REMBALLE.map(([rayonId, competenceDuRayon]) =>
-    tache({
-      id: `remballe-${rayonId}`,
-      nom: 'Remballe',
-      nature: 'remballe',
-      rayonId,
-      competence: competenceDuRayon,
-      jours: TOUS_LES_JOURS,
-    }),
-  ),
 ]
 
 const CUISSONS_SEMAINE = { vente: { debut: '08:30', fin: '20:00' }, cuissons: ['08:30', '13:30', '18:30'] }

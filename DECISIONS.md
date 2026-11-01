@@ -1965,3 +1965,32 @@ L'affluence du samedi (10 h-13 h, 15 h-19 h) recouvrait la plage de pause
 ordinaire de l'après-midi. Le samedi prend donc ses plages : 8 h 30-10 h et
 13 h-15 h (réglables : Paramètres → Règles internes). Le générateur, le
 placement des pauses et le contrôle de la semaine les utilisent.
+
+### D-158 — Préparation, vente, remballe ; un titulaire à l'ouverture et à la fermeture
+**Phases.** Chaque journée de rayon se lit en trois phases : **préparation**
+(de l'ouverture à 8 h 30), **vente** (8 h 30-20 h, dimanche 8 h 30-12 h 30)
+et **remballe** (début, durée et effectif propres à chaque rayon et à chaque
+jour, avant la fermeture). Les créneaux de la grille avant 8 h 30 forment la
+préparation ; la remballe a son propre minimum / cible, appliqué sur sa plage
+s'il est plus exigeant. La remballe est « à définir » partout tant qu'Arnaud
+ne l'a pas renseignée ; les anciennes tâches « remballe » sont remplacées par
+cette phase.
+**Titulaire.** À l'ouverture et à la fermeture d'un rayon (premier et dernier
+quart d'heure), au moins un **titulaire** du rayon (réglable par rayon ; sans
+objet pour un rayon sans aucun titulaire dans l'équipe, comme la cuisine
+mobile). Le générateur le traite comme un manque (poids double) ; la
+réparation cherche un titulaire à déplacer ou à **décaler** (finir à 20 h au
+lieu de 19 h 15), sans jamais retirer le dernier titulaire d'une ouverture
+ou d'une fermeture ; le contrôle de la semaine signale ce qui reste.
+**« Qui ouvre ne ferme pas »** : garanti par les 10 h maximum partout où le
+rayon reste ouvert plus de 10 h ; sur les journées courtes (dimanche matin,
+fraîche découpe, cuisine mobile), une même personne peut ouvrir et fermer.
+**Essai réaliste** : de 12 à 5 ouvertures ou fermetures sans titulaire (Marée
+surtout, 3 titulaires seulement).
+
+### C-33 — À données égales, le planning variait selon la vitesse de l'appareil ❗
+La réparation des trous était bornée par le temps : sur une machine chargée,
+elle s'arrêtait plus tôt. Elle est désormais bornée par un nombre d'essais
+(le temps n'est plus qu'un garde-fou très large) et ne réexamine, après un
+déplacement, que les deux rayons-jours touchés. Même chose pour la complétion
+des heures et la présence maximale.

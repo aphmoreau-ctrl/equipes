@@ -110,7 +110,8 @@ describe('état complet du magasin', () => {
     expect(points).toContain('Rôtisserie : durée d’une cuisson.')
     expect(points).toContain('Emballage fromage : qui la fait, les jours, l’heure et la durée.')
     expect(points).toContain('Emballage boucherie : les jours, l’heure et la durée.')
-    expect(points).toContain('Remballe (7 rayons) : l’heure et la durée.')
+    expect(points).toContain('Marée : remballe (heure de début, durée, effectif) du lundi au dimanche.')
+    expect(points.some((p) => p.startsWith('Remballe'))).toBe(false)
     expect(points).toContain(
       'Réunion secteur trad : responsable (réunion trad) à désigner pour Marée et Charcuterie / Fromage.',
     )

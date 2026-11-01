@@ -334,6 +334,43 @@ export function controlerLaSemaine(entrees: EntreesControleSemaine): Constat[] {
     }
   }
 
+  // 6 bis. Ouverture et fermeture : au moins un titulaire du rayon.
+  for (const besoin of entrees.besoins.filter((b) => b.titulaireAuxBornes === true)) {
+    // Rayon sans aucun titulaire dans l'equipe (cuisine mobile) : regle sans objet.
+    const aDesTitulaires = entrees.collaborateurs.some(
+      (c) => c.actif && rayonsPrincipaux(c).includes(besoin.rayonId),
+    )
+    if (!aDesTitulaires) continue
+    const rayon = entrees.rayons.find((r) => r.id === besoin.rayonId)
+    const horaires = rayon?.horairesPropres?.[jourDeLaSemaine(besoin.date)]
+    if (rayon === undefined || horaires === undefined || !horaires.ouvert) continue
+    const duRayon = entrees.vacations.filter(
+      (v) => v.rayonId === besoin.rayonId && v.jour === besoin.date,
+    )
+    const moments: readonly [string, number][] = [
+      ['l’ouverture', Math.floor(enMinutes(horaires.ouverture) / TRANCHE_MINUTES)],
+      ['la fermeture', Math.floor((enMinutes(horaires.fermeture) - 1) / TRANCHE_MINUTES)],
+    ]
+    for (const [moment, index] of moments) {
+      const titulaire = duRayon.some((v) => {
+        const c = personne(v.collaborateurId)
+        return c !== undefined && rayonsPrincipaux(c).includes(besoin.rayonId) && couvreLaTranche(v, index)
+      })
+      if (titulaire) continue
+      ajouter({
+        cle: `titulaire|${besoin.rayonId}|${besoin.date}|${index}`,
+        gravite: 'alerte',
+        categorie: 'Couverture',
+        rayonId: besoin.rayonId,
+        collaborateurId: null,
+        jour: besoin.date,
+        libelle: `${rayon.nom}, ${jourEnTexte(besoin.date)} — pas de titulaire à ${moment} (${enTexte(index * TRANCHE_MINUTES)})`,
+        explication:
+          'À l’ouverture et à la fermeture, il faut au moins une personne titulaire du rayon, pas un renfort seul (réglable dans la fiche du rayon).',
+      })
+    }
+  }
+
   // 7. Ecart au contrat, conges et ecole deduits (contrat / 6 par jour).
   const joursOuvrables = regles.joursHabituelsParSemaine ?? 6
   for (const collaborateur of entrees.collaborateurs.filter((c) => c.actif && c.forfait !== true)) {

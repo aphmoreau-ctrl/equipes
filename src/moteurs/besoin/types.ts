@@ -280,4 +280,9 @@ export interface BesoinJour {
   readonly coefficientsAppliques: Readonly<Record<NatureCoefficient, number>>
   /** Points d'attention releves pendant le calcul. */
   readonly alertes: readonly string[]
+  /**
+   * Rayon a grille : faut-il un titulaire a l'ouverture et a la fermeture ?
+   * Absent = rayon sans grille, pas d'exigence.
+   */
+  readonly titulaireAuxBornes?: boolean
 }

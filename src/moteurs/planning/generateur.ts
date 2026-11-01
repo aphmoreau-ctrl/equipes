@@ -9,6 +9,7 @@ import {
   nomAffiche,
   peutTravaillerDans,
   rayonsPossibles,
+  rayonsPrincipaux,
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import {
@@ -620,7 +621,27 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     readonly autonomes: Map<string, Int16Array>
     /** Horaires du rayon a respecter (rayon a grille), « ferme », ou null. */
     readonly bornes: Plage | 'ferme' | null
+    /** Titulaires du rayon presents, par tranche. */
+    readonly titulaires: Int16Array
+    /**
+     * Premiere et derniere tranche du rayon, ou il faut un titulaire (regle
+     * reglable par rayon). null = pas d'exigence.
+     */
+    readonly auxBornes: readonly number[] | null
   }
+
+  /** Pseudo-competence : « titulaire du rayon », exigee a l'ouverture et a la fermeture. */
+  const TITULAIRE = '__titulaire__'
+  const estTitulaire = (collaborateur: Collaborateur, rayonId: string) =>
+    rayonsPrincipaux(collaborateur).includes(rayonId)
+  /** La personne remplit-elle cette exigence dans ce rayon ? */
+  const tient = (collaborateur: Collaborateur, competence: string, rayonId: string) =>
+    competence === TITULAIRE ? estTitulaire(collaborateur, rayonId) : estAutonome(collaborateur, competence)
+  /** Ouverture ou fermeture sans titulaire ? */
+  const sansTitulaire = (creneau: EtatCreneau, index: number) =>
+    creneau.auxBornes !== null &&
+    creneau.auxBornes.includes(index) &&
+    (creneau.titulaires[index] ?? 0) === 0
 
   const creneaux = new Map<string, EtatCreneau>()
   const cle = (rayonId: string, jour: string) => `${rayonId}|${jour}`
@@ -632,14 +653,28 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
         if (!autonomes.has(competence)) autonomes.set(competence, new Int16Array(TRANCHES_PAR_JOUR))
       }
     }
+    const bornes = bornesDuCreneau(
+      rayons.find((rayon) => rayon.id === besoin.rayonId),
+      besoin,
+    )
     creneaux.set(cle(besoin.rayonId, besoin.date), {
       besoin,
       presents: new Int16Array(TRANCHES_PAR_JOUR),
       autonomes,
-      bornes: bornesDuCreneau(
-        rayons.find((rayon) => rayon.id === besoin.rayonId),
-        besoin,
-      ),
+      bornes,
+      titulaires: new Int16Array(TRANCHES_PAR_JOUR),
+      auxBornes:
+        regles !== undefined &&
+        besoin.titulaireAuxBornes === true &&
+        bornes !== null &&
+        bornes !== 'ferme' &&
+        // Un rayon sans aucun titulaire dans l'equipe (la cuisine mobile) : regle sans objet.
+        equipe.some((c) => estTitulaire(c, besoin.rayonId))
+          ? [
+              Math.floor(enMinutes(bornes.debut) / TRANCHE_MINUTES),
+              Math.floor((enMinutes(bornes.fin) - 1) / TRANCHE_MINUTES),
+            ]
+          : null,
     })
   }
 
@@ -687,6 +722,9 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     if (creneau !== undefined) {
       for (const index of tranchesDe.get(horaire.id) ?? []) {
         creneau.presents[index] = (creneau.presents[index] ?? 0) + sens
+        if (estTitulaire(collaborateur, vacation.rayonId)) {
+          creneau.titulaires[index] = (creneau.titulaires[index] ?? 0) + sens
+        }
         for (const [competence, compteurs] of creneau.autonomes) {
           if (estAutonome(collaborateur, competence)) {
             compteurs[index] = (compteurs[index] ?? 0) + sens
@@ -724,7 +762,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       const part = partDuCreneau(cleCreneau, creneau, horaire)
       variation += part.base
       for (const [competence, tranches] of part.critiques) {
-        if (estAutonome(collaborateur, competence)) variation -= tranches * poids.competenceCritique
+        if (tient(collaborateur, competence, vacation.rayonId)) {
+          // Le titulaire a l'ouverture ou a la fermeture pese autant qu'un manque.
+          variation -= tranches * (competence === TITULAIRE ? poids.manque * 2 : poids.competenceCritique)
+        }
       }
     }
 
@@ -781,6 +822,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     const priorite = prioriteDuJour(creneau.besoin.date)
     {
       for (const index of tranchesDe.get(horaire.id) ?? []) {
+        if (sansTitulaire(creneau, index)) critiques.set(TITULAIRE, (critiques.get(TITULAIRE) ?? 0) + 1)
         const tranche = creneau.besoin.tranches[index]
         const attendu = tranche?.personnes ?? 0
         const presents = creneau.presents[index] ?? 0
@@ -881,6 +923,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             for (const competence of creneau.besoin.tranches[index]?.competencesCritiques ?? []) {
               if ((creneau.autonomes.get(competence)?.[index] ?? 0) === 0) resteAFaire = true
             }
+            if (sansTitulaire(creneau, index)) resteAFaire = true
           }
           if (!resteAFaire) continue
         }
@@ -1190,7 +1233,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   function presenceMaximale(): number {
     if (regles === undefined) return 0
-    const finDuTemps = Date.now() + 1500
+    const finDuTemps = Date.now() + 6000
     let deplacees = 0
     const prioritaires = jours.filter(estPrioritaire)
     for (const collaborateur of equipe) {
@@ -1289,6 +1332,8 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     readonly debut: number
     readonly fin: number
     readonly poids: number
+    /** Il manque un TITULAIRE (ouverture ou fermeture), pas seulement quelqu'un. */
+    readonly titulaire?: boolean
   }
 
   /** Trous du moment, les plus lourds d'abord (vendredi et samedi prioritaires). */
@@ -1297,6 +1342,21 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     for (const [cleCreneau, creneau] of creneaux) {
       if (creneau.bornes === null || creneau.bornes === 'ferme') continue
       const priorite = prioriteDuJour(creneau.besoin.date)
+      if (phase === 'minimum') {
+        for (const index of creneau.auxBornes ?? []) {
+          if (!sansTitulaire(creneau, index)) continue
+          trous.push({
+            cleCreneau,
+            creneau,
+            rayonId: creneau.besoin.rayonId,
+            jour: creneau.besoin.date,
+            debut: index * TRANCHE_MINUTES,
+            fin: (index + 1) * TRANCHE_MINUTES,
+            poids: 2 * priorite,
+            titulaire: true,
+          })
+        }
+      }
       let debut: number | null = null
       for (let index = 0; index <= TRANCHES_PAR_JOUR; index += 1) {
         const manque =
@@ -1334,8 +1394,13 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   function departTient(vacation: Vacation, horaire: HoraireType, phase: Phase): boolean {
     const creneau = creneaux.get(cle(vacation.rayonId, vacation.jour))
     if (creneau === undefined) return true
+    const partant = equipe.find((c) => c.id === vacation.collaborateurId)
+    const titulaireDuDepart = partant !== undefined && estTitulaire(partant, vacation.rayonId)
     return (tranchesDe.get(horaire.id) ?? []).every(
-      (index) => (creneau.presents[index] ?? 0) >= seuilDe(creneau, index, phase),
+      (index) =>
+        (creneau.presents[index] ?? 0) >= seuilDe(creneau, index, phase) &&
+        // Ne jamais laisser l'ouverture ou la fermeture sans titulaire.
+        !(titulaireDuDepart && sansTitulaire(creneau, index)),
     )
   }
 
@@ -1355,6 +1420,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     placees.forEach((ancienne, position) => {
       const collaborateur = equipe.find((c) => c.id === ancienne.collaborateurId)
       if (collaborateur === undefined || !peutTravaillerDans(collaborateur, trou.rayonId)) return
+      if (trou.titulaire === true && !estTitulaire(collaborateur, trou.rayonId)) return
       if (critiques.some((competence) => !estAutonome(collaborateur, competence))) return
       // Un autre jour : seulement s'il est libre le jour du trou.
       if (ancienne.jour !== trou.jour && joursOccupes.get(collaborateur.id)?.has(trou.jour) === true) return
@@ -1362,7 +1428,14 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
       const horaireAncien = horairePour(ancienne, horaires, tranchesDe)
       inscrire(ancienne, horaireAncien, collaborateur, -1)
-      if (departTient(ancienne, horaireAncien, phase)) {
+      /*
+       * Meme rayon, meme jour : c'est un DECALAGE (finir a 20 h au lieu de
+       * 19 h 15). On ne juge pas le rayon sans ce poste, mais apres le
+       * decalage : voir plus bas.
+       */
+      const decalage = ancienne.rayonId === trou.rayonId && ancienne.jour === trou.jour
+      const anciennesTranches = new Set(decalage ? (tranchesDe.get(horaireAncien.id) ?? []) : [])
+      if (decalage || departTient(ancienne, horaireAncien, phase)) {
         const longueur = Math.min(duree(ancienne.debut, ancienne.fin), fermeture - ouverture)
         const departs = new Set(
           [trou.fin - longueur, trou.debut, ouverture, fermeture - longueur].map((depart) =>
@@ -1373,7 +1446,9 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           const horaire = posteSurMesure(depart, depart + longueur, estMineur(collaborateur), trou.jour)
           let gain = 0
           for (const index of tranchesDe.get(horaire.id) ?? []) {
+            if (anciennesTranches.has(index)) continue
             if ((trou.creneau.presents[index] ?? 0) < seuilDe(trou.creneau, index, phase)) gain += 1
+            if (trou.titulaire === true && sansTitulaire(trou.creneau, index)) gain += 4
           }
           if (gain === 0) continue
           // Ce que le depart perd sous sa cible (a eviter, sans l'interdire).
@@ -1395,6 +1470,38 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             fin: horaire.fin,
             pauseMinutes: horaire.pauseMinutes,
             pauseDebut: horaire.pauseDebut,
+          }
+          if (decalage) {
+            /*
+             * Le rayon tient-il une fois le poste decale ? La pause du nouveau
+             * poste n'est pas encore a sa place definitive (elle sera mise la
+             * ou un collegue couvre) : ses quarts d'heure ne comptent pas.
+             */
+            inscrire(nouvelle, horaire, collaborateur, 1)
+            const creneauDuRayon = trou.creneau
+            // Pauses du rayon ce jour-la (le poste decale compris).
+            const pauses = [...verrouillees, ...placees, nouvelle]
+              .filter(
+                (v) =>
+                  v.rayonId === trou.rayonId &&
+                  v.jour === trou.jour &&
+                  v.id !== ancienne.id &&
+                  v.pauseDebut !== undefined &&
+                  v.pauseMinutes > 0,
+              )
+              .map((v) => [enMinutes(v.pauseDebut as string), enMinutes(v.pauseDebut as string) + v.pauseMinutes] as const)
+            const tient = (tranchesDe.get(horaireAncien.id) ?? []).every((index) => {
+              const minute = index * TRANCHE_MINUTES
+              const pendantLaPause = pauses.some(
+                ([debut, fin]) => minute + TRANCHE_MINUTES > debut && minute < fin,
+              )
+              return (
+                pendantLaPause ||
+                (creneauDuRayon.presents[index] ?? 0) >= seuilDe(creneauDuRayon, index, phase)
+              )
+            })
+            inscrire(nouvelle, horaire, collaborateur, -1)
+            if (!tient) continue
           }
           candidats.push({
             position,
@@ -1427,16 +1534,24 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
   function reparerLesTrous(): number {
     if (regles === undefined) return 0
-    const finDuTemps = Date.now() + 2000
+    /*
+     * Bornee par un NOMBRE d'essais, pas par le temps : a donnees egales, le
+     * meme planning, quelle que soit la vitesse de l'appareil. Le temps n'est
+     * qu'un garde-fou, tres large.
+     */
+    const garde = Date.now() + 6000
+    const ESSAIS_PAR_PHASE = { minimum: 400, cible: 150 } as const
     let faites = 0
     for (const phase of ['minimum', 'cible'] as const) {
       const sansSolution = new Set<string>()
-      for (let tour = 0; tour < 300 && Date.now() < finDuTemps; tour += 1) {
+      let essais = 0
+      while (essais < ESSAIS_PAR_PHASE[phase] && Date.now() < garde) {
         let mouvement: Mouvement | null = null
         for (const trou of trousDe(phase)) {
-          const repere = `${trou.cleCreneau}|${trou.debut}`
+          const repere = `${trou.cleCreneau}|${trou.debut}|${trou.titulaire === true ? 't' : ''}`
           if (sansSolution.has(repere)) continue
-          if (Date.now() >= finDuTemps) break
+          if (essais >= ESSAIS_PAR_PHASE[phase]) break
+          essais += 1
           mouvement = meilleurMouvement(trou, phase)
           if (mouvement !== null) break
           sansSolution.add(repere)
@@ -1451,8 +1566,14 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
         placees[mouvement.position] = mouvement.nouvelle
         inscrire(mouvement.nouvelle, mouvement.horaire, mouvement.collaborateur, 1)
         faites += 1
-        // L'etat a change : les trous sans solution peuvent en avoir une.
-        sansSolution.clear()
+        // Seuls les deux rayons-jours touches peuvent avoir change de solution.
+        const touches = [
+          cle(mouvement.ancienne.rayonId, mouvement.ancienne.jour),
+          cle(mouvement.nouvelle.rayonId, mouvement.nouvelle.jour),
+        ]
+        for (const repere of [...sansSolution]) {
+          if (touches.some((t) => repere.startsWith(`${t}|`))) sansSolution.delete(repere)
+        }
       }
     }
     return faites
@@ -1678,7 +1799,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     if (regles === undefined) return 0
     // Un temps propre a cette etape : elle passe meme si les precedentes
     // ont consomme le leur.
-    const fin = Date.now() + 2000
+    const fin = Date.now() + 6000
     let retouches = 0
     for (let tour = 0; tour < 4; tour += 1) {
       let changement = false

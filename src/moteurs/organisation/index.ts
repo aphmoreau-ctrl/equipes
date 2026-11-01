@@ -120,6 +120,22 @@ function pointsDesEffectifs(entrees: EntreesPoints): PointADefinir[] {
         libelle: `${rayon.nom} : minimum et cible du ${joursEnTexte(joursIncomplets)}.`,
       })
     }
+    // Remballe : debut, duree et effectif, pour chaque jour d'ouverture d'un
+    // rayon de vente. Absente (donnees anterieures) = a definir aussi.
+    if (rayon.vente !== false) {
+      const sansRemballe = JOURS_SEMAINE.filter(
+        (jour) =>
+          (rayon.horairesPropres?.[jour].ouvert ?? true) && grille.remballe?.[jour] == null,
+      )
+      if (sansRemballe.length > 0) {
+        points.push({
+          id: `remballe-${rayon.id}`,
+          nature: 'a-definir',
+          rubrique: 'Effectifs',
+          libelle: `${rayon.nom} : remballe (heure de début, durée, effectif) du ${joursEnTexte(sansRemballe)}.`,
+        })
+      }
+    }
     if (joursProvisoires.length > 0) {
       points.push({
         id: `effectifs-provisoires-${rayon.id}`,
@@ -179,7 +195,9 @@ function pointsDesTaches(entrees: EntreesPoints): PointADefinir[] {
 
   // Les taches de meme nom et aux memes manques se regroupent (« Remballe »).
   const groupes = new Map<string, { tache: TachePlanifiee; rayons: string[]; manques: string[] }>()
-  for (const tache of entrees.organisation.taches.filter((t) => t.actif)) {
+  // La remballe est desormais une phase de la journee de chaque rayon (Fiche
+  // rayon) : les anciennes taches « remballe » ne comptent plus.
+  for (const tache of entrees.organisation.taches.filter((t) => t.actif && t.nature !== 'remballe')) {
     const manques = manquesDeLaTache(tache)
     if (manques.length === 0) continue
     const cle = `${tache.nom}|${manques.join(',')}`

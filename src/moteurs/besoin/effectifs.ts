@@ -53,6 +53,16 @@ export function effectifDeLaTranche(
       cible = Math.max(cible, visee)
     }
   }
+  // Remballe : son effectif propre, sur sa plage, s'il est plus exigeant.
+  const remballe = grille.remballe?.[jour]
+  if (remballe != null) {
+    const debut = enMinutes(remballe.debut)
+    if (minute >= debut && minute < debut + remballe.dureeMinutes) {
+      minimum = Math.max(minimum, remballe.minimum)
+      cible = Math.max(cible, remballe.cible)
+    }
+  }
+
   for (const plancher of grille.planchers) {
     if (!plancher.jours.includes(jour)) continue
     if (!couvre(plancher.debut, plancher.fin, minute)) continue

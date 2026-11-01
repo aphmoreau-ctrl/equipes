@@ -16,6 +16,15 @@ import {
 } from './parametres/SectionsMagasin'
 import { SectionModeleRayon } from './parametres/SectionModeleRayon'
 import { SectionSauvegarde } from './parametres/SectionSauvegarde'
+import {
+  SectionAffluence,
+  SectionEffectifs,
+  SectionPointsADefinir,
+  SectionReglesInternes,
+  SectionRotations,
+  SectionRotisserie,
+  SectionTachesPlanifiees,
+} from './parametres/SectionsOrganisation'
 
 interface Proprietes {
   readonly faceIdPossible: boolean
@@ -89,6 +98,8 @@ export function Parametres({
         </p>
       )}
 
+      <SectionPointsADefinir />
+
       <SectionRayons />
       <SectionHoraires />
       <SectionFrequentation />
@@ -102,6 +113,13 @@ export function Parametres({
       {etat.configurations.map((configuration) => (
         <SectionModeleRayon key={configuration.rayonId} rayonId={configuration.rayonId} />
       ))}
+
+      <SectionEffectifs />
+      <SectionAffluence />
+      <SectionTachesPlanifiees />
+      <SectionRotisserie />
+      <SectionRotations />
+      <SectionReglesInternes />
 
       <SectionRegles />
 

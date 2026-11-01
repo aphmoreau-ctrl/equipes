@@ -201,6 +201,11 @@ describe('les écrans ajoutés ne fuitent pas dans les documents', () => {
     /Feuilles de route/,
     /Ce qui n’a trouvé personne/,
     /Catalogue des tâches/,
+    // Regles du planning v2 : points ouverts et verifications RH
+    /Points à définir/,
+    /à définir/,
+    /À vérifier/,
+    /provisoire/i,
   ]
 
   for (const type of ['dossier-patron', 'affichage-equipe'] as const) {

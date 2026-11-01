@@ -1,0 +1,843 @@
+import { useId, useState } from 'react'
+import { JOURS_SEMAINE, nomDuJour, type JourSemaine } from '../../../domaine/calendrier'
+import { nomAffiche } from '../../../domaine/collaborateur'
+import { rayonParId } from '../../../domaine/magasin'
+import {
+  LIBELLES_FONCTION,
+  LIBELLES_NATURE_TACHE,
+  type CreneauEffectif,
+  type GrilleEffectifs,
+  type OrganisationPlanning,
+  type Plage,
+  type PlanRotisserie,
+  type ReglesInternes,
+  type TachePlanifiee,
+} from '../../../domaine/organisation'
+import type { ConfigurationRayon } from '../../../moteurs/besoin'
+import {
+  LIBELLES_NATURE_POINT,
+  pointsADefinir,
+  type PointADefinir,
+} from '../../../moteurs/organisation'
+import { useDonnees } from '../../DonneesProvider'
+import { ChampHeure, ChampNombre, Depliant, Interrupteur } from '../../composants/Champ'
+
+/**
+ * Reglages des regles du planning v2 : points a definir, effectifs,
+ * affluence, taches nommees, rotisserie, rotations et regles internes.
+ *
+ * Convention partout : un champ VIDE veut dire « a definir ». Il est signale
+ * en haut des Parametres tant qu'il n'est pas rempli.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Petits champs                                                       */
+/* ------------------------------------------------------------------ */
+
+/** Nombre facultatif : vide = a definir (null). */
+function ChampADefinir({
+  libelle,
+  valeur,
+  onChange,
+  suffixe,
+  pas = 1,
+}: {
+  readonly libelle: string
+  readonly valeur: number | null
+  readonly onChange: (valeur: number | null) => void
+  readonly suffixe?: string
+  readonly pas?: number
+}) {
+  const identifiant = useId()
+  return (
+    <div className="champ champ--etroit">
+      <label className="champ__libelle" htmlFor={identifiant}>
+        {libelle}
+        {suffixe !== undefined && <span className="champ__suffixe"> ({suffixe})</span>}
+      </label>
+      <input
+        id={identifiant}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step={pas}
+        className={valeur === null ? 'champ__saisie champ__saisie--vide' : 'champ__saisie'}
+        placeholder="à définir"
+        value={valeur === null ? '' : String(valeur)}
+        onChange={(evenement) => {
+          const texte = evenement.target.value.trim()
+          if (texte === '') return onChange(null)
+          const nombre = Number(texte.replace(',', '.'))
+          if (Number.isFinite(nombre) && nombre >= 0) onChange(nombre)
+        }}
+      />
+    </div>
+  )
+}
+
+function ChoixDesJours({
+  jours,
+  onChange,
+}: {
+  readonly jours: readonly JourSemaine[]
+  readonly onChange: (jours: JourSemaine[]) => void
+}) {
+  return (
+    <div className="groupe-boutons">
+      {JOURS_SEMAINE.map((jour) => (
+        <Interrupteur
+          key={jour}
+          libelle={nomDuJour(jour)}
+          actif={jours.includes(jour)}
+          onChange={(actif) =>
+            onChange(
+              (actif ? [...jours, jour] : jours.filter((j) => j !== jour)).sort((a, b) => a - b),
+            )
+          }
+        />
+      ))}
+    </div>
+  )
+}
+
+function AuMoinsUnPoint() {
+  return <span className="etiquette etiquette--verifier">à définir</span>
+}
+
+/** Raccourci : modifier l'organisation. */
+function useOrganisation(): [OrganisationPlanning, (changement: Partial<OrganisationPlanning>) => void] {
+  const { etat, modifier } = useDonnees()
+  return [
+    etat.organisation,
+    (changement) =>
+      modifier((precedent) => ({
+        ...precedent,
+        organisation: { ...precedent.organisation, ...changement },
+      })),
+  ]
+}
+
+/* ------------------------------------------------------------------ */
+/* Points a definir                                                    */
+/* ------------------------------------------------------------------ */
+
+export function SectionPointsADefinir() {
+  const { etat } = useDonnees()
+  const [organisation, regler] = useOrganisation()
+  const points = pointsADefinir(etat)
+  if (points.length === 0) return null
+
+  const parRubrique = new Map<string, PointADefinir[]>()
+  for (const point of points) {
+    parRubrique.set(point.rubrique, [...(parRubrique.get(point.rubrique) ?? []), point])
+  }
+  const aDefinir = points.filter((p) => p.nature === 'a-definir').length
+
+  return (
+    <section className="carte" aria-labelledby="titre-points-a-definir">
+      <h2 id="titre-points-a-definir">Points à définir</h2>
+      <p>
+        {aDefinir > 0
+          ? `${aDefinir} réglage${aDefinir > 1 ? 's' : ''} encore vide${aDefinir > 1 ? 's' : ''}. `
+          : ''}
+        Tant qu’un point reste ouvert, le planning fait sans et ne l’invente jamais. Remplissez-les
+        dans les réglages plus bas, à votre rythme.
+      </p>
+      {[...parRubrique.entries()].map(([rubrique, liste]) => (
+        <div key={rubrique}>
+          <h3>{rubrique}</h3>
+          <ul className="liste-simple">
+            {liste.map((point) => {
+              const verification = organisation.pointsAVerifier.find(
+                (p) => `verifier-${p.id}` === point.id,
+              )
+              return (
+                <li key={point.id}>
+                  <span
+                    className={
+                      point.nature === 'provisoire'
+                        ? 'etiquette etiquette--attente'
+                        : 'etiquette etiquette--verifier'
+                    }
+                  >
+                    {LIBELLES_NATURE_POINT[point.nature]}
+                  </span>{' '}
+                  {point.libelle}
+                  {verification !== undefined && (
+                    <>
+                      {' '}
+                      <button
+                        type="button"
+                        className="bouton"
+                        onClick={() =>
+                          regler({
+                            pointsAVerifier: organisation.pointsAVerifier.map((p) =>
+                              p.id === verification.id ? { ...p, verifie: true } : p,
+                            ),
+                          })
+                        }
+                      >
+                        C’est vérifié
+                      </button>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Effectifs                                                           */
+/* ------------------------------------------------------------------ */
+
+export function SectionEffectifs() {
+  const { etat, modifier } = useDonnees()
+  const avecGrille = etat.configurations.filter((c) => c.grilleEffectifs !== undefined)
+  const [rayonId, setRayonId] = useState(avecGrille[0]?.rayonId ?? '')
+  const [jour, setJour] = useState<JourSemaine>(1)
+  if (avecGrille.length === 0) return null
+
+  const configuration = avecGrille.find((c) => c.rayonId === rayonId) ?? avecGrille[0]
+  const grille = configuration?.grilleEffectifs
+  if (configuration === undefined || grille === undefined) return null
+  const creneaux = grille.jours[jour]
+  const nomDuRayon = rayonParId(etat.magasin, configuration.rayonId)?.nom ?? configuration.rayonId
+
+  function reglerGrille(changement: Partial<GrilleEffectifs>): void {
+    modifier((precedent) => ({
+      ...precedent,
+      configurations: precedent.configurations.map((c: ConfigurationRayon) =>
+        c.rayonId === configuration?.rayonId && c.grilleEffectifs !== undefined
+          ? { ...c, grilleEffectifs: { ...c.grilleEffectifs, ...changement } }
+          : c,
+      ),
+    }))
+  }
+
+  function reglerJour(valeur: readonly CreneauEffectif[] | null): void {
+    if (grille === undefined) return
+    reglerGrille({ jours: { ...grille.jours, [jour]: valeur } })
+  }
+
+  function reglerCreneau(index: number, changement: Partial<CreneauEffectif>): void {
+    reglerJour(
+      (creneaux ?? []).map((creneau, i) =>
+        i === index ? { ...creneau, ...changement, provisoire: false } : creneau,
+      ),
+    )
+  }
+
+  const joursSources = JOURS_SEMAINE.filter((j) => j !== jour && (grille.jours[j] ?? []).length > 0)
+
+  return (
+    <section className="carte" aria-labelledby="titre-effectifs">
+      <h2 id="titre-effectifs">Effectifs par rayon</h2>
+      <p>
+        Le <strong>minimum</strong> est obligatoire : le planning alerte s’il n’est pas tenu. La{' '}
+        <strong>cible</strong> est souhaitée : elle peut être atteinte avec des renforts. Un champ
+        vide reste « à définir ».
+      </p>
+
+      <div className="champs">
+        <label className="champ champ--etroit">
+          <span className="champ__libelle">Rayon</span>
+          <select
+            className="champ__saisie"
+            value={configuration.rayonId}
+            onChange={(evenement) => setRayonId(evenement.target.value)}
+          >
+            {avecGrille.map((c) => (
+              <option key={c.rayonId} value={c.rayonId}>
+                {rayonParId(etat.magasin, c.rayonId)?.nom ?? c.rayonId}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="groupe-boutons" role="group" aria-label="Jour">
+        {JOURS_SEMAINE.map((j) => (
+          <button
+            key={j}
+            type="button"
+            className={j === jour ? 'bouton bouton--principal' : 'bouton'}
+            aria-pressed={j === jour}
+            onClick={() => setJour(j)}
+          >
+            {nomDuJour(j)}
+            {grille.jours[j] === null && ' •'}
+          </button>
+        ))}
+      </div>
+
+      <h3>
+        {nomDuRayon}, {nomDuJour(jour)} {creneaux === null && <AuMoinsUnPoint />}
+      </h3>
+
+      {creneaux === null ? (
+        <p>Les effectifs de ce jour ne sont pas encore définis. Seuls les planchers s’appliquent.</p>
+      ) : creneaux.length === 0 ? (
+        <p>Personne n’est attendu ce jour-là.</p>
+      ) : (
+        creneaux.map((creneau, index) => (
+          <div className="champs" key={`${jour}-${index}`}>
+            <ChampHeure libelle="De" valeur={creneau.debut} onChange={(debut) => reglerCreneau(index, { debut })} />
+            <ChampHeure libelle="À" valeur={creneau.fin} onChange={(fin) => reglerCreneau(index, { fin })} />
+            <ChampADefinir
+              libelle="Minimum"
+              valeur={creneau.minimum}
+              onChange={(minimum) => reglerCreneau(index, { minimum })}
+            />
+            <ChampADefinir
+              libelle="Cible"
+              valeur={creneau.cible}
+              onChange={(cible) => reglerCreneau(index, { cible })}
+            />
+            {creneau.provisoire === true && <span className="etiquette etiquette--attente">provisoire</span>}
+            <button
+              type="button"
+              className="bouton"
+              onClick={() => reglerJour(creneaux.filter((_, i) => i !== index))}
+            >
+              Retirer
+            </button>
+          </div>
+        ))
+      )}
+
+      <div className="groupe-boutons">
+        <button
+          type="button"
+          className="bouton"
+          onClick={() => {
+            const dernier = creneaux?.[creneaux.length - 1]
+            reglerJour([
+              ...(creneaux ?? []),
+              { debut: dernier?.fin ?? '08:30', fin: '20:00', minimum: null, cible: null },
+            ])
+          }}
+        >
+          Ajouter un créneau
+        </button>
+        {joursSources.map((source) => (
+          <button
+            key={source}
+            type="button"
+            className="bouton"
+            onClick={() =>
+              reglerJour((grille.jours[source] ?? []).map((c) => ({ ...c, provisoire: true })))
+            }
+          >
+            Copier le {nomDuJour(source)}
+          </button>
+        ))}
+        {creneaux !== null && (
+          <button type="button" className="bouton" onClick={() => reglerJour(null)}>
+            Remettre « à définir »
+          </button>
+        )}
+        {creneaux !== null && creneaux.length > 0 && (
+          <button type="button" className="bouton" onClick={() => reglerJour([])}>
+            Personne ce jour-là
+          </button>
+        )}
+      </div>
+
+      <Depliant titre="Planchers de couverture" resume={`${grille.planchers.length}`}>
+        <p className="champ__aide">
+          Ils s’appliquent en plus de la grille, même les jours encore à définir : présence
+          permanente en vente, deux personnes certains jours…
+        </p>
+        {grille.planchers.map((plancher) => (
+          <div key={plancher.id}>
+            <p className="champ__libelle">{plancher.libelle}</p>
+            <div className="champs">
+              <ChampHeure
+                libelle="De"
+                valeur={plancher.debut}
+                onChange={(debut) =>
+                  reglerGrille({
+                    planchers: grille.planchers.map((p) => (p.id === plancher.id ? { ...p, debut } : p)),
+                  })
+                }
+              />
+              <ChampHeure
+                libelle="À"
+                valeur={plancher.fin}
+                onChange={(fin) =>
+                  reglerGrille({
+                    planchers: grille.planchers.map((p) => (p.id === plancher.id ? { ...p, fin } : p)),
+                  })
+                }
+              />
+              <ChampNombre
+                libelle="Personnes au moins"
+                valeur={plancher.minimum}
+                onChange={(minimum) =>
+                  reglerGrille({
+                    planchers: grille.planchers.map((p) => (p.id === plancher.id ? { ...p, minimum } : p)),
+                  })
+                }
+              />
+            </div>
+            <ChoixDesJours
+              jours={plancher.jours}
+              onChange={(jours) =>
+                reglerGrille({
+                  planchers: grille.planchers.map((p) => (p.id === plancher.id ? { ...p, jours } : p)),
+                })
+              }
+            />
+          </div>
+        ))}
+      </Depliant>
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Affluence                                                           */
+/* ------------------------------------------------------------------ */
+
+function EditeurPlages({
+  plages,
+  onChange,
+}: {
+  readonly plages: readonly Plage[]
+  readonly onChange: (plages: Plage[]) => void
+}) {
+  return (
+    <>
+      {plages.map((plage, index) => (
+        <div className="champs" key={index}>
+          <ChampHeure
+            libelle="De"
+            valeur={plage.debut}
+            onChange={(debut) => onChange(plages.map((p, i) => (i === index ? { ...p, debut } : p)))}
+          />
+          <ChampHeure
+            libelle="À"
+            valeur={plage.fin}
+            onChange={(fin) => onChange(plages.map((p, i) => (i === index ? { ...p, fin } : p)))}
+          />
+          <button type="button" className="bouton" onClick={() => onChange(plages.filter((_, i) => i !== index))}>
+            Retirer
+          </button>
+        </div>
+      ))}
+    </>
+  )
+}
+
+export function SectionAffluence() {
+  const { etat } = useDonnees()
+  const [organisation, regler] = useOrganisation()
+  if (etat.organisation.taches.length === 0 && etat.organisation.rotisserie === null) return null
+
+  return (
+    <section className="carte" aria-labelledby="titre-affluence">
+      <h2 id="titre-affluence">Heures d’affluence</h2>
+      <p>Pas de pause pendant ces heures. Elles servent aussi à placer les renforts.</p>
+      {JOURS_SEMAINE.map((jour) => {
+        const plages = organisation.plagesAffluence[jour]
+        const reglerJour = (valeur: Plage[] | null) =>
+          regler({ plagesAffluence: { ...organisation.plagesAffluence, [jour]: valeur } })
+        return (
+          <Depliant
+            key={jour}
+            titre={nomDuJour(jour)}
+            resume={
+              plages === null
+                ? 'à définir'
+                : plages.length === 0
+                  ? 'aucune'
+                  : plages.map((p) => `${p.debut}–${p.fin}`).join(' · ')
+            }
+          >
+            {plages !== null && <EditeurPlages plages={plages} onChange={reglerJour} />}
+            <div className="groupe-boutons">
+              <button
+                type="button"
+                className="bouton"
+                onClick={() => reglerJour([...(plages ?? []), { debut: '11:00', fin: '13:00' }])}
+              >
+                Ajouter une plage
+              </button>
+              {plages !== null && (
+                <button type="button" className="bouton" onClick={() => reglerJour(null)}>
+                  Remettre « à définir »
+                </button>
+              )}
+            </div>
+          </Depliant>
+        )
+      })}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Taches nommees                                                      */
+/* ------------------------------------------------------------------ */
+
+function EditeurTache({
+  tache,
+  onChange,
+}: {
+  readonly tache: TachePlanifiee
+  readonly onChange: (changement: Partial<TachePlanifiee>) => void
+}) {
+  const { etat } = useDonnees()
+  const equipe = etat.collaborateurs.filter((c) => c.actif)
+  const designes = tache.personnesDesignees
+
+  return (
+    <>
+      <p className="champ__aide">
+        {LIBELLES_NATURE_TACHE[tache.nature]}
+        {tache.rayonId !== null && ` · ${rayonParId(etat.magasin, tache.rayonId)?.nom ?? tache.rayonId}`}
+        {tache.competence !== null && ` · compétence ${tache.competence}`}
+        {tache.fonction !== null && ` · ${LIBELLES_FONCTION[tache.fonction]}`}
+      </p>
+
+      <p className="champ__libelle">Jours {tache.jours === null && <AuMoinsUnPoint />}</p>
+      <ChoixDesJours jours={tache.jours ?? []} onChange={(jours) => onChange({ jours })} />
+
+      <div className="champs">
+        <label className="champ champ--etroit">
+          <span className="champ__libelle">Moment</span>
+          <select
+            className="champ__saisie"
+            value={tache.moment.type}
+            onChange={(evenement) => {
+              const type = evenement.target.value
+              onChange({
+                moment:
+                  type === 'heure'
+                    ? { type: 'heure', heure: '08:00' }
+                    : type === 'libre'
+                      ? { type: 'libre' }
+                      : { type: 'a-definir' },
+              })
+            }}
+          >
+            <option value="heure">À heure fixe</option>
+            <option value="libre">Au choix du planning</option>
+            <option value="a-definir">À définir</option>
+          </select>
+        </label>
+        {tache.moment.type === 'heure' && (
+          <ChampHeure
+            libelle="Heure"
+            valeur={tache.moment.heure}
+            onChange={(heure) => onChange({ moment: { type: 'heure', heure } })}
+          />
+        )}
+        <ChampADefinir
+          libelle="Durée"
+          suffixe="min"
+          valeur={tache.dureeMinutes}
+          onChange={(dureeMinutes) => onChange({ dureeMinutes })}
+        />
+        <ChampADefinir
+          libelle="Fois par semaine"
+          valeur={tache.occurrencesParSemaine}
+          onChange={(occurrencesParSemaine) => onChange({ occurrencesParSemaine })}
+        />
+      </div>
+      <p className="champ__aide">« Fois par semaine » vide : une fois chaque jour prévu.</p>
+
+      {tache.fonction === null && (
+        <>
+          <p className="champ__libelle">
+            Personnes désignées {designes === null && <AuMoinsUnPoint />}
+          </p>
+          <div className="groupe-boutons">
+            {equipe.map((collaborateur) => (
+              <Interrupteur
+                key={collaborateur.id}
+                libelle={nomAffiche(collaborateur)}
+                actif={(designes ?? []).includes(collaborateur.id)}
+                onChange={(actif) =>
+                  onChange({
+                    personnesDesignees: actif
+                      ? [...(designes ?? []), collaborateur.id]
+                      : (designes ?? []).filter((id) => id !== collaborateur.id),
+                  })
+                }
+              />
+            ))}
+          </div>
+          {tache.competence !== null && (
+            <p className="champ__aide">Personne de désigné : toute personne qui a la compétence.</p>
+          )}
+        </>
+      )}
+
+      <div className="groupe-boutons">
+        <Interrupteur libelle="Tâche active" actif={tache.actif} onChange={(actif) => onChange({ actif })} />
+      </div>
+    </>
+  )
+}
+
+export function SectionTachesPlanifiees() {
+  const { etat } = useDonnees()
+  const [organisation, regler] = useOrganisation()
+  if (organisation.taches.length === 0) return null
+
+  function reglerTache(id: string, changement: Partial<TachePlanifiee>): void {
+    regler({ taches: organisation.taches.map((t) => (t.id === id ? { ...t, ...changement } : t)) })
+  }
+
+  return (
+    <section className="carte" aria-labelledby="titre-taches-nommees">
+      <h2 id="titre-taches-nommees">Tâches, réunions et réserves</h2>
+      <p>Emballages, réunions, skin marée, remballe : qui, quels jours, à quelle heure, combien de temps.</p>
+      {organisation.taches.map((tache) => {
+        const rayon = tache.rayonId === null ? '' : ` — ${rayonParId(etat.magasin, tache.rayonId)?.nom ?? ''}`
+        const incomplet =
+          tache.jours === null || tache.dureeMinutes === null || tache.moment.type === 'a-definir'
+        return (
+          <Depliant
+            key={tache.id}
+            titre={`${tache.nom}${tache.nature === 'remballe' ? rayon : ''}`}
+            resume={!tache.actif ? 'désactivée' : incomplet ? 'à définir' : 'complète'}
+          >
+            <EditeurTache tache={tache} onChange={(changement) => reglerTache(tache.id, changement)} />
+          </Depliant>
+        )
+      })}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Rotisserie                                                          */
+/* ------------------------------------------------------------------ */
+
+export function SectionRotisserie() {
+  const [organisation, regler] = useOrganisation()
+  const rotisserie = organisation.rotisserie
+  if (rotisserie === null) return null
+
+  function reglerRotisserie(changement: Partial<PlanRotisserie>): void {
+    if (rotisserie === null) return
+    regler({ rotisserie: { ...rotisserie, ...changement } })
+  }
+
+  return (
+    <section className="carte" aria-labelledby="titre-rotisserie">
+      <h2 id="titre-rotisserie">Rôtisserie</h2>
+      <p>
+        Règle légale : un produit ne reste pas plus de{' '}
+        {Math.round((rotisserie.maintienAuChaudMaximumMinutes / 60) * 100) / 100} h au chaud. Les
+        heures indiquées sont celles de <strong>sortie du four</strong>.
+      </p>
+      <div className="champs">
+        <ChampADefinir
+          libelle="Durée d’une cuisson"
+          suffixe="min"
+          valeur={rotisserie.dureeCuissonMinutes}
+          onChange={(dureeCuissonMinutes) => reglerRotisserie({ dureeCuissonMinutes })}
+        />
+        <ChampNombre
+          libelle="Maintien au chaud maximum"
+          suffixe="h"
+          pas={0.25}
+          valeur={rotisserie.maintienAuChaudMaximumMinutes / 60}
+          onChange={(heures) => reglerRotisserie({ maintienAuChaudMaximumMinutes: Math.round(heures * 60) })}
+        />
+      </div>
+      {JOURS_SEMAINE.map((jour) => {
+        const duJour = rotisserie.jours[jour]
+        const reglerJour = (changement: Partial<typeof duJour>) =>
+          reglerRotisserie({ jours: { ...rotisserie.jours, [jour]: { ...duJour, ...changement } } })
+        return (
+          <Depliant
+            key={jour}
+            titre={nomDuJour(jour)}
+            resume={duJour.vente === null ? 'pas de vente' : `${duJour.cuissons.length} cuisson(s)`}
+          >
+            {duJour.vente !== null && (
+              <div className="champs">
+                <ChampHeure
+                  libelle="Vente de"
+                  valeur={duJour.vente.debut}
+                  onChange={(debut) => duJour.vente !== null && reglerJour({ vente: { ...duJour.vente, debut } })}
+                />
+                <ChampHeure
+                  libelle="à"
+                  valeur={duJour.vente.fin}
+                  onChange={(fin) => duJour.vente !== null && reglerJour({ vente: { ...duJour.vente, fin } })}
+                />
+              </div>
+            )}
+            <div className="champs">
+              {duJour.cuissons.map((heure, index) => (
+                <ChampHeure
+                  key={index}
+                  libelle={`Cuisson ${index + 1}`}
+                  valeur={heure}
+                  onChange={(valeur) =>
+                    reglerJour({ cuissons: duJour.cuissons.map((h, i) => (i === index ? valeur : h)) })
+                  }
+                />
+              ))}
+            </div>
+            <div className="groupe-boutons">
+              <button
+                type="button"
+                className="bouton"
+                onClick={() => reglerJour({ cuissons: [...duJour.cuissons, '12:00'] })}
+              >
+                Ajouter une cuisson
+              </button>
+              {duJour.cuissons.length > 0 && (
+                <button
+                  type="button"
+                  className="bouton"
+                  onClick={() => reglerJour({ cuissons: duJour.cuissons.slice(0, -1) })}
+                >
+                  Retirer la dernière
+                </button>
+              )}
+              <Interrupteur
+                libelle="Vente ce jour"
+                actif={duJour.vente !== null}
+                onChange={(actif) =>
+                  reglerJour({ vente: actif ? { debut: '08:30', fin: '20:00' } : null })
+                }
+              />
+            </div>
+          </Depliant>
+        )
+      })}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Rotations                                                           */
+/* ------------------------------------------------------------------ */
+
+export function SectionRotations() {
+  const { etat } = useDonnees()
+  const [organisation, regler] = useOrganisation()
+  if (organisation.rotations.length === 0) return null
+  const equipe = etat.collaborateurs.filter((c) => c.actif)
+
+  return (
+    <section className="carte" aria-labelledby="titre-rotations">
+      <h2 id="titre-rotations">Rotations</h2>
+      <p>Des personnes qui se partagent un poste à tour de rôle, et se remplacent pendant les vacances.</p>
+      {organisation.rotations.map((rotation) => (
+        <div key={rotation.id}>
+          <h3>
+            {rotation.nom} {rotation.personnes.length < 2 && <AuMoinsUnPoint />}
+          </h3>
+          <div className="groupe-boutons">
+            {equipe.map((collaborateur) => (
+              <Interrupteur
+                key={collaborateur.id}
+                libelle={nomAffiche(collaborateur)}
+                actif={rotation.personnes.includes(collaborateur.id)}
+                onChange={(actif) =>
+                  regler({
+                    rotations: organisation.rotations.map((r) =>
+                      r.id === rotation.id
+                        ? {
+                            ...r,
+                            personnes: actif
+                              ? [...r.personnes, collaborateur.id]
+                              : r.personnes.filter((id) => id !== collaborateur.id),
+                          }
+                        : r,
+                    ),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Regles internes                                                     */
+/* ------------------------------------------------------------------ */
+
+export function SectionReglesInternes() {
+  const [organisation, regler] = useOrganisation()
+  const r = organisation.reglesInternes
+
+  function reglerRegles(changement: Partial<ReglesInternes>): void {
+    regler({ reglesInternes: { ...r, ...changement } })
+  }
+
+  return (
+    <section className="carte" aria-labelledby="titre-regles-internes">
+      <h2 id="titre-regles-internes">Règles internes</h2>
+      <p>Elles déclenchent des alertes, jamais un blocage : vous gardez la main.</p>
+      <div className="grille-champs">
+        <ChampNombre
+          libelle="Pause par heure travaillée"
+          suffixe="min"
+          valeur={r.pauseMinutesParHeure}
+          onChange={(pauseMinutesParHeure) => reglerRegles({ pauseMinutesParHeure })}
+        />
+        <ChampNombre
+          libelle="Présence minimale un jour travaillé"
+          suffixe="h"
+          pas={0.5}
+          valeur={r.presenceMinimaleParJourMinutes / 60}
+          onChange={(heures) => reglerRegles({ presenceMinimaleParJourMinutes: Math.round(heures * 60) })}
+        />
+        <ChampNombre
+          libelle="Jours consécutifs au maximum"
+          valeur={r.joursConsecutifsMaximum}
+          onChange={(joursConsecutifsMaximum) => reglerRegles({ joursConsecutifsMaximum })}
+        />
+        <ChampHeure
+          libelle="Un poste du matin finit au plus tard à"
+          valeur={r.finDuMatin}
+          onChange={(finDuMatin) => reglerRegles({ finDuMatin })}
+        />
+        <ChampADefinir
+          libelle="Dépannage : durée maximale"
+          suffixe="min"
+          valeur={r.dureeMaximaleDepannageMinutes}
+          onChange={(dureeMaximaleDepannageMinutes) => reglerRegles({ dureeMaximaleDepannageMinutes })}
+        />
+      </div>
+      <div className="groupe-boutons">
+        <Interrupteur
+          libelle="Pauses payées, comprises dans le contrat"
+          actif={r.pausesPayeesIncluses}
+          onChange={(pausesPayeesIncluses) => reglerRegles({ pausesPayeesIncluses })}
+        />
+        <Interrupteur
+          libelle="Jamais de pause pendant l’affluence"
+          actif={r.pauseInterditeEnAffluence}
+          onChange={(pauseInterditeEnAffluence) => reglerRegles({ pauseInterditeEnAffluence })}
+        />
+      </div>
+      <p className="champ__libelle">Plages où la pause peut être prise</p>
+      <EditeurPlages plages={r.fenetresPause} onChange={(fenetresPause) => reglerRegles({ fenetresPause })} />
+      <button
+        type="button"
+        className="bouton"
+        onClick={() => reglerRegles({ fenetresPause: [...r.fenetresPause, { debut: '15:00', fin: '17:30' }] })}
+      >
+        Ajouter une plage
+      </button>
+    </section>
+  )
+}

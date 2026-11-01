@@ -150,3 +150,24 @@ describe('ecran Alertes', () => {
     expect(screen.getAllByRole('listitem').length).toBeLessThan(avant)
   })
 })
+
+describe('fiche : ce qui sert au planning', () => {
+  it('passe un rayon en dépannage, ce qui le retire des renforts', () => {
+    afficher(<Equipe />)
+    const camille = fiche('Camille D.')
+    const depannage = within(camille).getByText(/Dépannage uniquement/).nextElementSibling as HTMLElement
+    fireEvent.click(within(depannage).getByRole('button', { name: 'Boucherie' }))
+    expect(within(depannage).getByRole('button', { name: 'Boucherie' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('note le poste du matin et la fonction de manager', () => {
+    afficher(<Equipe />)
+    const camille = fiche('Camille D.')
+    fireEvent.click(within(camille).getByRole('button', { name: 'Le matin uniquement (contrainte)' }))
+    fireEvent.click(within(camille).getByRole('button', { name: 'Manager' }))
+    expect(within(camille).getByRole('button', { name: 'Manager' })).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      within(camille).getByRole('button', { name: 'Le matin uniquement (contrainte)' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
+})

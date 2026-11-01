@@ -14,6 +14,7 @@ import {
   capaciteHebdomadaire,
   disponibiliteDuJour,
   nomAffiche,
+  rayonsPossibles,
   type Collaborateur,
   type NiveauCompetence,
   type PeriodeFormation,
@@ -30,6 +31,7 @@ import {
   SectionSuiviIndividuel,
 } from './equipe/SectionsRH'
 import { SectionVivier } from './equipe/SectionVivier'
+import { FicheOrganisation } from './equipe/FicheOrganisation'
 import {
   NouveauCollaborateur,
   type BrouillonCollaborateur,
@@ -299,6 +301,12 @@ export function Equipe() {
                 ))}
             </div>
 
+            <FicheOrganisation
+              collaborateur={collaborateur}
+              rayons={rayons}
+              onModifier={(changement) => modifierCollaborateur(collaborateur.id, changement)}
+            />
+
             <p className="champ__libelle">Dates clés</p>
             <div className="champs">
               <ChampDate
@@ -490,7 +498,7 @@ function competencesDeLaFiche(
   catalogue: readonly Competence[],
   collaborateur: Collaborateur,
 ): string[] {
-  const rayons = [collaborateur.rayonPrincipal, ...collaborateur.rayonsSecondaires]
+  const rayons = [...rayonsPossibles(collaborateur), ...(collaborateur.rayonsDepannage ?? [])]
   const retenues = new Set<string>(Object.keys(collaborateur.competences))
   for (const rayon of rayons) {
     for (const competence of competencesDuRayon(catalogue, rayon)) retenues.add(competence.nom)

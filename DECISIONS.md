@@ -1536,3 +1536,121 @@ Repéré en relisant la feuille de style : la mention « à vérifier » ajouté
 lot 1b redéfinissait la classe `.etiquette`, déjà utilisée par la liste
 d'avancement des modules — elle en changeait donc l'allure sans qu'on l'ait
 demandé. Corrigé : la mention ne redéfinit plus que ce qui lui est propre.
+
+---
+
+## Règles du planning v2 — Étape 1 : modèle de données et valeurs de départ (1er novembre 2026)
+
+Source : `regles-planning-equipes.md`. Points validés par Arnaud le 1er novembre
+2026 : les prénoms vivent dans l'application et jamais dans le dépôt ; la grille
+d'effectifs remplace le calcul par volume ; les pauses de 3 min/h sont payées
+et comprises dans le contrat ; ses 8 activités remplacent les rayons de
+démonstration dans ses données réelles.
+
+### D-123 — La grille d'effectifs remplace le calcul par volume (validé)
+**Décision.** Un rayon peut porter une **grille d'effectifs** : pour chaque
+jour, des créneaux avec un **minimum** (obligatoire) et une **cible**
+(souhaitée). Quand elle existe, le nombre de personnes demandé vient d'elle
+seule ; les blocs de charge ne servent plus qu'aux feuilles de route.
+**Raison.** C'est ainsi que vous raisonnez (« 1 / 2 de 11 h à 13 h »), et c'est
+plus simple à régler qu'un calcul par palettes et clients.
+**Les rayons de démonstration n'ont pas de grille** : leur besoin ne bouge pas
+(le test `besoins-inchanges` passe toujours).
+**Alternative.** Retenir le plus élevé des deux (grille ou calcul).
+
+### D-124 — Les règles de couverture sont des « planchers », à part de la grille
+**Décision.** La présence permanente (8 h 30-20 h, dimanche 8 h 30-12 h 30) et
+les deux personnes en Charcuterie / Fromage le vendredi et le samedi sont des
+**planchers**, ajoutés à la grille. Ils tiennent même les jours dont la grille
+est encore à définir.
+**Choix fait** : les deux personnes en Charcuterie / Fromage s'appliquent de
+8 h 30 à 20 h (heures de vente).
+**Alternative.** Les appliquer dès l'ouverture du rayon (6 h 30 / 7 h).
+
+### D-125 — Pauses payées, comprises dans le contrat (validé, à confirmer RH)
+**Décision.** 3 min par heure travaillée, payées : 36 h 75 de présence =
+35 h de travail effectif + 1 h 45 de pause. Réglage modifiable
+(« Pauses payées, comprises dans le contrat »).
+**Conséquence.** Le plafond de 35 h des mineurs porte sur le travail effectif ;
+un contrat de 36 h 75 y tiendrait. La question reste listée « à vérifier (RH) »
+jusqu'à ce que vous la cochiez.
+
+### D-126 — « À définir » veut dire vide, jamais inventé
+**Décision.** Toute valeur marquée [À DÉFINIR] est enregistrée **vide**.
+L'application la liste en tête des Paramètres (« Points à définir ») et fait
+sans : un effectif vide ne demande personne, seul le plancher s'applique. Les
+valeurs données « provisoires » portent cette mention jusqu'à ce que vous les
+modifiiez.
+**Raison.** Inventer une valeur, c'est risquer qu'elle soit prise pour vraie.
+
+### D-127 — Huit activités, dont deux boucheries et une production
+**Décision.** Boucherie Trad et Boucherie LS sont deux rayons, aux mêmes
+horaires, chacun avec sa compétence. La préparation traiteur est un rayon
+**sans vente** (aucune obligation de présence en vente). Les horaires d'un
+rayon sont ses horaires de **présence** ; ceux du magasin, les heures de
+**vente** (8 h 30-20 h, dimanche 8 h 30-12 h 30).
+La tranche « ouverture → 8 h 30 » commence à l'heure d'ouverture réelle du
+rayon ce jour-là (5 h le mardi en Fruits & Légumes, 6 h le lundi).
+
+### D-128 — La rôtisserie va aux bouchers titulaires
+**Décision.** La compétence Rôtisserie est donnée aux personnes **titulaires**
+de Boucherie Trad ou LS, pas à celles qui y viennent en renfort.
+**Alternative.** L'étendre aux renforts boucherie (marée, charcuterie) : il
+suffit de cocher la compétence sur leur fiche.
+
+### D-129 — Le cadre au forfait garde une fiche de 35 h, jamais comptée
+**Décision.** La fiche exige un nombre d'heures : 35 h y figure pour la
+cohérence, mais la case « Cadre au forfait » l'exclut de tout calcul d'heures
+(appliqué par le moteur de contrôle, étape 2). Il compte seulement comme
+présence.
+
+### D-130 — Le dépannage ne se propose jamais d'office
+**Décision.** Un rayon « en dépannage » n'entre pas dans la liste des rayons où
+la personne peut être placée ; le générateur ne l'utilisera qu'en dernier
+recours, explicitement (étape 3). Durée maximale d'un dépannage : **2 h**,
+modifiable.
+**Raison.** « Courte durée » n'était pas chiffré ; 2 h est une demi-matinée.
+
+### D-131 — Valeurs de départ choisies là où le document ne tranchait pas
+- **Poste du matin** : il finit au plus tard à **14 h**. Les trois personnes
+  « Matin » sont importées en **préférence** ; passez-les en « contrainte » sur
+  leur fiche si c'est impératif.
+- **Affluence du dimanche** : aucune plage (le document ne parle que de la
+  semaine et du samedi).
+- **Rôtisserie** : 3 cuissons du lundi au samedi, sorties du four à **8 h 30,
+  13 h 30 et 18 h 30** (5 h d'écart au plus) ; le dimanche, une à 8 h 30.
+- **Réunion secteur trad** : 8 h tous les jours, dimanche compris ; Marée,
+  Charcuterie / Fromage, Boucherie Trad et Préparation doivent y être
+  représentés.
+- **Remballe** : une tâche par rayon de vente, heure et durée à définir.
+- **Préparation traiteur** : 6 h-13 h 30 provisoire du lundi au samedi (heure
+  de fin à confirmer) ; une personne le samedi.
+- **Horaires types** du magasin : Ouverture 5 h-12 h, Matin 6 h-13 h,
+  Journée 8 h 30-15 h 30, Après-midi 13 h-20 h.
+
+### D-132 — Ce que l'import ne sait pas encore
+**Décision.** Le document ne donne ni initiale (sauf les deux Charlotte), ni
+date d'entrée, ni solde de congés. L'import laisse l'initiale vide (seul le
+prénom s'affiche), la date d'entrée vide (signalée ; les échéances d'entretien
+attendent qu'elle soit saisie) et les soldes de congés à zéro. Un manager est
+classé « agent de maîtrise » : corrigez sur la fiche si besoin. Les deux
+apprentis mineurs sont importés en **16-17 ans** : vérifiez qu'aucun n'a moins
+de 16 ans (les règles sont alors plus strictes).
+
+### D-133 — Aucune liste nominative dans le dépôt (validé)
+**Décision.** Le tableau des collaborateurs a été retiré de
+`regles-planning-equipes.md` et de l'historique du dépôt. L'équipe s'importe
+une seule fois par « Restaurer une sauvegarde », à partir d'un fichier transmis
+à part. Le code de l'import (`import-equipe.ts`) ne contient aucun nom ; ses
+tests utilisent des prénoms fictifs.
+
+### D-134 — Jours d'école : jours fixes ou périodes datées
+**Décision.** Pour un apprenti, on peut saisir des **jours fixes** chaque
+semaine (nouveau) ou des **périodes datées** (existant). Le point n'est signalé
+« à définir » que si ni l'un ni l'autre n'est renseigné.
+
+### C-28 — Un test dépendait de la date du jour ❗
+Le test « change de jour » des feuilles de route choisissait le 3 octobre en
+dur ; depuis que la semaine affichée est celle de novembre, ce jour n'existait
+plus dans la liste et le test échouait. Il choisit désormais le samedi de la
+semaine affichée, quelle qu'elle soit.

@@ -2035,3 +2035,9 @@ select.champ__saisie {
   font-size: 13px;
   color: var(--texte-doux);
 }
+
+/* Champ encore « a definir » : bordure en pointilles, bien visible. */
+.champ__saisie--vide {
+  border-style: dashed;
+  border-color: var(--avertissement);
+}

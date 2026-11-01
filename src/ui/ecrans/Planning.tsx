@@ -7,6 +7,7 @@ import {
   lundiDeLaSemaine,
   nomDuJour,
   semaineDe,
+  jourEnTexte,
 } from '../../domaine/calendrier'
 import { estDisponible, nomAffiche, peutTravaillerDans } from '../../domaine/collaborateur'
 import { rayonsActifs } from '../../domaine/magasin'
@@ -22,7 +23,7 @@ import {
   datePublication,
   type EtatSuivi,
 } from '../../domaine/planning'
-import { enTexte } from '../../domaine/temps'
+import { duree, enMinutes, enTexte } from '../../domaine/temps'
 import {
   contexteDeVerification,
   verifier,
@@ -75,6 +76,29 @@ export function Planning() {
     return planning(semaine).vacations.filter((vacation) =>
       estAbsent(absences, vacation.collaborateurId, vacation.jour),
     )
+  }, [etat, planning, semaine])
+  /**
+   * Postes hors des horaires de leur rayon (rayon dote d'horaires propres),
+   * ou dans un rayon que la personne ne tient pas. Ils ont pu venir d'un
+   * ancien pret automatique (corrige depuis) ou d'une saisie a la main.
+   */
+  const horsHoraires = useMemo(() => {
+    return planning(semaine).vacations.filter((vacation) => {
+      const rayon = etat.magasin.rayons.find((r) => r.id === vacation.rayonId)
+      const collaborateur = etat.collaborateurs.find((c) => c.id === vacation.collaborateurId)
+      if (rayon?.horairesPropres == null || collaborateur === undefined) return false
+      const configuration = etat.configurations.find((c) => c.rayonId === rayon.id)
+      if (configuration?.grilleEffectifs === undefined) return false
+      const horaires = rayon.horairesPropres[jourDeLaSemaine(vacation.jour)]
+      const debut = enMinutes(vacation.debut)
+      const fin = debut + duree(vacation.debut, vacation.fin)
+      return (
+        !horaires.ouvert ||
+        debut < enMinutes(horaires.ouverture) ||
+        fin > enMinutes(horaires.fermeture) ||
+        !peutTravaillerDans(collaborateur, rayon.id)
+      )
+    })
   }, [etat, planning, semaine])
   const nomDe = (identifiant: string): string => {
     const collaborateur = etat.collaborateurs.find((c) => c.id === identifiant)
@@ -455,6 +479,40 @@ export function Planning() {
           légale, couvre le besoin au mieux et répartit équitablement les sujétions. Ce n’est
           qu’une proposition : vous la corrigez case par case ensuite.
         </p>
+
+        {horsHoraires.length > 0 && etatGeneration !== 'en-cours' && (
+          <div className="avis avis--attention" role="status">
+            <p>
+              <strong>
+                {horsHoraires.length} poste{horsHoraires.length > 1 ? 's' : ''} hors des horaires
+                du rayon, ou dans un rayon que la personne ne tient pas :
+              </strong>{' '}
+              {horsHoraires
+                .slice(0, 6)
+                .map(
+                  (v) =>
+                    `${nomDe(v.collaborateurId)} ${jourEnTexte(v.jour)} ${v.debut}–${v.fin}`,
+                )
+                .join(' · ')}
+              {horsHoraires.length > 6 ? '…' : ''}
+            </p>
+            <button
+              type="button"
+              className="bouton bouton--principal"
+              onClick={() =>
+                modifierPlanning(semaine, (avant) => ({
+                  ...avant,
+                  vacations: avant.vacations.filter(
+                    (v) => !horsHoraires.some((h) => h.id === v.id),
+                  ),
+                }))
+              }
+            >
+              Retirer ces postes
+            </button>
+            <span className="bouton__aide">puis relancez la proposition pour combler</span>
+          </div>
+        )}
 
         {surAbsence.length > 0 && etatGeneration !== 'en-cours' && (
           <div className="avis avis--attention" role="status">

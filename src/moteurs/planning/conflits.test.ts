@@ -127,3 +127,51 @@ describe('solutions classées', () => {
     expect(conflits()).toEqual(conflits())
   })
 })
+
+describe('prêts dans un rayon piloté par sa grille', () => {
+  it('ne dépasse jamais la fermeture, et ne prête que ceux qui y travaillent', async () => {
+    const { construireEtatReel } = await import('../../donnees/import-equipe')
+    const { RAYON } = await import('../../donnees/modele-la-vaugine')
+    const { enMinutes } = await import('../../domaine/temps')
+    // Equipe FICTIVE : deux poissonniers, un preparateur.
+    const etat = construireEtatReel([
+      { prenom: 'Abel', statut: 'employe', heures: 36.75, principaux: [RAYON.maree] },
+      { prenom: 'Bérénice', statut: 'employe', heures: 36.75, principaux: [RAYON.charcuterieFromage], secondaires: [RAYON.maree] },
+      { prenom: 'Cyril', statut: 'employe', heures: 36.75, principaux: [RAYON.preparationTraiteur] },
+    ])
+    const configuration = etat.configurations.find((c) => c.rayonId === RAYON.maree)!
+    const besoin = calculerBesoin(configuration, {
+      date: JOUR,
+      clientsParTranche: new Array<number>(96).fill(0),
+      tranchesOuvertes: new Set(),
+      meteo: 'normal',
+      coefficientEvenements: 1,
+      enPromotion: false,
+      saisiesQualite: [],
+    })
+    const abel = etat.collaborateurs.find((c) => c.prenom === 'Abel')!
+    // Abel tient la maree de 6 h 30 a 19 h 30 : il manque quelqu'un de 19 h 30 a 20 h.
+    const trouves = chercherLesConflits({
+      besoins: [besoin],
+      vacations: [
+        { id: 'v', collaborateurId: abel.id, rayonId: RAYON.maree, jour: JOUR, debut: '06:30', fin: '19:30', pauseMinutes: 0 },
+      ],
+      collaborateurs: etat.collaborateurs,
+      absences: [],
+      renforts: [],
+      nomDuRayon: (id) => id,
+      rayons: etat.magasin.rayons,
+    })
+    const soir = trouves.find((c) => c.debutMinutes === enMinutes('19:30'))
+    expect(soir).toBeDefined()
+    const prets = soir!.solutions.filter((s) => s.nature === 'pret')
+    expect(prets.length).toBeGreaterThan(0)
+    for (const pret of prets) {
+      expect(enMinutes(pret.fin ?? '23:59')).toBeLessThanOrEqual(enMinutes('20:00'))
+      expect(pret.debut).toBe('17:00')
+    }
+    // Le preparateur n'est jamais propose en maree.
+    expect(prets.some((p) => p.libelle.includes('Cyril'))).toBe(false)
+    expect(prets.some((p) => p.libelle.includes('Bérénice'))).toBe(true)
+  })
+})

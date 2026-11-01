@@ -52,6 +52,7 @@ export function Conflits({ semaine, vacations, besoinDuJour, onAppliquer }: Prop
       absences: absencesEffectives(etat),
       renforts: etat.renforts,
       nomDuRayon: (identifiant) => rayonParId(etat.magasin, identifiant)?.nom ?? identifiant,
+      rayons: etat.magasin.rayons,
     })
   }, [jours, rayons, besoinDuJour, vacations, etat])
 

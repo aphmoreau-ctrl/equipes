@@ -471,3 +471,40 @@ describe('pauses et absences dans le planning', () => {
     expect(screen.getByRole('button', { name: 'Recalculer la semaine' })).toBeInTheDocument()
   })
 })
+
+describe('postes hors des horaires du rayon', () => {
+  it('les repère et les retire d’un geste', async () => {
+    const { enregistrerEtat, lireEtat } = await import('../../donnees/etat')
+    const { planningVide } = await import('../../domaine/planning')
+    const { construireEtatReel } = await import('../../donnees/import-equipe')
+    const { RAYON } = await import('../../donnees/modele-la-vaugine')
+    const semaine = lundiDeLaSemaine(aujourdhui())
+    // Equipe FICTIVE.
+    const base = construireEtatReel([
+      { prenom: 'Abel', statut: 'employe', heures: 36.75, principaux: [RAYON.maree] },
+    ])
+    const abel = base.collaborateurs[0]!
+    enregistrerEtat({
+      ...base,
+      plannings: {
+        [semaine]: {
+          ...planningVide(semaine),
+          vacations: [
+            { id: 'tard', collaborateurId: abel.id, rayonId: RAYON.maree, jour: semaine, debut: '19:30', fin: '22:30', pauseMinutes: 0 },
+            { id: 'ok', collaborateurId: abel.id, rayonId: RAYON.maree, jour: ajouterJoursLocal(semaine, 1), debut: '07:00', fin: '14:00', pauseMinutes: 21, pauseDebut: '10:00' },
+          ],
+        },
+      },
+    })
+    afficher()
+    expect(screen.getByText(/1 poste hors des horaires/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer ces postes' }))
+    expect(lireEtat().plannings[semaine]?.vacations.map((v) => v.id)).toEqual(['ok'])
+  })
+})
+
+function ajouterJoursLocal(date: string, jours: number): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + jours)
+  return d.toISOString().slice(0, 10)
+}

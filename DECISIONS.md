@@ -1760,3 +1760,16 @@ elle en sort (le moteur de contrôle le signalera, étape 2).
 **Reste** : un rayon tenu par une seule personne (Fraîche découpe, Cuisine
 mobile) se retrouve vide pendant sa pause — la relève par un rayon voisin
 viendra avec les tâches et les prêts.
+
+### C-30 — Des prêts jusqu'à 22 h 45, et à des personnes sans la compétence ❗
+**Constat d'Arnaud** (capture du planning) : des postes de 19 h 30 à 22 h 30
+en Marée, un préparateur en Fraîche découpe. Ils ne venaient pas du calcul
+automatique mais des **solutions aux conflits** (« Prêter X depuis… »,
+applicables d'un geste) : le prêt durait au moins 3 h **à partir du début du
+trou**, sans regarder l'heure de fermeture, et était proposé à n'importe qui.
+**Corrigé** : dans un rayon à grille, un prêt (ou un décalage) reste dans les
+horaires du rayon — un trou à 19 h 30 donne un prêt de 17 h à 20 h — et n'est
+proposé qu'aux personnes qui tiennent ce rayon (titulaire ou renfort).
+**Et pour les postes déjà posés** : l'écran Planning signale tout poste hors
+des horaires de son rayon, ou dans un rayon que la personne ne tient pas, avec
+un bouton « Retirer ces postes ».

@@ -4,6 +4,7 @@ import {
   disponibiliteDuJour,
   enFormation,
   nomAffiche,
+  peutTravaillerDans,
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import { jourDeLaSemaine, jourEnTexte } from '../../domaine/calendrier'
@@ -12,6 +13,8 @@ import { calculerCouverture } from '../indicateurs'
 import type { Renfort } from '../../domaine/vivier'
 import { dureeTravailEffectif, type Vacation } from '../regles'
 import { heuresEnTexte } from '../../domaine/nombres'
+import type { Rayon } from '../../domaine/magasin'
+import { besoinAvecGrille, bornesDuCreneau } from './generateur'
 
 /**
  * Conflits restants, et solutions classees (§9.7).
@@ -81,6 +84,11 @@ export interface EntreesConflits {
   readonly renforts: readonly Renfort[]
   /** Nom lisible de chaque rayon. */
   readonly nomDuRayon: (rayonId: string) => string
+  /**
+   * Rayons, avec leurs horaires : un pret ou des heures en plus ne sortent
+   * jamais des horaires d'un rayon pilote par sa grille d'effectifs.
+   */
+  readonly rayons?: readonly Rayon[]
 }
 
 const COUTS: Readonly<Record<NatureSolution, number>> = {
@@ -261,15 +269,36 @@ function chercherDesSolutions(
 ): Solution[] {
   const solutions: Solution[] = []
   const jour = besoin.date
-  const debut = enTexte(plage.debutMinutes)
   /** Un prêt de moins de trois heures ne vaut pas le déplacement. */
   const minutes = Math.max(plage.finMinutes - plage.debutMinutes, 3 * 60)
-  const finProposee = enTexte(Math.min(plage.debutMinutes + minutes, 1439))
+  let debutPropose = plage.debutMinutes
+  let finPropose = Math.min(plage.debutMinutes + minutes, 1439)
+
+  /*
+   * Rayon a grille : le pret reste dans ses horaires. Un trou a 19 h 30 dans
+   * un rayon qui ferme a 20 h donne un pret de 17 h a 20 h, pas de 19 h 30 a
+   * 22 h 30.
+   */
+  const rayon = entrees.rayons?.find((r) => r.id === besoin.rayonId)
+  const bornes = bornesDuCreneau(rayon, besoin)
+  if (bornes === 'ferme') return []
+  if (bornes !== null) {
+    const ouverture = enMinutes(bornes.debut)
+    const fermeture = enMinutes(bornes.fin)
+    finPropose = Math.min(finPropose, fermeture)
+    debutPropose = Math.max(ouverture, Math.min(debutPropose, finPropose - minutes))
+  }
+  const debut = enTexte(debutPropose)
+  const finProposee = enTexte(finPropose)
 
   const niveauRequis = competence === undefined ? 0 : 2
+  const aGrille = besoinAvecGrille(besoin)
   const convient = (collaborateur: Collaborateur): boolean =>
-    competence === undefined ||
-    (collaborateur.competences[competence] ?? 0) >= (nature === 'binome-incomplet' ? 3 : niveauRequis)
+    // Rayon a grille : seulement ceux qui y travaillent, en titulaire ou en
+    // renfort. Jamais un preparateur en fraiche decoupe.
+    (!aGrille || peutTravaillerDans(collaborateur, besoin.rayonId)) &&
+    (competence === undefined ||
+      (collaborateur.competences[competence] ?? 0) >= (nature === 'binome-incomplet' ? 3 : niveauRequis))
 
   // 1. Preter quelqu'un d'un autre rayon.
   for (const collaborateur of [...entrees.collaborateurs].sort((a, b) => a.id.localeCompare(b.id))) {
@@ -303,6 +332,12 @@ function chercherDesSolutions(
         nouveauDebut <= plage.debutMinutes && nouvelleFin >= plage.finMinutes &&
         !(enMinutes(vacation.debut) <= plage.debutMinutes && enMinutes(vacation.fin) >= plage.finMinutes)
       if (!couvreMieux) continue
+      if (
+        bornes !== null &&
+        (nouveauDebut < enMinutes(bornes.debut) || nouvelleFin > enMinutes(bornes.fin))
+      ) {
+        continue
+      }
 
       solutions.push({
         nature: 'decalage',

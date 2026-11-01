@@ -90,8 +90,15 @@ describe('besoin d’un rayon piloté par sa grille', () => {
     expect(t?.cible).toBe(3)
   })
 
+  /** La meme configuration, vendredi remis « a definir ». */
+  function sansVendredi(rayonId: string) {
+    const configuration = CONFIGURATIONS_LA_VAUGINE.find((c) => c.rayonId === rayonId)!
+    const grille = configuration.grilleEffectifs!
+    return { ...configuration, grilleEffectifs: { ...grille, jours: { ...grille.jours, 5: null } } }
+  }
+
   it('vendredi non encore défini : il emprunte la cible du jeudi, comme minimum', () => {
-    const b = besoin(RAYON.maree, VENDREDI)
+    const b = calculerBesoin(sansVendredi(RAYON.maree), contexte(VENDREDI))
     // Jeudi 11 h - 13 h : minimum 1, cible 2. Vendredi : 2 et 2.
     expect(b.tranches[tranche('11:00')]?.personnes).toBe(2)
     expect(b.tranches[tranche('11:00')]?.cible).toBe(2)
@@ -99,7 +106,7 @@ describe('besoin d’un rayon piloté par sa grille', () => {
   })
 
   it('un jour emprunté s’arrête aux horaires du rayon ce jour-là', () => {
-    const configuration = CONFIGURATIONS_LA_VAUGINE.find((c) => c.rayonId === RAYON.charcuterieFromage)!
+    const configuration = sansVendredi(RAYON.charcuterieFromage)
     // Vendredi, la charcuterie ouvre a 7 h (le jeudi a 6 h 30).
     const ouvertes = new Set<number>()
     for (let i = tranche('07:00'); i < tranche('20:00'); i += 1) ouvertes.add(i)
@@ -109,8 +116,8 @@ describe('besoin d’un rayon piloté par sa grille', () => {
   })
 
   it('un jour emprunté se désactive avec un remplissage vide', () => {
-    const configuration = CONFIGURATIONS_LA_VAUGINE.find((c) => c.rayonId === RAYON.maree)!
-    const sans = { ...configuration, grilleEffectifs: { ...configuration.grilleEffectifs!, joursVidesRemplisPar: {} } }
+    const configuration = sansVendredi(RAYON.maree)
+    const sans = { ...configuration, grilleEffectifs: { ...configuration.grilleEffectifs, joursVidesRemplisPar: {} } }
     const b = calculerBesoin(sans, contexte(VENDREDI))
     expect(b.tranches[tranche('11:00')]?.personnes).toBe(1)
     expect(b.tranches[tranche('07:00')]?.personnes).toBe(0)
@@ -120,10 +127,12 @@ describe('besoin d’un rayon piloté par sa grille', () => {
     expect(besoin(RAYON.charcuterieFromage, SAMEDI).tranches[tranche('15:00')]?.personnes).toBe(2)
   })
 
-  it('dimanche : présence de 8 h 30 à 12 h 30 seulement', () => {
+  it('dimanche : une personne de l’ouverture à 12 h 45, deux souhaitées après 8 h 30', () => {
     const b = besoin(RAYON.boucherieTrad, DIMANCHE)
-    expect(b.tranches[tranche('12:15')]?.personnes).toBe(1)
-    expect(b.tranches[tranche('12:30')]?.personnes).toBe(0)
+    expect(b.tranches[tranche('07:00')]?.personnes).toBe(1)
+    expect(b.tranches[tranche('12:30')]?.personnes).toBe(1)
+    expect(b.tranches[tranche('12:30')]?.cible).toBe(2)
+    expect(b.tranches[tranche('12:45')]?.personnes).toBe(0)
   })
 
   it('Cuisine mobile : une personne le vendredi, personne le lundi', () => {

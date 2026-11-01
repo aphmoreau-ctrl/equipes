@@ -47,7 +47,7 @@ describe('points à définir', () => {
     chargerLeMagasin()
     afficher(<SectionPointsADefinir />)
     expect(screen.getByText('Rôtisserie : durée d’une cuisson.')).toBeInTheDocument()
-    expect(screen.getByText(/Heures d’affluence du samedi/)).toBeInTheDocument()
+    expect(screen.getByText(/Emballage fromage/)).toBeInTheDocument()
     const boutons = screen.getAllByRole('button', { name: 'C’est vérifié' })
     expect(boutons).toHaveLength(2)
     fireEvent.click(boutons[0] as HTMLElement)
@@ -56,11 +56,32 @@ describe('points à définir', () => {
 })
 
 describe('effectifs', () => {
+  it('applique les grilles du week-end proposées aux jours encore à définir', async () => {
+    const { construireEtatReel } = await import('../../../donnees/import-equipe')
+    const etat = construireEtatReel([{ prenom: 'Abel', statut: 'employe', heures: 36.75, principaux: [RAYON.maree] }])
+    // Donnees importees avant les grilles du week-end.
+    enregistrerEtat({
+      ...etat,
+      configurations: etat.configurations.map((c) =>
+        c.rayonId === RAYON.maree
+          ? { ...c, grilleEffectifs: { ...c.grilleEffectifs!, jours: { ...c.grilleEffectifs!.jours, 5: null, 6: null, 7: null } } }
+          : c,
+      ),
+    })
+    afficher(<SectionEffectifs />)
+    fireEvent.click(screen.getByRole('button', { name: 'Appliquer les grilles du week-end proposées' }))
+    const grille = lireEtat().configurations.find((c) => c.rayonId === RAYON.maree)?.grilleEffectifs
+    expect(grille?.jours[6]?.[2]).toMatchObject({ debut: '10:00', fin: '13:00', minimum: 2, cible: 3 })
+    expect(screen.queryByRole('button', { name: 'Appliquer les grilles du week-end proposées' })).not.toBeInTheDocument()
+  })
+
   it('remplit le vendredi en copiant le jeudi, puis ajuste un minimum', () => {
     chargerLeMagasin()
     afficher(<SectionEffectifs />)
     fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: RAYON.maree } })
     fireEvent.click(within(screen.getByRole('group', { name: 'Jour' })).getByRole('button', { name: /^vendredi/ }))
+    // Le vendredi a sa grille de depart : on la remet « a definir », puis on copie le jeudi.
+    fireEvent.click(screen.getByRole('button', { name: 'Remettre « à définir »' }))
     expect(screen.getByText(/pas encore définis/)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Copier le jeudi' }))

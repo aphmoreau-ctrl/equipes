@@ -27,10 +27,10 @@ describe('points à définir', () => {
   const points = pointsADefinir(MODELE)
   const libelles = points.map((p) => p.libelle)
 
-  it('relève les effectifs du vendredi au dimanche des rayons trad', () => {
+  it('marque provisoires les effectifs donnés, semaine et week-end', () => {
     for (const rayon of ['Fruits & Légumes', 'Marée', 'Charcuterie / Fromage', 'Boucherie Trad', 'Boucherie LS']) {
-      expect(libelles).toContain(`${rayon} : effectifs du vendredi au dimanche (en attendant : vendredi et samedi = cible du jeudi).`)
-      expect(libelles).toContain(`${rayon} : effectifs du lundi au jeudi à affiner.`)
+      expect(libelles).toContain(`${rayon} : effectifs du lundi au dimanche à affiner.`)
+      expect(libelles.some((l) => l.startsWith(`${rayon} : effectifs du vendredi`))).toBe(false)
     }
     expect(libelles.some((l) => l.startsWith('Fraîche découpe : effectifs'))).toBe(false)
   })

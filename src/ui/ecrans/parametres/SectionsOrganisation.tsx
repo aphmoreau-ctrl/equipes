@@ -22,6 +22,7 @@ import {
   type PointADefinir,
 } from '../../../moteurs/organisation'
 import { useDonnees } from '../../DonneesProvider'
+import { appliquerGrillesDuWeekEnd, journeesARemplir } from '../../../donnees/grilles-week-end'
 import { ChampHeure, ChampNombre, Depliant, Interrupteur } from '../../composants/Champ'
 
 /**
@@ -244,6 +245,25 @@ export function SectionEffectifs() {
         <strong>cible</strong> est souhaitée : elle peut être atteinte avec des renforts. Un champ
         vide reste « à définir ».
       </p>
+
+      {journeesARemplir(etat) > 0 && (
+        <div className="avis">
+          <p>
+            <strong>Grilles du week-end proposées</strong> : vendredi, samedi et dimanche des
+            rayons trad, et l’affluence du samedi (10 h-13 h, 15 h-19 h). Seuls les jours encore
+            « à définir » sont remplis ({journeesARemplir(etat)} journée
+            {journeesARemplir(etat) > 1 ? 's' : ''}) ; rien de ce que vous avez saisi n’est
+            modifié.
+          </p>
+          <button
+            type="button"
+            className="bouton bouton--principal"
+            onClick={() => modifier((precedent) => appliquerGrillesDuWeekEnd(precedent).etat)}
+          >
+            Appliquer les grilles du week-end proposées
+          </button>
+        </div>
+      )}
 
       <div className="champs">
         <label className="champ champ--etroit">

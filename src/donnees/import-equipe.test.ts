@@ -108,8 +108,6 @@ describe('état complet du magasin', () => {
     const points = pointsADefinir(etat).map((p) => p.libelle)
     expect(points).toContain('Dana R. : jours d’école.')
     expect(points).toContain('Rôtisserie : durée d’une cuisson.')
-    expect(points).toContain('Heures d’affluence du samedi.')
-    expect(points).toContain('Marée : effectifs du vendredi au dimanche (en attendant : vendredi et samedi = cible du jeudi).')
     expect(points).toContain('Emballage fromage : qui la fait, les jours, l’heure et la durée.')
     expect(points).toContain('Emballage boucherie : les jours, l’heure et la durée.')
     expect(points).toContain('Remballe (7 rayons) : l’heure et la durée.')

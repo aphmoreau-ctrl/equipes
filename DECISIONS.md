@@ -1887,3 +1887,29 @@ cartes superposées, texte d'un mot par ligne. Renommée `controle-semaine`.
 Les constats « à confirmer » (repos hebdomadaire à cheval sur une semaine
 pas encore construite) sont rangés dans un groupe replié : ce ne sont pas
 des erreurs.
+
+---
+
+## Grilles du week-end, présence maximale le vendredi et le samedi, travail rayon par rayon (1er novembre 2026, soir)
+
+### D-154 — Les grilles du week-end d'Arnaud (provisoires)
+**Décision.** Vendredi, samedi et dimanche des cinq rayons trad, tels que
+donnés par Arnaud (minimum / cible, valeurs provisoires), entrent dans le
+modèle de départ ; affluence du samedi 10 h-13 h et 15 h-19 h. Les tranches
+partent de l'ouverture réelle du rayon ce jour-là ; le dimanche va jusqu'à
+12 h 45. Cuisine mobile, Fraîche découpe et Préparation traiteur (samedi)
+avaient déjà leurs valeurs.
+**Sur l'iPad**, les données déjà importées ne changent pas d'elles-mêmes : le
+bouton « Appliquer les grilles du week-end proposées » (Paramètres →
+Effectifs) remplit **seulement les jours encore à définir**, sans rien écraser.
+
+### Point à régler — pauses du samedi après-midi
+L'affluence du samedi (15 h-19 h) recouvre entièrement la plage de pause de
+l'après-midi (15 h-17 h 30) : une pause le samedi après-midi sera toujours
+signalée « hors plage » ou « pendant l'affluence ». Il faudra une plage de
+pause propre au samedi (par exemple 13 h-15 h), ou accepter l'alerte.
+
+### Préparation traiteur (point 9) — en attente
+L'heure de fin (12 h ou 13 h 30 selon le jour) reste « à définir », à 13 h 30
+provisoirement, jusqu'à ce qu'Arnaud indique les jours. (Les 14 h de D-131
+sont la fin d'un « poste du matin », pas celle de la préparation.)

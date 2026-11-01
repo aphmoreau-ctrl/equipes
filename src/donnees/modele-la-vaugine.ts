@@ -259,26 +259,114 @@ function grilleOuverture(rayonId: string, minimum: number, cible: number): Grill
   return { 1: jour(1), 2: jour(2), 3: jour(3), 4: jour(4), 5: jour(5), 6: jour(6), 7: jour(7) }
 }
 
+/** Creneaux d'une journee : bornes [debut, fin] et paires [minimum, cible]. */
+function journee(
+  ouverture: string,
+  bornes: readonly (readonly [string, string])[],
+  valeurs: readonly Paire[],
+): CreneauEffectif[] {
+  return bornes.map(([debut, fin], index) => {
+    const [minimum, cible] = valeurs[index] as Paire
+    return { debut: debut === 'ouverture' ? ouverture : debut, fin, minimum, cible, provisoire: true }
+  })
+}
+
+const TRANCHES_VENDREDI = [
+  ['ouverture', '08:30'], ['08:30', '11:00'], ['11:00', '13:00'],
+  ['13:00', '17:00'], ['17:00', '19:00'], ['19:00', '20:00'],
+] as const
+const TRANCHES_SAMEDI = [
+  ['ouverture', '08:30'], ['08:30', '10:00'], ['10:00', '13:00'],
+  ['13:00', '15:00'], ['15:00', '19:00'], ['19:00', '20:00'],
+] as const
+const TRANCHES_DIMANCHE = [['ouverture', '08:30'], ['08:30', '12:45']] as const
+
+type SixPaires = readonly [Paire, Paire, Paire, Paire, Paire, Paire]
+type JoursDuWeekEnd = Readonly<Record<5 | 6 | 7, readonly CreneauEffectif[]>>
+
+function weekEnd(
+  horairesDe: string,
+  vendredi: SixPaires,
+  samedi: SixPaires,
+  dimanche: readonly [Paire, Paire],
+): JoursDuWeekEnd {
+  return {
+    5: journee(ouvertureDu(horairesDe, 5), TRANCHES_VENDREDI, vendredi),
+    6: journee(ouvertureDu(horairesDe, 6), TRANCHES_SAMEDI, samedi),
+    7: journee(ouvertureDu(horairesDe, 7), TRANCHES_DIMANCHE, dimanche),
+  }
+}
+
+/**
+ * Effectifs du week-end, donnes par Arnaud le 1er novembre 2026 (valeurs de
+ * depart provisoires). Le bouton « Appliquer les grilles du week-end
+ * proposees » ne les recopie que sur les jours encore a definir.
+ */
+export const GRILLES_WEEK_END: Readonly<Record<string, JoursDuWeekEnd>> = {
+  [RAYON.fruitsLegumes]: weekEnd(
+    RAYON.fruitsLegumes,
+    [[3, 3], [1, 2], [2, 3], [1, 2], [2, 3], [1, 1]],
+    [[3, 3], [1, 2], [2, 3], [1, 2], [2, 3], [1, 1]],
+    [[1, 2], [1, 2]],
+  ),
+  [RAYON.maree]: weekEnd(
+    RAYON.maree,
+    [[1, 2], [1, 2], [2, 2], [1, 1], [2, 2], [1, 1]],
+    [[1, 2], [1, 2], [2, 3], [1, 2], [2, 2], [1, 1]],
+    [[1, 1], [1, 1]],
+  ),
+  [RAYON.charcuterieFromage]: weekEnd(
+    RAYON.charcuterieFromage,
+    [[2, 2], [2, 2], [2, 3], [2, 2], [2, 3], [2, 2]],
+    [[2, 2], [2, 2], [2, 3], [2, 2], [2, 3], [2, 2]],
+    [[1, 1], [1, 2]],
+  ),
+  [RAYON.boucherieTrad]: weekEnd(
+    RAYON.boucherieTrad,
+    [[2, 2], [1, 2], [2, 3], [1, 2], [2, 3], [1, 1]],
+    [[2, 2], [1, 2], [2, 3], [1, 2], [2, 3], [1, 1]],
+    [[1, 1], [1, 2]],
+  ),
+  [RAYON.boucherieLs]: weekEnd(
+    RAYON.boucherieTrad,
+    [[2, 2], [1, 2], [1, 1], [1, 1], [1, 1], [0, 1]],
+    [[2, 2], [1, 2], [1, 1], [1, 1], [1, 1], [0, 1]],
+    [[1, 1], [0, 1]],
+  ),
+}
+
+/** Affluence du samedi, provisoire : 10 h - 13 h et 15 h - 19 h. */
+export const AFFLUENCE_SAMEDI: readonly Plage[] = [
+  { debut: '10:00', fin: '13:00' },
+  { debut: '15:00', fin: '19:00' },
+]
+
+/** Grille lundi-jeudi completee du week-end. */
+function avecWeekEnd(rayonId: string, jours: GrilleEffectifs['jours']): GrilleEffectifs['jours'] {
+  const weekend = GRILLES_WEEK_END[rayonId]
+  return weekend === undefined ? jours : { ...jours, 5: weekend[5], 6: weekend[6], 7: weekend[7] }
+}
+
 const GRILLES: Readonly<Record<string, GrilleEffectifs>> = {
   [RAYON.fruitsLegumes]: {
     competence: COMPETENCE.fruitsLegumes,
-    jours: grilleLundiJeudi(RAYON.fruitsLegumes, [
+    jours: avecWeekEnd(RAYON.fruitsLegumes, grilleLundiJeudi(RAYON.fruitsLegumes, [
       [2, 3], [1, 2], [1, 2], [1, 1], [1, 2], [1, 1],
-    ]),
+    ])),
     planchers: presencePermanente(),
   },
   [RAYON.maree]: {
     competence: COMPETENCE.maree,
-    jours: grilleLundiJeudi(RAYON.maree, [
+    jours: avecWeekEnd(RAYON.maree, grilleLundiJeudi(RAYON.maree, [
       [1, 1], [1, 1], [1, 2], [1, 1], [1, 2], [1, 1],
-    ]),
+    ])),
     planchers: presencePermanente(),
   },
   [RAYON.charcuterieFromage]: {
     competence: COMPETENCE.charcuterieFromage,
-    jours: grilleLundiJeudi(RAYON.charcuterieFromage, [
+    jours: avecWeekEnd(RAYON.charcuterieFromage, grilleLundiJeudi(RAYON.charcuterieFromage, [
       [1, 2], [1, 1], [1, 2], [1, 1], [1, 2], [1, 1],
-    ]),
+    ])),
     planchers: [
       ...presencePermanente(),
       {
@@ -293,16 +381,16 @@ const GRILLES: Readonly<Record<string, GrilleEffectifs>> = {
   },
   [RAYON.boucherieTrad]: {
     competence: COMPETENCE.boucherieTrad,
-    jours: grilleLundiJeudi(RAYON.boucherieTrad, [
+    jours: avecWeekEnd(RAYON.boucherieTrad, grilleLundiJeudi(RAYON.boucherieTrad, [
       [1, 2], [1, 1], [1, 2], [1, 1], [1, 2], [1, 1],
-    ]),
+    ])),
     planchers: presencePermanente(),
   },
   [RAYON.boucherieLs]: {
     competence: COMPETENCE.boucherieLs,
-    jours: grilleLundiJeudi(RAYON.boucherieTrad, [
+    jours: avecWeekEnd(RAYON.boucherieLs, grilleLundiJeudi(RAYON.boucherieTrad, [
       [2, 2], [1, 2], [1, 1], [1, 1], [1, 1], [0, 1],
-    ]),
+    ])),
     planchers: [],
   },
   [RAYON.fraicheDecoupe]: {
@@ -470,7 +558,7 @@ export const ORGANISATION_LA_VAUGINE: OrganisationPlanning = {
     3: [{ debut: '11:00', fin: '13:00' }, { debut: '17:00', fin: '19:00' }],
     4: [{ debut: '11:00', fin: '13:00' }, { debut: '17:00', fin: '19:00' }],
     5: [{ debut: '11:00', fin: '13:00' }, { debut: '17:00', fin: '19:00' }],
-    6: null,
+    6: AFFLUENCE_SAMEDI,
     7: [],
   },
   taches: TACHES_LA_VAUGINE,

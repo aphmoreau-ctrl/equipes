@@ -30,12 +30,16 @@ interface Proprietes {
     rayonId: string,
   ) => import('../../moteurs/besoin').BesoinJour | null
   readonly onAppliquer: (vacations: readonly Vacation[]) => void
+  /** Vue d'un rayon : ses conflits seulement. */
+  readonly rayonId?: string
 }
 
-export function Conflits({ semaine, vacations, besoinDuJour, onAppliquer }: Proprietes) {
+export function Conflits({ semaine, vacations, besoinDuJour, onAppliquer, rayonId }: Proprietes) {
   const { etat } = useDonnees()
   const jours = semaineDe(semaine)
-  const rayons = rayonsActifs(etat.magasin)
+  const rayons = rayonsActifs(etat.magasin).filter(
+    (rayon) => rayonId === undefined || rayon.id === rayonId,
+  )
   const [tout, setTout] = useState(false)
 
   const conflits = useMemo(() => {

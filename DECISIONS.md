@@ -1832,3 +1832,31 @@ Sous le planning, chaque minimum non tenu liste les personnes qui tiennent
 ce rayon et ce qui les retient : en pause, déjà en rayon, travaille dans tel
 rayon qu'il faudrait dégarnir, déjà à ses heures, congé, école, règle légale
 précise, case verrouillée.
+
+### D-151 — La vue d'un rayon dans le Planning
+**Décision.** Une rangée de gros boutons (« Tous » et chaque rayon) remplace
+la liste déroulante. Le dernier choix est **mémorisé sur l'appareil** (l'iPad
+et l'iPhone gardent chacun le leur). Dans la vue d'un rayon :
+- les **titulaires** d'abord (même s'ils ne viennent pas cette semaine), puis
+  les **renforts** qui y ont au moins un poste, sous l'intertitre « Renforts
+  venus d'autres rayons », avec leur rayon d'origine ;
+- un renfort ne montre que ses postes **dans ce rayon** (cadre en
+  pointillés) ; les jours où il travaille ailleurs portent « ailleurs (rayon) »,
+  pour ne pas le croire libre ;
+- « Ajouter un renfort à la grille » fait apparaître une personne qui peut
+  tenir le rayon, pour lui poser un poste ;
+- la colonne de droite donne les heures **ici**, sur les heures de la semaine ;
+- sous la grille, la **couverture heure par heure** : présents au quart
+  d'heure le moins garni, rouge (minimum non tenu), orange (cible non
+  atteinte), vert ; toucher une case donne le détail au quart d'heure, pauses
+  comprises ;
+- seules les **règles enfreintes** par les gens du rayon et les **conflits**
+  du rayon sont listés.
+**Alternative.** Couverture par demi-heure (plus précise, plus serrée).
+
+### D-152 — Le PDF d'un seul rayon
+**Décision.** Quand un rayon est choisi, « Dossier à présenter » et
+« Affichage équipe » n'impriment que ce rayon : horaires **et pause** de
+chacun, heures pauses comprises. Le dossier pour la direction garde son
+tableau de couverture du rayon. Rien d'interne n'y figure (le test des
+documents propres couvre les nouvelles mentions).

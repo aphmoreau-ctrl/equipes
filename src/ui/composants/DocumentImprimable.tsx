@@ -5,6 +5,7 @@ import type { Planning } from '../../domaine/planning'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
 import type { CouvertureJour } from '../../moteurs/indicateurs'
 import { ecartEnTexte, heuresEnTexte } from '../../domaine/nombres'
+import { duree } from '../../domaine/temps'
 
 /**
  * Documents destines a SORTIR de l'application (cahier des charges §15).
@@ -41,10 +42,26 @@ interface Proprietes {
   }[]
   /** Date d'edition du document. */
   readonly edite: string
+  /** Pauses payees comprises dans le contrat : les totaux les comptent (D-125). */
+  readonly pausesPayees?: boolean
 }
 
-function heuresDe(vacations: readonly Vacation[]): number {
-  return vacations.reduce((somme, vacation) => somme + dureeTravailEffectif(vacation), 0) / 60
+function heuresDe(vacations: readonly Vacation[], pausesPayees = false): number {
+  return (
+    vacations.reduce(
+      (somme, vacation) =>
+        somme + (pausesPayees ? duree(vacation.debut, vacation.fin) : dureeTravailEffectif(vacation)),
+      0,
+    ) / 60
+  )
+}
+
+/** « 06:00 – 13:00 (pause 09:30) » : l'horaire, et la pause quand elle est placee. */
+function horaireEtPause(vacation: Vacation): string {
+  const horaire = `${vacation.debut}\u2009–\u2009${vacation.fin}`
+  return vacation.pauseMinutes > 0 && vacation.pauseDebut !== undefined
+    ? `${horaire} (pause ${vacation.pauseDebut})`
+    : horaire
 }
 
 export function DocumentImprimable({
@@ -57,6 +74,7 @@ export function DocumentImprimable({
   nomDuService,
   renforts,
   edite,
+  pausesPayees = false,
 }: Proprietes) {
   const jours = semaineDe(planning.semaine)
   const dernierJour = jours[6] ?? planning.semaine
@@ -70,9 +88,16 @@ export function DocumentImprimable({
       collaborateur,
       prevues: heuresDe(
         planning.vacations.filter((vacation) => vacation.collaborateurId === collaborateur.id),
+        pausesPayees,
       ),
     }))
     .filter(({ prevues }) => prevues > 0)
+    // Document d'un seul rayon : seulement les personnes qui y travaillent.
+    .filter(({ collaborateur }) =>
+      planning.vacations.some(
+        (v) => v.collaborateurId === collaborateur.id && rayons.some((r) => r.id === v.rayonId),
+      ),
+    )
     .sort((a, b) => nomAffiche(a.collaborateur).localeCompare(nomAffiche(b.collaborateur), 'fr'))
 
   const rayonsConcernes = rayons.filter(
@@ -139,13 +164,11 @@ export function DocumentImprimable({
                           <td key={jour}>
                             {duJour.length === 0
                               ? '—'
-                              : duJour
-                                  .map((vacation) => `${vacation.debut} – ${vacation.fin}`)
-                                  .join(' / ')}
+                              : duJour.map(horaireEtPause).join(' / ')}
                           </td>
                         )
                       })}
-                      <td className="document__total">{heuresEnTexte(heuresDe(siennes))}</td>
+                      <td className="document__total">{heuresEnTexte(heuresDe(siennes, pausesPayees))}</td>
                     </tr>
                   )
                 })}
@@ -179,7 +202,7 @@ export function DocumentImprimable({
                             </td>
                           )
                         })}
-                        <td className="document__total">{heuresEnTexte(heuresDe(siennes))}</td>
+                        <td className="document__total">{heuresEnTexte(heuresDe(siennes, pausesPayees))}</td>
                       </tr>
                     )
                   })}
@@ -212,7 +235,11 @@ export function DocumentImprimable({
                   <th scope="row">{nomAffiche(collaborateur)}</th>
                   <td>{collaborateur.heuresHebdomadaires} h</td>
                   <td className="document__total">{heuresEnTexte(prevues)}</td>
-                  <td>{ecartEnTexte(prevues - collaborateur.heuresHebdomadaires)}</td>
+                  <td>
+                    {collaborateur.forfait === true
+                      ? 'forfait'
+                      : ecartEnTexte(prevues - collaborateur.heuresHebdomadaires)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -257,7 +284,7 @@ export function DocumentImprimable({
             </tbody>
           </table>
           <p className="document__mention">
-            La couverture est mesurée demi-heure par demi-heure. Un rayon peut donc totaliser plus
+            La couverture est mesurée quart d’heure par quart d’heure. Un rayon peut donc totaliser plus
             d’heures que nécessaire tout en restant découvert à certains moments de la journée.
           </p>
         </section>

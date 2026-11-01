@@ -56,7 +56,15 @@ describe('vue tous rayons', () => {
     afficher()
     // Camille D. tient les fruits et légumes : on la place en crèmerie.
     // La vacation prend le rayon choisi dans le filtre.
-    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: 'cremerie' } })
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Rayon' })).getByRole('button', {
+        name: 'Crèmerie / libre-service frais',
+      }),
+    )
+    // Camille n'y a pas encore de poste : on l'ajoute a la grille comme renfort.
+    const ajout = screen.getByLabelText('Ajouter un renfort à la grille') as HTMLSelectElement
+    const camille = [...ajout.options].find((option) => option.text === 'Camille D.')
+    fireEvent.change(ajout, { target: { value: camille?.value ?? '' } })
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
 

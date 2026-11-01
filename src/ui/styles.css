@@ -2059,3 +2059,99 @@ select.champ__saisie {
   font-size: 12px;
   color: var(--texte-doux);
 }
+
+/* ---------------------------------------------------- Vue par rayon */
+
+.choix-rayon {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.choix-rayon .bouton {
+  flex: 0 0 auto;
+  min-height: var(--cible-tactile);
+}
+
+.grille__intertitre-rayon {
+  text-align: left;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texte-doux);
+  padding-top: 14px;
+}
+.grille__origine {
+  display: block;
+  font-size: 12px;
+  color: var(--texte-doux);
+}
+.case__vacation--renfort {
+  border: 1px dashed var(--accent);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+.case__ailleurs {
+  font-size: 12px;
+  color: var(--texte-doux);
+  font-style: italic;
+}
+
+.couverture-rayon__table {
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.couverture-rayon__table th {
+  font-weight: 600;
+  color: var(--texte-doux);
+  text-align: left;
+  white-space: nowrap;
+}
+.couverture-rayon__case {
+  width: 38px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--bordure);
+  background: var(--fond-survol);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.couverture-rayon__case[aria-pressed='true'] {
+  outline: 2px solid var(--texte);
+}
+.couverture-rayon__case--manque {
+  background: color-mix(in srgb, var(--alerte) 22%, var(--fond-carte));
+  border-color: var(--alerte);
+}
+.couverture-rayon__case--sous-cible {
+  background: color-mix(in srgb, var(--avertissement) 18%, var(--fond-carte));
+  border-color: var(--avertissement);
+}
+.couverture-rayon__case--bon {
+  background: color-mix(in srgb, var(--succes) 18%, var(--fond-carte));
+  border-color: var(--succes);
+}
+.couverture-rayon__legende {
+  font-size: 13px;
+  color: var(--texte-doux);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.couverture-rayon__puce {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid;
+  margin-left: 8px;
+}
+.couverture-rayon__detail {
+  margin-top: 8px;
+}

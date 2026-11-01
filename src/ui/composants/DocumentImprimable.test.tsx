@@ -81,7 +81,7 @@ describe('contenu du dossier à présenter', () => {
   it('explique pourquoi un rayon peut dépasser le besoin et rester découvert', () => {
     const doc = document_()
     expect(
-      within(doc).getByText(/mesurée demi-heure par demi-heure/),
+      within(doc).getByText(/mesurée quart d’heure par quart d’heure/),
     ).toBeInTheDocument()
   })
 
@@ -206,6 +206,11 @@ describe('les écrans ajoutés ne fuitent pas dans les documents', () => {
     /à définir/,
     /À vérifier/,
     /provisoire/i,
+    // Vue par rayon et diagnostics du planning
+    /Pourquoi personne/,
+    /Renforts venus d’autres rayons/,
+    /Couverture heure par heure/,
+    /case verrouillée/,
   ]
 
   for (const type of ['dossier-patron', 'affichage-equipe'] as const) {

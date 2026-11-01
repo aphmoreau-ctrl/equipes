@@ -51,9 +51,11 @@ describe('écran Planning', () => {
 
   it('filtre l’équipe par rayon', () => {
     afficher()
-    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: 'boucherie' } })
-    expect(screen.getByText('Thierry M.')).toBeInTheDocument()
-    expect(screen.queryByText('Julien S.')).not.toBeInTheDocument()
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Rayon' })).getByRole('button', { name: 'Boucherie' }),
+    )
+    expect(within(grille()).getByText('Thierry M.')).toBeInTheDocument()
+    expect(within(grille()).queryByText('Julien S.')).not.toBeInTheDocument()
   })
 
   it('place une vacation en touchant une case', () => {
@@ -519,5 +521,73 @@ describe('cases verrouillées', () => {
     expect(screen.getByText(/elle ne sera pas recalculée/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Tout déverrouiller' }))
     expect(screen.queryByRole('button', { name: 'Tout déverrouiller' })).not.toBeInTheDocument()
+  })
+})
+
+describe('vue par rayon', () => {
+  async function preparer() {
+    const { enregistrerEtat } = await import('../../donnees/etat')
+    const { planningVide } = await import('../../domaine/planning')
+    const { construireEtatReel } = await import('../../donnees/import-equipe')
+    const { RAYON } = await import('../../donnees/modele-la-vaugine')
+    const semaine = lundiDeLaSemaine(aujourdhui())
+    const mardi = ajouterJoursLocal(semaine, 1)
+    // Equipe FICTIVE.
+    const base = construireEtatReel([
+      { prenom: 'Abel', statut: 'employe', heures: 36.75, principaux: [RAYON.maree] },
+      { prenom: 'Bérénice', statut: 'employe', heures: 36.75, principaux: [RAYON.charcuterieFromage], secondaires: [RAYON.maree] },
+    ])
+    const [abel, berenice] = base.collaborateurs as [typeof base.collaborateurs[0], typeof base.collaborateurs[0]]
+    enregistrerEtat({
+      ...base,
+      plannings: {
+        [semaine]: {
+          ...planningVide(semaine),
+          vacations: [
+            { id: 'a', collaborateurId: abel.id, rayonId: RAYON.maree, jour: semaine, debut: '07:00', fin: '14:00', pauseMinutes: 21, pauseDebut: '10:00' },
+            { id: 'b', collaborateurId: berenice.id, rayonId: RAYON.maree, jour: semaine, debut: '14:00', fin: '20:00', pauseMinutes: 18, pauseDebut: '16:00' },
+            { id: 'c', collaborateurId: berenice.id, rayonId: RAYON.charcuterieFromage, jour: mardi, debut: '07:00', fin: '14:00', pauseMinutes: 21, pauseDebut: '10:00' },
+          ],
+        },
+      },
+    })
+  }
+
+  function choisirMaree() {
+    fireEvent.click(within(screen.getByRole('group', { name: 'Rayon' })).getByRole('button', { name: 'Marée' }))
+  }
+
+  it('montre les titulaires, puis les renforts avec leur seul travail dans le rayon', async () => {
+    await preparer()
+    afficher()
+    choisirMaree()
+    const g = grille()
+    expect(within(g).getByText('Abel')).toBeInTheDocument()
+    expect(within(g).getByText('Renforts venus d’autres rayons')).toBeInTheDocument()
+    expect(within(g).getByText(/renfort · titulaire Charcuterie \/ Fromage/)).toBeInTheDocument()
+    expect(within(g).getByText('ailleurs (Charcuterie / Fromage)')).toBeInTheDocument()
+    expect(within(g).getByText('14:00–20:00')).toBeInTheDocument()
+    expect(within(g).queryByText('07:00–14:00', { selector: '.case__vacation--renfort *' })).toBeNull()
+  })
+
+  it('affiche la couverture heure par heure, avec le détail au toucher', async () => {
+    await preparer()
+    afficher()
+    choisirMaree()
+    expect(screen.getByRole('heading', { name: 'Couverture heure par heure' })).toBeInTheDocument()
+    const case10h = screen.getByRole('button', { name: /^lundi 10 h : / })
+    fireEvent.click(case10h)
+    expect(screen.getByText(/10:00 : 0 présent, minimum 1, cible 1 — en pause : Abel/)).toBeInTheDocument()
+  })
+
+  it('se souvient du dernier rayon choisi', async () => {
+    await preparer()
+    const premier = afficher()
+    choisirMaree()
+    premier.unmount()
+    afficher()
+    expect(
+      within(screen.getByRole('group', { name: 'Rayon' })).getByRole('button', { name: 'Marée' }),
+    ).toHaveAttribute('aria-pressed', 'true')
   })
 })

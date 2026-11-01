@@ -9,7 +9,13 @@ import {
   semaineDe,
   jourEnTexte,
 } from '../../domaine/calendrier'
-import { estDisponible, nomAffiche, peutTravaillerDans } from '../../domaine/collaborateur'
+import {
+  estDisponible,
+  nomAffiche,
+  peutTravaillerDans,
+  rayonsPrincipaux,
+} from '../../domaine/collaborateur'
+import { CouvertureRayon } from '../composants/CouvertureRayon'
 import { rayonsActifs } from '../../domaine/magasin'
 import {
   LIBELLES_ORIGINE,
@@ -53,12 +59,36 @@ import { Scenarios } from '../composants/Scenarios'
 import { DocumentImprimable, type TypeDocument } from '../composants/DocumentImprimable'
 import { heuresEnTexte, nombreEnTexte } from '../../domaine/nombres'
 
+/** Dernier rayon choisi dans le Planning, sur cet appareil. */
+const CLE_RAYON = 'equipes.planning.rayon'
+
 export function Planning() {
   const { etat, planning, modifierPlanning, historique, besoinDuJour } = useDonnees()
   const rayons = rayonsActifs(etat.magasin)
 
   const [semaine, setSemaine] = useState(() => lundiDeLaSemaine(aujourdhui()))
-  const [filtreRayon, setFiltreRayon] = useState('tous')
+  /*
+   * Rayon affiche, memorise sur cet appareil : l'iPad et l'iPhone gardent
+   * chacun le leur. Stockage indisponible (navigation privee) : « Tous ».
+   */
+  const [filtreRayon, setFiltreRayonBrut] = useState(() => {
+    try {
+      const memorise = window.localStorage.getItem(CLE_RAYON)
+      return memorise !== null && rayons.some((rayon) => rayon.id === memorise) ? memorise : 'tous'
+    } catch {
+      return 'tous'
+    }
+  })
+  function setFiltreRayon(valeur: string): void {
+    setFiltreRayonBrut(valeur)
+    try {
+      window.localStorage.setItem(CLE_RAYON, valeur)
+    } catch {
+      // Rien a faire : le choix vaudra pour cette session seulement.
+    }
+  }
+  /** Renforts ajoutes a la main a la vue d'un rayon, pour leur poser un poste. */
+  const [renfortsAjoutes, setRenfortsAjoutes] = useState<readonly string[]>([])
   const [caseChoisie, setCaseChoisie] = useState<{ collaborateurId: string; jour: string } | null>(
     null,
   )
@@ -132,12 +162,55 @@ export function Planning() {
   }
 
 
-  const equipe = etat.collaborateurs
+  /*
+   * Vue d'un rayon : ses titulaires, puis les renforts qui y ont au moins un
+   * poste cette semaine (ou qu'on vient d'ajouter pour leur en poser un).
+   */
+  const actifs = etat.collaborateurs
     .filter((collaborateur) => collaborateur.actif)
-    .filter(
-      (collaborateur) => filtreRayon === 'tous' || peutTravaillerDans(collaborateur, filtreRayon),
-    )
     .sort((a, b) => nomAffiche(a).localeCompare(nomAffiche(b), 'fr'))
+  const titulaires =
+    filtreRayon === 'tous'
+      ? actifs
+      : actifs.filter((collaborateur) => rayonsPrincipaux(collaborateur).includes(filtreRayon))
+  const renfortsDuRayon =
+    filtreRayon === 'tous'
+      ? []
+      : actifs.filter(
+          (collaborateur) =>
+            !titulaires.includes(collaborateur) &&
+            (planningCourant.vacations.some(
+              (v) => v.collaborateurId === collaborateur.id && v.rayonId === filtreRayon,
+            ) ||
+              renfortsAjoutes.includes(collaborateur.id)),
+        )
+  const renfortsPossibles =
+    filtreRayon === 'tous'
+      ? []
+      : actifs.filter(
+          (collaborateur) =>
+            !titulaires.includes(collaborateur) &&
+            !renfortsDuRayon.includes(collaborateur) &&
+            peutTravaillerDans(collaborateur, filtreRayon),
+        )
+  const equipe = [...titulaires, ...renfortsDuRayon]
+  const idsRenforts = new Set(renfortsDuRayon.map((collaborateur) => collaborateur.id))
+  /** Vue d'un rayon : les regles enfreintes par ses gens, les jours ou ils y sont. */
+  const filtrerInfractions = <T extends { collaborateurId: string; jour: string }>(
+    liste: readonly T[],
+  ): T[] =>
+    filtreRayon === 'tous'
+      ? [...liste]
+      : liste.filter(
+          (infraction) =>
+            titulaires.some((c) => c.id === infraction.collaborateurId) ||
+            planningCourant.vacations.some(
+              (v) =>
+                v.collaborateurId === infraction.collaborateurId &&
+                v.rayonId === filtreRayon &&
+                v.jour === infraction.jour,
+            ),
+        )
 
   // ------------------------------------------------- Contrôle des règles
   const infractions = useMemo(
@@ -170,6 +243,7 @@ export function Planning() {
     return compte
   }, [infractions])
 
+  const infractionsVisibles = filtrerInfractions(infractions)
   const bloquantes = infractions.filter((infraction) => infraction.severite === 'bloquante')
   const avertissements = infractions.filter((infraction) => infraction.severite === 'avertissement')
   const aConfirmer = infractions.filter((infraction) => infraction.severite === 'a-confirmer')
@@ -424,22 +498,21 @@ export function Planning() {
           </button>
         </div>
 
-        <div className="champs">
-          <label className="champ">
-            <span className="champ__libelle">Rayon</span>
-            <select
-              className="champ__saisie"
-              value={filtreRayon}
-              onChange={(evenement) => setFiltreRayon(evenement.target.value)}
+        <div className="choix-rayon" role="group" aria-label="Rayon">
+          {[{ id: 'tous', nom: 'Tous' }, ...rayons].map((rayon) => (
+            <button
+              key={rayon.id}
+              type="button"
+              className={filtreRayon === rayon.id ? 'bouton bouton--principal' : 'bouton'}
+              aria-pressed={filtreRayon === rayon.id}
+              onClick={() => {
+                setFiltreRayon(rayon.id)
+                setRenfortsAjoutes([])
+              }}
             >
-              <option value="tous">Tous les rayons</option>
-              {rayons.map((rayon) => (
-                <option key={rayon.id} value={rayon.id}>
-                  {rayon.nom}
-                </option>
-              ))}
-            </select>
-          </label>
+              {rayon.nom}
+            </button>
+          ))}
         </div>
 
         <dl className="liste-faits">
@@ -677,8 +750,32 @@ export function Planning() {
       </section>
 
       <section className="carte">
-        <h2>Grille de la semaine</h2>
+        <h2>
+          Grille de la semaine
+          {filtreRayon !== 'tous' && ` — ${rayons.find((r) => r.id === filtreRayon)?.nom ?? ''}`}
+        </h2>
         <p>Touchez une case pour placer ou retirer une vacation.</p>
+
+        {renfortsPossibles.length > 0 && (
+          <label className="champ champ--etroit">
+            <span className="champ__libelle">Ajouter un renfort à la grille</span>
+            <select
+              className="champ__saisie"
+              value=""
+              onChange={(evenement) => {
+                const choisi = evenement.target.value
+                if (choisi !== '') setRenfortsAjoutes([...renfortsAjoutes, choisi])
+              }}
+            >
+              <option value="">Choisir…</option>
+              {renfortsPossibles.map((collaborateur) => (
+                <option key={collaborateur.id} value={collaborateur.id}>
+                  {nomAffiche(collaborateur)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <GrillePlanning
           collaborateurs={equipe}
@@ -691,6 +788,7 @@ export function Planning() {
           infractionsParPersonne={infractionsParPersonne}
           renforts={renfortsDeLaSemaine}
           pausesPayees={etat.organisation.reglesInternes.pausesPayeesIncluses}
+          {...(filtreRayon === 'tous' ? {} : { rayonFiltre: filtreRayon, idsRenforts })}
           onChoisirCase={(collaborateurId, jour) =>
             setCaseChoisie(
               caseChoisie?.collaborateurId === collaborateurId && caseChoisie.jour === jour
@@ -753,13 +851,24 @@ export function Planning() {
             </div>
           </div>
         )}
+
+        {filtreRayon !== 'tous' && (
+          <>
+            <h3>Couverture heure par heure</h3>
+            <CouvertureRayon
+              besoins={besoinsDeLaSemaine.filter((besoin) => besoin.rayonId === filtreRayon)}
+              vacations={[...planningCourant.vacations, ...vacationsDesRenforts]}
+              collaborateurs={etat.collaborateurs}
+            />
+          </>
+        )}
       </section>
 
       {bloquantes.length + avertissements.length > 0 && (
         <section className="carte">
           <h2>Contrôle des règles</h2>
           <ul className="liste-alertes">
-            {infractions.map((infraction) => (
+            {infractionsVisibles.map((infraction) => (
               <LigneInfraction
                 key={`${infraction.regle}-${infraction.collaborateurId}-${infraction.jour}-${infraction.libelle}`}
                 infraction={infraction}
@@ -841,6 +950,7 @@ export function Planning() {
         semaine={semaine}
         vacations={planningCourant.vacations}
         besoinDuJour={besoinDuJour}
+        {...(filtreRayon === 'tous' ? {} : { rayonId: filtreRayon })}
         onAppliquer={(nouvelles) =>
           modifierPlanning(semaine, (precedent) => ({ ...precedent, vacations: nouvelles }))
         }
@@ -857,6 +967,8 @@ export function Planning() {
         <p>
           Ce que vous voyez à l’écran est exactement ce qui sera imprimé. Ni le statut de suivi,
           ni les remarques, ni l’historique n’y figurent.
+          {filtreRayon !== 'tous' &&
+            ` Seul le rayon ${rayons.find((r) => r.id === filtreRayon)?.nom ?? ''} est imprimé : choisissez « Tous » pour le service entier.`}
         </p>
 
         <div className="groupe-boutons">
@@ -912,7 +1024,8 @@ export function Planning() {
               <DocumentImprimable
                 type={documentAffiche}
                 planning={planningCourant}
-                rayons={rayons}
+                rayons={filtreRayon === 'tous' ? rayons : rayons.filter((r) => r.id === filtreRayon)}
+                pausesPayees={etat.organisation.reglesInternes.pausesPayeesIncluses}
                 collaborateurs={etat.collaborateurs}
                 couvertures={couvertures}
                 budgetHeuresParRayon={etat.magasin.budgetHeuresParRayon}

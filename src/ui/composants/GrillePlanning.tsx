@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { nomAffiche, type Collaborateur } from '../../domaine/collaborateur'
 import { jourDeLaSemaine, nomDuJour } from '../../domaine/calendrier'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
@@ -24,6 +25,8 @@ export function GrillePlanning({
   onChoisirCase,
   onBasculerVerrou,
   pausesPayees = false,
+  rayonFiltre,
+  idsRenforts,
 }: {
   readonly collaborateurs: readonly Collaborateur[]
   readonly jours: readonly string[]
@@ -52,6 +55,13 @@ export function GrillePlanning({
    * la presence entiere, pauses comprises, aux heures du contrat.
    */
   readonly pausesPayees?: boolean
+  /**
+   * Vue d'un seul rayon : les postes dans ce rayon s'affichent, ceux d'un
+   * autre rayon sont resumes en « ailleurs ». Absent = tous les rayons.
+   */
+  readonly rayonFiltre?: string
+  /** Renforts venus d'un autre rayon (vue d'un rayon), affiches apres les titulaires. */
+  readonly idsRenforts?: ReadonlySet<string>
 }) {
   function vacationsDe(collaborateurId: string, jour: string): Vacation[] {
     return vacations.filter(
@@ -68,10 +78,14 @@ export function GrillePlanning({
   }
 
   /** Heures au titre du contrat : pauses comprises si elles sont payees. */
-  function heuresPlanifiees(collaborateurId: string): number {
+  function heuresPlanifiees(collaborateurId: string, rayonId?: string): number {
     return (
       vacations
-        .filter((vacation) => vacation.collaborateurId === collaborateurId)
+        .filter(
+          (vacation) =>
+            vacation.collaborateurId === collaborateurId &&
+            (rayonId === undefined || vacation.rayonId === rayonId),
+        )
         .reduce(
           (somme, vacation) =>
             somme +
@@ -105,7 +119,10 @@ export function GrillePlanning({
           </tr>
         </thead>
         <tbody>
-          {collaborateurs.map((collaborateur) => {
+          {collaborateurs.map((collaborateur, position) => {
+            const renfort = idsRenforts?.has(collaborateur.id) === true
+            const premierRenfort =
+              renfort && (position === 0 || idsRenforts?.has(collaborateurs[position - 1]!.id) !== true)
             const effectives = heuresDe(collaborateur.id)
             const heures = heuresPlanifiees(collaborateur.id)
             const forfait = collaborateur.forfait === true
@@ -113,9 +130,22 @@ export function GrillePlanning({
             const infractions = infractionsParPersonne[collaborateur.id] ?? 0
 
             return (
-              <tr key={collaborateur.id}>
+              <Fragment key={collaborateur.id}>
+              {premierRenfort && (
+                <tr>
+                  <th scope="row" colSpan={jours.length + 2} className="grille__intertitre-rayon">
+                    Renforts venus d’autres rayons
+                  </th>
+                </tr>
+              )}
+              <tr>
                 <th scope="row" className="grille__personne">
                   <span className="grille__nom">{nomAffiche(collaborateur)}</span>
+                  {renfort && (
+                    <span className="grille__origine">
+                      renfort · titulaire {nomDuRayon(collaborateur.rayonPrincipal)}
+                    </span>
+                  )}
                   <span className="grille__contrat">
                     {collaborateur.heuresHebdomadaires} h
                     {infractions > 0 && (
@@ -148,9 +178,21 @@ export function GrillePlanning({
                       >
                         {dedans.length === 0 ? (
                           <span className="case__repos">—</span>
+                        ) : rayonFiltre !== undefined &&
+                          dedans.every((vacation) => vacation.rayonId !== rayonFiltre) ? (
+                          <span className="case__ailleurs">
+                            ailleurs ({dedans.map((v) => nomDuRayon(v.rayonId)).join(', ')})
+                          </span>
                         ) : (
-                          dedans.map((vacation) => (
-                            <span key={vacation.id} className="case__vacation">
+                          dedans
+                            .filter((vacation) => rayonFiltre === undefined || vacation.rayonId === rayonFiltre)
+                            .map((vacation) => (
+                            <span
+                              key={vacation.id}
+                              className={
+                                renfort ? 'case__vacation case__vacation--renfort' : 'case__vacation'
+                              }
+                            >
                               <span className="case__heures">
                                 {vacation.debut}–{vacation.fin}
                               </span>
@@ -184,6 +226,11 @@ export function GrillePlanning({
                 })}
 
                 <td className="grille__total">
+                  {rayonFiltre !== undefined && heuresPlanifiees(collaborateur.id, rayonFiltre) !== heures && (
+                    <span className="grille__effectif">
+                      {heuresEnTexte(heuresPlanifiees(collaborateur.id, rayonFiltre), 2)} ici, sur
+                    </span>
+                  )}
                   <span className="grille__heures">{heuresEnTexte(heures, 2)}</span>
                   {forfait ? (
                     <span className="grille__ecart grille__ecart--neutre">forfait</span>
@@ -199,6 +246,7 @@ export function GrillePlanning({
                   )}
                 </td>
               </tr>
+              </Fragment>
             )
           })}
         </tbody>

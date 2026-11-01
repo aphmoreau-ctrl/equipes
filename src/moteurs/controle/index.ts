@@ -51,6 +51,11 @@ export interface Constat {
   readonly jour: string | null
   readonly libelle: string
   readonly explication: string
+  /**
+   * Constat qui ne pourra etre tranche qu'une fois la semaine voisine
+   * construite (repos hebdomadaire a cheval) : affiche a part, replie.
+   */
+  readonly aConfirmer?: boolean
 }
 
 export interface EntreesControleSemaine {
@@ -133,10 +138,9 @@ export function controlerLaSemaine(entrees: EntreesControleSemaine): Constat[] {
       rayonId: rayonDuJour(infraction.collaborateurId, infraction.jour),
       collaborateurId: infraction.collaborateurId,
       jour: infraction.jour,
-      libelle:
-        (infraction.severite === 'a-confirmer' ? 'À confirmer : ' : '') +
-        `${nom(infraction.collaborateurId)} — ${infraction.libelle}`,
+      libelle: `${nom(infraction.collaborateurId)} — ${infraction.libelle}`,
       explication: infraction.explication,
+      ...(infraction.severite === 'a-confirmer' ? { aConfirmer: true } : {}),
     })
   }
 

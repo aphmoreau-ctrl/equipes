@@ -1879,3 +1879,11 @@ planning — proposé, retouché ou saisi à la main — et classe chaque consta
 « Contrôle des règles ». Elle suit le rayon choisi. « Voir dans la grille »
 ouvre la case concernée. Une alerte peut être **acceptée pour la semaine**
 (datée, réversible, rangée à part) ; un bloquant ne s'accepte jamais.
+
+### C-32 — La liste du contrôle de la semaine s'affichait écrasée ❗
+Sa feuille de style reprenait le nom (`controle`) de l'encadré « Contrôles
+avant validation », dont la mise en colonnes s'appliquait à la liste entière :
+cartes superposées, texte d'un mot par ligne. Renommée `controle-semaine`.
+Les constats « à confirmer » (repos hebdomadaire à cheval sur une semaine
+pas encore construite) sont rangés dans un groupe replié : ce ne sont pas
+des erreurs.

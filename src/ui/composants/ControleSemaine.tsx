@@ -33,15 +33,15 @@ function Ligne({
   readonly onOuvrir: (collaborateurId: string, jour: string) => void
 }) {
   return (
-    <li className={`controle__ligne controle__ligne--${constat.gravite}`}>
-      <div className="controle__tete">
+    <li className={`controle-semaine__ligne controle-semaine__ligne--${constat.gravite}`}>
+      <div className="controle-semaine__tete">
         <span className={constat.gravite === 'bloquant' ? 'verdict verdict--mauvais' : 'verdict verdict--moyen'}>
           {constat.gravite === 'bloquant' ? 'Bloquant' : 'Alerte'}
         </span>
-        <span className="controle__categorie">{constat.categorie}</span>
+        <span className="controle-semaine__categorie">{constat.categorie}</span>
       </div>
-      <p className="controle__libelle">{constat.libelle}</p>
-      <p className="controle__explication">{constat.explication}</p>
+      <p className="controle-semaine__libelle">{constat.libelle}</p>
+      <p className="controle-semaine__explication">{constat.explication}</p>
       <div className="groupe-boutons">
         {constat.collaborateurId !== null && constat.jour !== null && (
           <button
@@ -78,7 +78,10 @@ export function ControleSemaine({
   onOuvrir,
 }: Proprietes) {
   const ids = new Set(acceptees.map((a) => a.id))
-  const ouverts = constats.filter((c) => c.gravite === 'bloquant' || !ids.has(c.id))
+  const aConfirmer = constats.filter((c) => c.aConfirmer === true && !ids.has(c.id))
+  const ouverts = constats.filter(
+    (c) => c.aConfirmer !== true && (c.gravite === 'bloquant' || !ids.has(c.id)),
+  )
   const accepteesVisibles = constats.filter((c) => c.gravite === 'alerte' && ids.has(c.id))
   const bloquants = ouverts.filter((c) => c.gravite === 'bloquant').length
   const alertes = ouverts.length - bloquants
@@ -94,7 +97,7 @@ export function ControleSemaine({
       </p>
 
       {ouverts.length > 0 && (
-        <ul className="controle">
+        <ul className="controle-semaine">
           {ouverts.map((constat) => (
             <Ligne
               key={constat.id}
@@ -106,12 +109,29 @@ export function ControleSemaine({
         </ul>
       )}
 
+      {aConfirmer.length > 0 && (
+        <Depliant
+          titre="À confirmer quand la semaine voisine sera construite"
+          resume={String(aConfirmer.length)}
+        >
+          <p className="champ__aide">
+            Pas une erreur : la règle (souvent le repos hebdomadaire) porte sur deux semaines, et
+            l’autre n’est pas encore planifiée.
+          </p>
+          <ul className="controle-semaine">
+            {aConfirmer.map((constat) => (
+              <Ligne key={constat.id} constat={constat} onOuvrir={onOuvrir} />
+            ))}
+          </ul>
+        </Depliant>
+      )}
+
       {accepteesVisibles.length > 0 && (
         <Depliant
           titre="Alertes acceptées pour cette semaine"
           resume={String(accepteesVisibles.length)}
         >
-          <ul className="controle">
+          <ul className="controle-semaine">
             {accepteesVisibles.map((constat) => {
               const le = acceptees.find((a) => a.id === constat.id)?.le
               return (

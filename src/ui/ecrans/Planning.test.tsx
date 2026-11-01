@@ -585,8 +585,9 @@ describe('vue par rayon', () => {
     afficher()
     choisirMaree()
     const controle = screen.getByRole('heading', { name: 'Contrôle de la semaine' }).parentElement as HTMLElement
-    const pause = within(controle).getByText(/^Abel — pause de 21 min|^Abel — /, { selector: '.controle__libelle' })
-    expect(pause).toBeInTheDocument()
+    expect(
+      within(controle).getAllByText(/^Abel — /, { selector: '.controle-semaine__libelle' }).length,
+    ).toBeGreaterThan(0)
     const avant = within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' }).length
     fireEvent.click(within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' })[0] as HTMLElement)
     expect(within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' }).length).toBe(avant - 1)

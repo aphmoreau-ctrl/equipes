@@ -2023,3 +2023,63 @@ grille du rayon comprise.
 préparation ne peut plus faire 36 h 75 : 6 h par jour en semaine, 5 jours au
 plus (deux jours de repos consécutifs), soit 31 h 30 au mieux. Le planning le
 signale ; à voir avec la RH (contrat, ou un second rayon pour lui).
+
+## Règle de base du générateur : toujours un planning complet (1er novembre 2026, nuit)
+
+Réponse aux points 14 (cas concret F&L) et 15 (règle de base) d'Arnaud.
+Ordre de priorité strict : **loi** > **minimum de chaque rayon** (ouverture et
+fermeture comprises) > **heures de contrat** > **cible** (vendredi et samedi
+d'abord).
+
+### D-161 — Un renfort revient dans son rayon principal quand celui-ci manque de monde
+**Décision.** Quand une personne est partie en renfort dans un autre rayon le
+jour même et que son **rayon principal** tombe sous son minimum, la réparation
+la fait revenir, même si le rayon qu'elle quitte retombe sous le sien : le
+manque reste là où il est vraiment.
+**Raison.** Sur les vraies données, une vendeuse de F&L était prêtée à la Marée quatre
+jours, et F&L restait sans personne le vendredi et le samedi entre 5 h et
+8 h 30.
+**Alternative.** Interdire purement les prêts quand le rayon principal est
+juste : trop rigide (les prêts restent utiles quand il y a du surplus).
+
+### D-162 — Le minimum passe avant le contrat : heures supplémentaires dites
+**Décision.** Pour un trou d'**une heure au plus**, collé à un poste du même
+rayon, le générateur **allonge ce poste** (ouvrir à 5 h au lieu de 5 h 15),
+dans la limite du dépassement permis (1 h par défaut, réglable). La complétion
+reprend ce temps un autre jour si elle le peut.
+Pour un trou **d'une heure ou plus** qu'aucun déplacement ne comble, il ajoute
+une **journée en heures supplémentaires** à la personne qui en a le moins,
+si la loi le permet. Le planning le dit toujours (« journée ajoutée en heures
+supplémentaires… : 41,25 h sur la semaine pour 36,75 h au contrat »).
+**Raison.** Ordre de priorité d'Arnaud (point 15). Une journée entière pour un
+quart d'heure de pause serait disproportionnée : le seuil d'une heure l'évite.
+**Alternative.** Ne jamais dépasser le contrat et laisser le trou : c'était
+le comportement précédent, contraire à la règle.
+
+### D-163 — Pas de micro-poste, ouvertures et fermetures réparties, préférence « matin »
+- **Postes de 6 h au moins**, sauf si le rayon est ouvert moins longtemps ce
+  jour-là (dimanche, rayon à demi-journée) : alors toute sa plage, à une heure
+  près (plus de postes de 3 ou 4 h dans un rayon ouvert 5 h 30). La
+  complétion ne raccourcit plus un poste sous cette longueur.
+- **Préférence « matin »** (sans être une contrainte) : désormais prise en
+  compte (poids 6 par poste qui finit après la fin du matin). Avant, seule la
+  contrainte « matin uniquement » était lue.
+- **Ouvertures et fermetures réparties** : une passe finale **échange les
+  postes** de deux titulaires du même rayon le même jour quand l'un a
+  nettement plus de fermetures (ou d'ouvertures) que l'autre, ou quand celui
+  qui ferme préfère le matin. La couverture ne change pas d'un quart d'heure ;
+  chaque échange reste permis par la loi pour les deux.
+**Alternative.** Fixer des tours d'ouverture/fermeture à la main : possible
+plus tard (verrouiller les cases), le générateur s'y plie déjà.
+
+### C-34 — Un manque dû à la place finale d'une pause n'était pas toujours signalé ❗
+Le diagnostic lisait les compteurs internes du générateur, pas les postes
+finaux : un manque créé par la dernière remise en place des pauses (samedi
+15 h 15 en F&L) passait sous silence. Il compte désormais sur les postes
+finaux, pauses comprises.
+
+### C-35 — Un poste court ne pouvait plus être allongé
+La règle « pas de poste de moins de 6 h » empêchait aussi d'**allonger** un
+poste déjà court (5 h → 5 h 30, encore sous 6 h) : deux personnes de la
+préparation finissaient 1 h 15 sous leur contrat. Elle ne joue plus qu'au
+raccourcissement.

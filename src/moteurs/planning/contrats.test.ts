@@ -38,7 +38,14 @@ const EQUIPE: SaisieCollaborateur[] = [
   { prenom: 'Flore', statut: 'employe', heures: H, principaux: [CF], secondaires: [R.maree] },
   { prenom: 'Gaspard', statut: 'employe', heures: H, principaux: [CF], depannage: [BT] },
   { prenom: 'Hélène', statut: 'manager', heures: H, principaux: [R.fruitsLegumes], secondaires: [R.fraicheDecoupe] },
-  { prenom: 'Igor', statut: 'employe', heures: H, principaux: [R.fruitsLegumes], secondaires: [R.fraicheDecoupe] },
+  {
+    prenom: 'Igor',
+    statut: 'employe',
+    heures: H,
+    principaux: [R.fruitsLegumes],
+    secondaires: [R.fraicheDecoupe],
+    posteDuMatin: 'preference',
+  },
   { prenom: 'Jade', statut: 'employe', heures: H, principaux: [R.fruitsLegumes], secondaires: [CM] },
   { prenom: 'Kevin', statut: 'employe', heures: H, principaux: [R.fruitsLegumes], secondaires: [R.maree] },
   { prenom: 'Lina', statut: 'interim', heures: H, principaux: [R.fruitsLegumes] },
@@ -111,6 +118,53 @@ function heuresDe(r: { vacations: readonly { collaborateurId: string; debut: str
 }
 const resultat = genererLePlanning(entrees)
 
+/** Ouvertures (0) ou fermetures (1) de chacun dans un rayon, sur la semaine. */
+function auxBornes(rayonId: string, borne: 0 | 1): Map<string, number> {
+  const compte = new Map<string, number>()
+  for (const besoin of entrees.besoins.filter((b) => b.rayonId === rayonId)) {
+    const ouvertes = besoin.tranches.filter((t) => t.personnes > 0)
+    const tranche = borne === 0 ? ouvertes[0] : ouvertes[ouvertes.length - 1]
+    if (tranche === undefined) continue
+    for (const v of resultat.vacations) {
+      if (v.rayonId !== rayonId || v.jour !== besoin.date) continue
+      const debut = enMinutes(v.debut)
+      const fin = debut + duree(v.debut, v.fin)
+      if (debut <= tranche.index * 15 && tranche.index * 15 < fin) {
+        compte.set(v.collaborateurId, (compte.get(v.collaborateurId) ?? 0) + 1)
+      }
+    }
+  }
+  return compte
+}
+
+describe('un planning cohérent (règle de base du générateur)', () => {
+  it('pas de micro-poste : 6 h au moins, sauf rayon ouvert moins longtemps ce jour-là', () => {
+    const courts = resultat.vacations.filter((v) => {
+      // Le rayon est « ouvert », pour le planning, la ou sa grille demande du monde.
+      const besoin = entrees.besoins.find((b) => b.rayonId === v.rayonId && b.date === v.jour)
+      const tenues = (besoin?.tranches ?? []).filter((t) => t.personnes > 0)
+      const ouvert =
+        tenues.length === 0 ? 24 * 60 : ((tenues[tenues.length - 1]?.index ?? 0) - (tenues[0]?.index ?? 0) + 1) * 15
+      // Tolerance d'une heure : la completion ajuste les postes au quart d'heure.
+      return duree(v.debut, v.fin) < Math.min(6 * 60, ouvert) - 60
+    })
+    expect(courts.map((v) => `${v.collaborateurId} ${v.jour} ${v.rayonId} ${v.debut}-${v.fin}`)).toEqual([])
+  })
+
+  it('celui qui préfère le matin ferme moins que ses collègues du rayon', () => {
+    const fermetures = auxBornes(R.fruitsLegumes, 1)
+    const igor = fermetures.get('c-igor') ?? 0
+    const autres = ['c-helene', 'c-jade', 'c-kevin', 'c-lina'].map((id) => fermetures.get(id) ?? 0)
+    expect(igor).toBeLessThanOrEqual(Math.min(...autres))
+  })
+
+  it('répartit les fermetures entre les titulaires (écart de 3 au plus)', () => {
+    const fermetures = auxBornes(R.fruitsLegumes, 1)
+    const sansPreference = ['c-helene', 'c-jade', 'c-kevin', 'c-lina'].map((id) => fermetures.get(id) ?? 0)
+    expect(Math.max(...sansPreference) - Math.min(...sansPreference)).toBeLessThanOrEqual(3)
+  })
+})
+
 describe('chacun fait ses heures', () => {
   it('chacun fait ses heures, à un quart d’heure près, sauf l’apprenti à l’école', () => {
     for (const collaborateur of etat.collaborateurs) {
@@ -126,6 +180,13 @@ describe('chacun fait ses heures', () => {
         collaborateur.prenom === 'Ulysse'
           ? (collaborateur.heuresHebdomadaires * 5) / 6
           : collaborateur.heuresHebdomadaires
+      // Le minimum passe avant le contrat : une journee en heures
+      // supplementaires est permise, mais toujours dite.
+      if (resultat.restesAExpliquer.some((r) => r.startsWith(`${collaborateur.prenom} : journée ajoutée en heures supplémentaires`))) {
+        expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeGreaterThan(vise)
+        expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeLessThanOrEqual(48)
+        continue
+      }
       expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeCloseTo(vise, 0)
       expect(Math.abs(heuresDe(resultat, collaborateur.id) - vise), collaborateur.prenom).toBeLessThanOrEqual(0.25)
     }
@@ -204,7 +265,7 @@ describe('chacun fait ses heures', () => {
     expect(heuresDe(resultat, zoe.id)).toBeGreaterThan(30)
   })
 
-  it('place les pauses quand un collègue couvre : aucune pause ne vide Fruits & Légumes en semaine', () => {
+  it('un trou laissé par une pause en Fruits & Légumes est toujours expliqué (personne pour la couvrir)', () => {
     // Le samedi, l'affluence (15 h-19 h) recouvre la plage de pause de l'apres-midi :
     // une pause y est forcement hors plage ou pendant l'affluence (point a regler).
     for (const besoin of entrees.besoins.filter(
@@ -223,7 +284,19 @@ describe('chacun fait ses heures', () => {
             debutTranche < enMinutes(v.fin) &&
             !couvreLaTranche(v, tranche.index),
         )
-        expect(enPause, `${besoin.date} tranche ${tranche.index}`).toEqual([])
+        if (enPause.length === 0) continue
+        // Personne pour couvrir la pause : c'est un minimum impossible, dit avec sa cause.
+        const jourEnTexte = new Date(`${besoin.date}T12:00:00`).toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        })
+        expect(
+          resultat.restesAExpliquer.some(
+            (r) => r.startsWith(`Fruits & Légumes, le ${jourEnTexte}`) && r.includes('en pause'),
+          ),
+          `${besoin.date} tranche ${tranche.index}`,
+        ).toBe(true)
       }
     }
   })

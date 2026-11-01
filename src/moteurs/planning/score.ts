@@ -44,6 +44,11 @@ export interface PoidsPenalites {
    * contrat, mieux vaut les placer que les perdre. Absent = sureffectif.
    */
   readonly audelaDeLaCible?: number
+  /**
+   * Par poste qui finit apres la fin du matin, pour une personne qui
+   * PREFERE le matin (sans que ce soit une contrainte). Absent = 0.
+   */
+  readonly preferenceDuMatin?: number
 }
 
 export const POIDS_PAR_DEFAUT: PoidsPenalites = {
@@ -59,6 +64,9 @@ export const POIDS_PAR_DEFAUT: PoidsPenalites = {
   // vise la cible avec les heures dues, sans faire depasser les contrats.
   cible: 1.2,
   audelaDeLaCible: 0.5,
+  // Une preference, pas une regle : elle departage, sans jamais coûter un
+  // minimum (un manque d'un quart d'heure pese deja 20).
+  preferenceDuMatin: 6,
 }
 
 /**

@@ -1,4 +1,5 @@
 import { estAbsent, type Absence } from '../../domaine/absence'
+import { couvreLaTranche } from '../indicateurs'
 import { jourDeLaSemaine, jourEnTexte, semaineDe } from '../../domaine/calendrier'
 import {
   enFormation,
@@ -486,7 +487,10 @@ export function postesDeContrat(
     // (le dimanche matin) : sinon personne ne pourrait y etre place.
     const longueurs = new Set([
       ...LONGUEURS_POSTES_DE_CONTRAT,
-      ...(plage < LONGUEURS_POSTES_DE_CONTRAT[0]! ? [3 * 60, 4 * 60, 5 * 60] : []),
+      // Pas de micro-poste : a une heure pres, toute la plage du rayon.
+      ...(plage < LONGUEURS_POSTES_DE_CONTRAT[0]!
+        ? [3 * 60, 4 * 60, 5 * 60].filter((longueur) => longueur >= plage - 60)
+        : []),
       ...(plage >= 3 * 60 && plage <= 9 * 60 ? [plage] : []),
     ])
     for (const longueur of longueurs) {
@@ -689,6 +693,16 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     )
   }
 
+  /**
+   * Pas de micro-poste : 6 h au moins, sauf si le rayon ouvre moins longtemps
+   * ce jour-la (dimanche matin, fraiche decoupe) ; alors toute sa plage.
+   */
+  function longueurMinimale(rayonId: string, jour: string): number {
+    const bornes = creneaux.get(cle(rayonId, jour))?.bornes ?? null
+    if (bornes === null || bornes === 'ferme') return DUREE_MINIMALE_POSTE
+    return Math.min(6 * 60, duree(bornes.debut, bornes.fin))
+  }
+
   /** Tranches couvertes par chaque horaire type, calculees une seule fois. */
   const tranchesDe = new Map<string, number[]>()
   for (const horaire of horaires) {
@@ -708,6 +722,11 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   const versionDuCreneau = new Map<string, number>()
   const versionDeLaPersonne = new Map<string, number>()
+  /** Poids de chaque ouverture (ou fermeture) deja confiee, pour les repartir. */
+  const POIDS_EQUITE_BORNES = 0.75
+  /** Ouvertures et fermetures deja confiees a chaque titulaire : pour les repartir. */
+  const ouvertures = new Map<string, number>()
+  const fermetures = new Map<string, number>()
   const memoireCreneau = new Map<
     string,
     { readonly version: number; readonly base: number; readonly critiques: ReadonlyMap<string, number> }
@@ -724,6 +743,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
         creneau.presents[index] = (creneau.presents[index] ?? 0) + sens
         if (estTitulaire(collaborateur, vacation.rayonId)) {
           creneau.titulaires[index] = (creneau.titulaires[index] ?? 0) + sens
+          if (index === creneau.auxBornes?.[0]) {
+            ouvertures.set(collaborateur.id, (ouvertures.get(collaborateur.id) ?? 0) + sens)
+          }
+          if (index === creneau.auxBornes?.[1]) {
+            fermetures.set(collaborateur.id, (fermetures.get(collaborateur.id) ?? 0) + sens)
+          }
         }
         for (const [competence, compteurs] of creneau.autonomes) {
           if (estAutonome(collaborateur, competence)) {
@@ -761,6 +786,26 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     if (creneau !== undefined) {
       const part = partDuCreneau(cleCreneau, creneau, horaire)
       variation += part.base
+      // Ouvertures et fermetures reparties entre les titulaires : celui qui en a
+      // deja beaucoup cede la suivante a un autre, a merite egal.
+      if (creneau.auxBornes !== null && estTitulaire(collaborateur, vacation.rayonId)) {
+        const couvertes = tranchesDe.get(horaire.id) ?? []
+        if (couvertes.includes(creneau.auxBornes[0] as number)) {
+          variation += POIDS_EQUITE_BORNES * (ouvertures.get(collaborateur.id) ?? 0)
+        }
+        if (couvertes.includes(creneau.auxBornes[1] as number)) {
+          variation += POIDS_EQUITE_BORNES * (fermetures.get(collaborateur.id) ?? 0)
+        }
+      }
+      // Preference du matin : celui qui prefere le matin ferme en dernier.
+      if (
+        collaborateur.posteDuMatin === 'preference' &&
+        entrees.reglesInternes !== undefined &&
+        enMinutes(horaire.debut) + duree(horaire.debut, horaire.fin) >
+          enMinutes(entrees.reglesInternes.finDuMatin)
+      ) {
+        variation += poids.preferenceDuMatin ?? 0
+      }
       for (const [competence, tranches] of part.critiques) {
         if (tient(collaborateur, competence, vacation.rayonId)) {
           // Le titulaire a l'ouverture ou a la fermeture pese autant qu'un manque.
@@ -1203,6 +1248,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    * quarts d'heure, ou on lui ajoute un jour, jusqu'a atteindre ses heures.
    * Chaque retouche repasse au crible des regles legales.
    */
+  /** Journees ajoutees en heures supplementaires pour tenir un minimum. */
+  const MANQUE_MINIMAL_POUR_UN_AJOUT = 60 / TRANCHE_MINUTES
+  const ajoutsEnHeuresSup: { collaborateurId: string; rayonId: string; jour: string }[] = []
+
   const ajustementsAvant = completerLesHeures()
 
   /*
@@ -1218,8 +1267,101 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   const reparations = reparerLesTrous()
   const versLesJoursPrioritaires = presenceMaximale()
+  const bornesReparties = repartirLesBornes()
   const ajustements =
-    ajustementsAvant + reparations + versLesJoursPrioritaires + completerLesHeures()
+    ajustementsAvant + reparations + versLesJoursPrioritaires + bornesReparties + completerLesHeures()
+
+  /*
+   * 5 quater. Ouvertures et fermetures reparties.
+   *
+   * Deux titulaires du meme rayon, le meme jour, ECHANGENT leurs postes
+   * quand l'un a nettement plus de fermetures (ou d'ouvertures) que l'autre,
+   * ou quand celui qui ferme prefere le matin. La couverture du rayon ne
+   * bouge pas d'un quart d'heure : seules les personnes changent. Chaque
+   * echange doit rester permis par la loi pour les deux.
+   */
+  function repartirLesBornes(): number {
+    if (regles === undefined) return 0
+    const finDuMatin =
+      entrees.reglesInternes !== undefined ? enMinutes(entrees.reglesInternes.finDuMatin) : null
+    const tardif = (v: Vacation) =>
+      finDuMatin !== null && enMinutes(v.debut) + duree(v.debut, v.fin) > finDuMatin
+    /** Ce que coute a une personne de tenir ces postes : moins = mieux. */
+    function cout(collaborateur: Collaborateur, ouv: number, ferm: number, tardifs: number): number {
+      return (
+        ouv * ouv +
+        ferm * ferm +
+        (collaborateur.posteDuMatin === 'preference' ? 4 * tardifs : 0)
+      )
+    }
+    const bornesDe = (v: Vacation): [number, number] => {
+      const creneau = creneaux.get(cle(v.rayonId, v.jour))
+      const tranches = tranchesDe.get(horairePour(v, horaires, tranchesDe).id) ?? []
+      if (creneau?.auxBornes == null) return [0, 0]
+      return [
+        Number(tranches.includes(creneau.auxBornes[0] as number)),
+        Number(tranches.includes(creneau.auxBornes[1] as number)),
+      ]
+    }
+    const tardifsDe = (id: string) => (parPersonne.get(id) ?? []).filter(tardif).length
+    let echanges = 0
+    for (let tour = 0; tour < 3; tour += 1) {
+      let change = false
+      for (let i = 0; i < placees.length; i += 1) {
+        for (let j = 0; j < placees.length; j += 1) {
+          const va = placees[i] as Vacation
+          const vb = placees[j] as Vacation
+          if (i === j || va.jour !== vb.jour || va.rayonId !== vb.rayonId) continue
+          if (va.collaborateurId === vb.collaborateurId) continue
+          // Des heures proches : l'echange ne defait pas les contrats.
+          if (Math.abs(duree(va.debut, va.fin) - duree(vb.debut, vb.fin)) > 60) continue
+          const [oa, fa] = bornesDe(va)
+          const [ob, fb] = bornesDe(vb)
+          if (oa === ob && fa === fb && tardif(va) === tardif(vb)) continue
+          const a = equipe.find((c) => c.id === va.collaborateurId)
+          const b = equipe.find((c) => c.id === vb.collaborateurId)
+          if (a === undefined || b === undefined) continue
+          if (!estTitulaire(a, va.rayonId) || !estTitulaire(b, va.rayonId)) continue
+          if (estMineur(a) || estMineur(b)) continue
+          const avant =
+            cout(a, ouvertures.get(a.id) ?? 0, fermetures.get(a.id) ?? 0, tardifsDe(a.id)) +
+            cout(b, ouvertures.get(b.id) ?? 0, fermetures.get(b.id) ?? 0, tardifsDe(b.id))
+          const ta = Number(tardif(vb)) - Number(tardif(va))
+          const apres =
+            cout(a, (ouvertures.get(a.id) ?? 0) - oa + ob, (fermetures.get(a.id) ?? 0) - fa + fb, tardifsDe(a.id) + ta) +
+            cout(b, (ouvertures.get(b.id) ?? 0) - ob + oa, (fermetures.get(b.id) ?? 0) - fb + fa, tardifsDe(b.id) - ta)
+          if (apres >= avant) continue
+          const creneau = creneaux.get(cle(va.rayonId, va.jour))
+          const critiquesDe = (v: Vacation) =>
+            [
+              ...new Set(
+                (tranchesDe.get(horairePour(v, horaires, tranchesDe).id) ?? []).flatMap(
+                  (index) => creneau?.besoin.tranches[index]?.competencesCritiques ?? [],
+                ),
+              ),
+            ].sort()
+          const pourB: Vacation = { ...va, id: `${va.id}-e${b.id}`, collaborateurId: b.id }
+          const pourA: Vacation = { ...vb, id: `${vb.id}-e${a.id}`, collaborateurId: a.id }
+          const autresDeA = (parPersonne.get(a.id) ?? []).filter((v) => v.id !== va.id)
+          const autresDeB = (parPersonne.get(b.id) ?? []).filter((v) => v.id !== vb.id)
+          if (!affectationPermise(pourA, a, autresDeA, entrees, critiquesDe(vb))) continue
+          if (!affectationPermise(pourB, b, autresDeB, entrees, critiquesDe(va))) continue
+          const ha = horairePour(va, horaires, tranchesDe)
+          const hb = horairePour(vb, horaires, tranchesDe)
+          inscrire(va, ha, a, -1)
+          inscrire(vb, hb, b, -1)
+          placees[i] = pourB
+          placees[j] = pourA
+          inscrire(pourB, ha, b, 1)
+          inscrire(pourA, hb, a, 1)
+          echanges += 1
+          change = true
+        }
+      }
+      if (!change) break
+    }
+    return echanges
+  }
 
   /*
    * 5 ter. Presence maximale les jours prioritaires (vendredi, samedi).
@@ -1269,7 +1411,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             if (creneau === undefined || rayon === undefined || creneau.bornes === null || creneau.bornes === 'ferme') continue
             const ouverture = enMinutes(creneau.bornes.debut)
             const fermeture = enMinutes(creneau.bornes.fin)
-            const longueur = Math.min(duree(ancienne.debut, ancienne.fin), fermeture - ouverture)
+            const longueur = Math.min(
+              Math.max(duree(ancienne.debut, ancienne.fin), longueurMinimale(rayonId, jourCible)),
+              fermeture - ouverture,
+            )
             const affluence = affluenceDuJour(jourDeLaSemaine(jourCible))
             const departs = new Set(
               [ouverture, fermeture - longueur, ...affluence.map((p) => enMinutes(p.debut) - 60)].map(
@@ -1435,8 +1580,23 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
        */
       const decalage = ancienne.rayonId === trou.rayonId && ancienne.jour === trou.jour
       const anciennesTranches = new Set(decalage ? (tranchesDe.get(horaireAncien.id) ?? []) : [])
-      if (decalage || departTient(ancienne, horaireAncien, phase)) {
-        const longueur = Math.min(duree(ancienne.debut, ancienne.fin), fermeture - ouverture)
+      /*
+       * Un renfort ne doit pas creer de trou dans son rayon principal : s'il
+       * est parti en renfort ailleurs le jour meme et que son rayon principal
+       * manque de monde, il y revient, meme si le rayon qu'il quitte retombe
+       * sous son minimum (le manque reste la ou il est vraiment).
+       */
+      const retourAuRayonPrincipal =
+        phase === 'minimum' &&
+        ancienne.jour === trou.jour &&
+        ancienne.rayonId !== trou.rayonId &&
+        rayonsPrincipaux(collaborateur).includes(trou.rayonId) &&
+        !rayonsPrincipaux(collaborateur).includes(ancienne.rayonId)
+      if (decalage || retourAuRayonPrincipal || departTient(ancienne, horaireAncien, phase)) {
+        const longueur = Math.min(
+          Math.max(duree(ancienne.debut, ancienne.fin), longueurMinimale(trou.rayonId, trou.jour)),
+          fermeture - ouverture,
+        )
         const departs = new Set(
           [trou.fin - longueur, trou.debut, ouverture, fermeture - longueur].map((depart) =>
             Math.min(Math.max(depart, ouverture), fermeture - longueur),
@@ -1532,6 +1692,143 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     return null
   }
 
+  /**
+   * Un trou court (une heure au plus) colle a un poste du meme rayon : on
+   * ALLONGE ce poste (ouvrir a 5 h au lieu de 5 h 15). Le quart d'heure de
+   * plus sera repris un autre jour par la completion des heures, dans la
+   * limite du depassement permis.
+   */
+  function etirementPourLeMinimum(trou: Trou): boolean {
+    if (trou.fin - trou.debut > 60) return false
+    const critiques = [
+      ...new Set(
+        trou.creneau.besoin.tranches
+          .slice(trou.debut / TRANCHE_MINUTES, trou.fin / TRANCHE_MINUTES)
+          .flatMap((tranche) => tranche.competencesCritiques),
+      ),
+    ].sort()
+    const candidats: { position: number; collaborateur: Collaborateur; d: number; f: number }[] = []
+    placees.forEach((ancienne, position) => {
+      if (ancienne.rayonId !== trou.rayonId || ancienne.jour !== trou.jour) return
+      const collaborateur = equipe.find((c) => c.id === ancienne.collaborateurId)
+      if (collaborateur === undefined) return
+      if (trou.titulaire === true && !estTitulaire(collaborateur, trou.rayonId)) return
+      if (critiques.some((competence) => !estAutonome(collaborateur, competence))) return
+      const debut = enMinutes(ancienne.debut)
+      const fin = debut + duree(ancienne.debut, ancienne.fin)
+      if (fin === trou.debut) candidats.push({ position, collaborateur, d: debut, f: trou.fin })
+      else if (debut === trou.fin) candidats.push({ position, collaborateur, d: trou.debut, f: fin })
+    })
+    candidats.sort(
+      (a, b) =>
+        minutesPlacees(a.collaborateur) - minutesPlacees(b.collaborateur) ||
+        a.collaborateur.id.localeCompare(b.collaborateur.id),
+    )
+    for (const { position, collaborateur, d, f } of candidats) {
+      const ancienne = placees[position] as Vacation
+      if (!dansLesBornes(ancienne.rayonId, ancienne.jour, enTexte(d), enTexte(f))) continue
+      const horaire = posteSurMesure(d, f, estMineur(collaborateur), ancienne.jour)
+      const nouvelle: Vacation = {
+        ...ancienne,
+        id: `${ancienne.id}-m${enTexte(d)}${enTexte(f)}`,
+        debut: horaire.debut,
+        fin: horaire.fin,
+        pauseMinutes: horaire.pauseMinutes,
+        pauseDebut: horaire.pauseDebut,
+      }
+      const plus = minutesAuContrat(nouvelle, pausesPayees) - minutesAuContrat(ancienne, pausesPayees)
+      if (
+        minutesPlacees(collaborateur) + plus >
+        (visee(collaborateur) ?? collaborateur.heuresHebdomadaires) * 60 + depassementMaximum
+      ) {
+        continue
+      }
+      // Le poste allonge doit vraiment couvrir le trou (pas d'y mettre sa pause).
+      const couvertes = new Set(tranchesDe.get(horaire.id) ?? [])
+      let couvre = true
+      for (let minute = trou.debut; minute < trou.fin; minute += TRANCHE_MINUTES) {
+        if (!couvertes.has(minute / TRANCHE_MINUTES)) couvre = false
+      }
+      if (!couvre) continue
+      const siennes = (parPersonne.get(collaborateur.id) ?? []).filter((v) => v.id !== ancienne.id)
+      if (!affectationPermise(nouvelle, collaborateur, siennes, entrees, critiques)) continue
+      inscrire(ancienne, horairePour(ancienne, horaires, tranchesDe), collaborateur, -1)
+      placees[position] = nouvelle
+      inscrire(nouvelle, horaire, collaborateur, 1)
+      return true
+    }
+    return false
+  }
+
+  function ajoutPourLeMinimum(trou: Trou): boolean {
+    if (trou.creneau.bornes === null || trou.creneau.bornes === 'ferme') return false
+    const rayon = rayons.find((r) => r.id === trou.rayonId)
+    if (rayon === undefined) return false
+    const critiques = [
+      ...new Set(
+        trou.creneau.besoin.tranches
+          .slice(trou.debut / TRANCHE_MINUTES, trou.fin / TRANCHE_MINUTES)
+          .flatMap((tranche) => tranche.competencesCritiques),
+      ),
+    ].sort()
+    const candidats: { collaborateur: Collaborateur; horaire: HoraireType; score: number }[] = []
+    for (const collaborateur of equipe) {
+      if (!peutTravaillerDans(collaborateur, trou.rayonId)) continue
+      if (trou.titulaire === true && !estTitulaire(collaborateur, trou.rayonId)) continue
+      if (critiques.some((competence) => !estAutonome(collaborateur, competence))) continue
+      if (ecarteDEmblee(collaborateur, trou.rayonId, trou.jour)) continue
+      const jeune = estMineur(collaborateur)
+      for (const horaire of horairesDuCreneau(trou.rayonId, trou.jour, true)) {
+        if (horaire.id.startsWith('contrat-j-') !== jeune) continue
+        let gain = 0
+        for (const index of tranchesDe.get(horaire.id) ?? []) {
+          if (index * TRANCHE_MINUTES < trou.debut || index * TRANCHE_MINUTES >= trou.fin) continue
+          if (
+            (trou.creneau.presents[index] ?? 0) < seuilDe(trou.creneau, index, 'minimum') ||
+            (trou.titulaire === true && sansTitulaire(trou.creneau, index))
+          ) {
+            gain += 1
+          }
+        }
+        /*
+         * Une journee de plus en heures supplementaires se justifie pour un
+         * vrai manque (une heure au moins), pas pour un quart d'heure de pause.
+         */
+        if (gain < MANQUE_MINIMAL_POUR_UN_AJOUT) continue
+        candidats.push({
+          collaborateur,
+          horaire,
+          // Le plus de trou couvert, par celui qui a le moins d'heures, au plus court.
+          score: gain * 10 - minutesPlacees(collaborateur) / 60 - duree(horaire.debut, horaire.fin) / 600,
+        })
+      }
+    }
+    candidats.sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.collaborateur.id.localeCompare(b.collaborateur.id) ||
+        a.horaire.id.localeCompare(b.horaire.id),
+    )
+    for (const candidat of candidats.slice(0, 15)) {
+      const vacation = enVacation({ collaborateur: candidat.collaborateur, rayon, jour: trou.jour, horaire: candidat.horaire })
+      if (
+        affectationPermise(
+          vacation,
+          candidat.collaborateur,
+          parPersonne.get(candidat.collaborateur.id) ?? [],
+          entrees,
+          critiques,
+        )
+      ) {
+        placees.push(vacation)
+        inscrire(vacation, candidat.horaire, candidat.collaborateur, 1)
+        ajoutsEnHeuresSup.push({ collaborateurId: candidat.collaborateur.id, rayonId: trou.rayonId, jour: trou.jour })
+        return true
+      }
+    }
+    return false
+  }
+
   function reparerLesTrous(): number {
     if (regles === undefined) return 0
     /*
@@ -1554,9 +1851,22 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           essais += 1
           mouvement = meilleurMouvement(trou, phase)
           if (mouvement !== null) break
+          // Le minimum passe avant le contrat : faute de deplacement possible,
+          // une journee de plus, en heures supplementaires, si la loi le permet.
+          if (phase === 'minimum' && (etirementPourLeMinimum(trou) || ajoutPourLeMinimum(trou))) {
+            faites += 1
+            sansSolution.clear()
+            mouvement = null
+            break
+          }
           sansSolution.add(repere)
         }
-        if (mouvement === null) break
+        if (mouvement === null) {
+          if (essais < ESSAIS_PAR_PHASE[phase] && trousDe(phase).some((t) => !sansSolution.has(`${t.cleCreneau}|${t.debut}|${t.titulaire === true ? 't' : ''}`))) {
+            continue
+          }
+          break
+        }
         inscrire(
           mouvement.ancienne,
           horairePour(mouvement.ancienne, horaires, tranchesDe),
@@ -1733,7 +2043,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
                 [debut, fin - delta],
               ]
         for (const [d, f] of formes as [number, number][]) {
-          if (d < 0 || f > MINUTES_PAR_JOUR || f - d < DUREE_MINIMALE_POSTE) continue
+          if (d < 0 || f > MINUTES_PAR_JOUR) continue
+          // Pas de micro-poste : on ne raccourcit pas sous la longueur minimale
+          // (un poste deja court peut toujours etre allonge).
+          if (f - d < Math.min(longueurMinimale(ancienne.rayonId, ancienne.jour), fin - debut)) continue
           if (!dansLesBornes(ancienne.rayonId, ancienne.jour, enTexte(d), enTexte(f))) continue
           const horaire = posteSurMesure(d, f, jeune, ancienne.jour)
           const nouvelle: Vacation = {
@@ -1787,6 +2100,9 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       (a, b) => a.variation - b.variation || a.nouvelle.id.localeCompare(b.nouvelle.id),
     )
     for (const retouche of retouches) {
+      // Le minimum passe avant le contrat : on ne raccourcit pas un poste
+      // au prix d'un trou sous le minimum (une perte de l'ordre d'un manque).
+      if (ecart < 0 && retouche.variation >= poids.manque / 2) continue
       const siennes = (parPersonne.get(collaborateur.id) ?? []).filter(
         (v) => v.id !== retouche.ancienne?.id,
       )
@@ -1924,7 +2240,14 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     const nomDuRayon = rayons.find((rayon) => rayon.id === besoin.rayonId)?.nom ?? besoin.rayonId
 
     // Rayon a grille : on dit exactement QUAND il manque quelqu'un.
-    const presents = creneaux.get(cle(besoin.rayonId, besoin.date))?.presents
+    // Compte sur les postes FINAUX, pauses a leur place definitive.
+    const presents =
+      creneaux.get(cle(besoin.rayonId, besoin.date)) === undefined
+        ? undefined
+        : Array.from(
+            { length: TRANCHES_PAR_JOUR },
+            (_, index) => duRayon.filter((vacation) => couvreLaTranche(vacation, index)).length,
+          )
     if (besoinAvecGrille(besoin) && presents !== undefined) {
       const plages: string[] = []
       let debut: number | null = null
@@ -1972,6 +2295,9 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       const siennes = ordonnees.filter((v) => v.collaborateurId === collaborateur.id)
       const faites = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
       if (ecartAuContratEnHeures(collaborateur, siennes, pausesPayees, vise) <= 0.25) continue
+      // Heures supplementaires voulues pour tenir un minimum : dites plus bas,
+      // avec le jour et le rayon (pas un ecart a corriger).
+      if (faites > vise && ajoutsEnHeuresSup.some((a) => a.collaborateurId === collaborateur.id)) continue
 
       // Ce qu'on sait de sa semaine, en clair.
       const raisons: string[] = []
@@ -1997,6 +2323,21 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           `. ${explication}`,
       )
     }
+  }
+
+  for (const ajout of ajoutsEnHeuresSup) {
+    const collaborateur = equipe.find((c) => c.id === ajout.collaborateurId)
+    if (collaborateur === undefined) continue
+    const faites =
+      ordonnees
+        .filter((v) => v.collaborateurId === collaborateur.id)
+        .reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
+    restes.push(
+      `${nomAffiche(collaborateur)} : journée ajoutée en heures supplémentaires le ${jourEnTexte(ajout.jour)} ` +
+        `en ${rayons.find((r) => r.id === ajout.rayonId)?.nom ?? ajout.rayonId}, pour tenir le minimum ` +
+        `(aucun déplacement ne le permettait) : ${heuresEnTexte(faites, 2)} sur la semaine pour ` +
+        `${heuresEnTexte(visee(collaborateur) ?? collaborateur.heuresHebdomadaires, 2)} au contrat.`,
+    )
   }
 
   /*

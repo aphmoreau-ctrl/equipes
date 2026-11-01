@@ -7,6 +7,8 @@ import {
   LIBELLES_FONCTION,
   LIBELLES_NATURE_TACHE,
   PRIORITE_PAR_JOUR_PAR_DEFAUT,
+  FENETRES_PAUSE_PAR_JOUR_PAR_DEFAUT,
+  fenetresDuJour,
   JOURS_DE_REPOS_PREFERES_PAR_DEFAUT,
   JOURS_PRIORITAIRES_PAR_DEFAUT,
   type CreneauEffectif,
@@ -906,6 +908,19 @@ export function SectionReglesInternes() {
       >
         Ajouter une plage
       </button>
+
+      <p className="champ__libelle">Plages de pause du samedi (l’affluence y est différente)</p>
+      <EditeurPlages
+        plages={fenetresDuJour(r, 6)}
+        onChange={(plages) =>
+          reglerRegles({
+            fenetresPauseParJour: {
+              ...(r.fenetresPauseParJour ?? FENETRES_PAUSE_PAR_JOUR_PAR_DEFAUT),
+              6: plages,
+            },
+          })
+        }
+      />
     </section>
   )
 }

@@ -1951,3 +1951,17 @@ donne pour la semaine :
 Le dépannage n'est ni compté dans les heures disponibles, ni proposé au
 calcul : il se pose à la main. Si le solde est positif et qu'un minimum reste
 découvert, chaque trou est expliqué (« Pourquoi personne »).
+
+---
+
+## Fiche rayon : tâches, phases, titulaire (1er novembre 2026, nuit)
+
+Choix validés par Arnaud (« vas-y avec tes choix ») : remballe avant 20 h ;
+la charge des tâches s'AJOUTE à la présence en vente ; un seul endroit pour
+les tâches d'un rayon ; plage de pause du samedi après-midi 13 h-15 h.
+
+### D-157 — Le samedi a ses propres plages de pause
+L'affluence du samedi (10 h-13 h, 15 h-19 h) recouvrait la plage de pause
+ordinaire de l'après-midi. Le samedi prend donc ses plages : 8 h 30-10 h et
+13 h-15 h (réglables : Paramètres → Règles internes). Le générateur, le
+placement des pauses et le contrôle de la semaine les utilisent.

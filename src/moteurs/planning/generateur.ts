@@ -12,6 +12,7 @@ import {
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import {
+  fenetresDuJour,
   JOURS_DE_REPOS_PREFERES_PAR_DEFAUT,
   JOURS_PRIORITAIRES_PAR_DEFAUT,
   PRIORITE_PAR_JOUR_PAR_DEFAUT,
@@ -428,11 +429,12 @@ export function placerLaPause(
   pause: number,
   regles: ReglesInternes,
   affluence: readonly Plage[],
+  fenetres: readonly Plage[] = regles.fenetresPause,
 ): number {
   const libre = (depart: number) =>
     depart >= debut + 60 &&
     depart + pause <= fin - 60 &&
-    regles.fenetresPause.some(
+    fenetres.some(
       (fenetre) => depart >= enMinutes(fenetre.debut) && depart + pause <= enMinutes(fenetre.fin),
     ) &&
     !(
@@ -498,7 +500,16 @@ export function postesDeContrat(
       for (const depart of departs) {
         for (const jeune of avecJeunes ? [false, true] : [false]) {
           const pause = pauseDuPoste(longueur, regles, jeune, parametres)
-          const pauseDebut = placerLaPause(depart, depart + longueur, pause, regles, affluence)
+          const pauseDebut = placerLaPause(
+            depart,
+            depart + longueur,
+            pause,
+            regles,
+            affluence,
+            fenetresDuJour(regles, jourDeLaSemaine(besoin.date)),
+          )
+          // Une forme par horaire : la pause sera de toute facon replacee
+          // a la fin, selon les plages du jour et la presence des collegues.
           const id = `contrat-${jeune ? 'j' : 'a'}-${enTexte(depart)}-${enTexte(depart + longueur)}-${pause}`
           if (formes.has(id)) continue
           formes.set(id, {
@@ -1490,7 +1501,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             if (enPause < TRANCHE_MINUTES / 2) continue
             if ((creneau.presents[index] ?? 0) < (creneau.besoin.tranches[index]?.personnes ?? 0)) trous += 1
           }
-          const dansUneFenetre = regle.fenetresPause.some(
+          const dansUneFenetre = fenetresDuJour(regle, jourDeLaSemaine(ancienne.jour)).some(
             (f) => depart >= enMinutes(f.debut) && depart + pause <= enMinutes(f.fin),
           )
           const pendantLAffluence =
@@ -1542,6 +1553,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       pause,
       regle,
       affluenceDuJour(jourDeLaSemaine(jour)),
+      fenetresDuJour(regle, jourDeLaSemaine(jour)),
     )
     const id = `mesure-${jeune ? 'j' : 'a'}-${enTexte(debut)}-${enTexte(fin)}-${pause}-${enTexte(pauseDebut)}`
     const connu = horaires.find((horaire) => horaire.id === id)

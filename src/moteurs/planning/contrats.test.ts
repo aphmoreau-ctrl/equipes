@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { jourDeLaSemaine, semaineDe } from '../../domaine/calendrier'
 import { estMineur } from '../../domaine/collaborateur'
-import { REGLES_INTERNES_PAR_DEFAUT } from '../../domaine/organisation'
+import { fenetresDuJour, REGLES_INTERNES_PAR_DEFAUT } from '../../domaine/organisation'
 import { duree, enMinutes } from '../../domaine/temps'
 import { construireEtatReel, type SaisieCollaborateur } from '../../donnees/import-equipe'
 import { ORGANISATION_LA_VAUGINE, RAYON as R } from '../../donnees/modele-la-vaugine'
@@ -273,6 +273,16 @@ describe('postes de contrat et pauses', () => {
     const soir = placerLaPause(enMinutes('12:00'), enMinutes('20:00'), 24, regles, affluence)
     expect(soir).toBeGreaterThanOrEqual(enMinutes('15:00'))
     expect(soir + 24).toBeLessThanOrEqual(enMinutes('17:00'))
+  })
+
+  it('le samedi, la pause se place dans les plages du samedi, hors affluence', () => {
+    const samedi = [
+      { debut: '10:00', fin: '13:00' },
+      { debut: '15:00', fin: '19:00' },
+    ]
+    const depart = placerLaPause(enMinutes('12:00'), enMinutes('20:00'), 24, regles, samedi, fenetresDuJour(regles, 6))
+    expect(depart).toBeGreaterThanOrEqual(enMinutes('13:00'))
+    expect(depart + 24).toBeLessThanOrEqual(enMinutes('15:00'))
   })
 
   it('cale les postes sur les horaires du rayon, dimanche matin compris', () => {

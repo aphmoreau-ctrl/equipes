@@ -11,7 +11,7 @@ import {
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import type { Rayon } from '../../domaine/magasin'
-import type { OrganisationPlanning, Plage } from '../../domaine/organisation'
+import { fenetresDuJour, type OrganisationPlanning, type Plage } from '../../domaine/organisation'
 import { TRANCHE_MINUTES, duree, enMinutes, enTexte } from '../../domaine/temps'
 import { heuresEnTexte } from '../../domaine/nombres'
 import type { BesoinJour } from '../besoin'
@@ -167,7 +167,8 @@ export function controlerLaSemaine(entrees: EntreesControleSemaine): Constat[] {
     if (vacation.pauseDebut === undefined) continue
     const debutPause = enMinutes(vacation.pauseDebut)
     const finPause = debutPause + vacation.pauseMinutes
-    const dansUnePlage = regles.fenetresPause.some(
+    const fenetres = fenetresDuJour(regles, jourDeLaSemaine(vacation.jour))
+    const dansUnePlage = fenetres.some(
       (fenetre) => debutPause >= enMinutes(fenetre.debut) && finPause <= enMinutes(fenetre.fin),
     )
     if (!dansUnePlage) {
@@ -176,7 +177,7 @@ export function controlerLaSemaine(entrees: EntreesControleSemaine): Constat[] {
         cle: `plage|${vacation.id}`,
         libelle: `${nom(vacation.collaborateurId)} — pause à ${vacation.pauseDebut}, hors des plages prévues`,
         explication:
-          `Les pauses se prennent ${regles.fenetresPause.map((f) => `de ${f.debut} à ${f.fin}`).join(' ou ')}. ` +
+          `Ce jour-là, les pauses se prennent ${fenetres.map((f) => `de ${f.debut} à ${f.fin}`).join(' ou ')}. ` +
           `Elle a pu être déplacée pour ne pas laisser le rayon vide.`,
       })
     }

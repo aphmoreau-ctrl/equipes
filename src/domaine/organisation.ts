@@ -211,6 +211,12 @@ export interface ReglesInternes {
   readonly pausesPayeesIncluses: boolean
   /** Plages ou la pause peut etre prise. */
   readonly fenetresPause: readonly Plage[]
+  /**
+   * Plages propres a certains jours, a la place des plages ordinaires.
+   * Absent = le samedi, 8 h 30-10 h et 13 h-15 h (l'affluence du samedi
+   * couvre 10 h-13 h et 15 h-19 h).
+   */
+  readonly fenetresPauseParJour?: Partial<Readonly<Record<JourSemaine, readonly Plage[]>>>
   /** Jamais de pause pendant les heures d'affluence. */
   readonly pauseInterditeEnAffluence: boolean
   /** Presence minimale un jour travaille. */
@@ -248,6 +254,18 @@ export interface ReglesInternes {
 }
 
 export const JOURS_PRIORITAIRES_PAR_DEFAUT: readonly JourSemaine[] = [5, 6]
+
+export const FENETRES_PAUSE_PAR_JOUR_PAR_DEFAUT: Partial<Readonly<Record<JourSemaine, readonly Plage[]>>> = {
+  6: [
+    { debut: '08:30', fin: '10:00' },
+    { debut: '13:00', fin: '15:00' },
+  ],
+}
+
+/** Plages de pause d'un jour donne. */
+export function fenetresDuJour(regles: ReglesInternes, jour: JourSemaine): readonly Plage[] {
+  return (regles.fenetresPauseParJour ?? FENETRES_PAUSE_PAR_JOUR_PAR_DEFAUT)[jour] ?? regles.fenetresPause
+}
 export const JOURS_DE_REPOS_PREFERES_PAR_DEFAUT: readonly JourSemaine[] = [1, 2, 3]
 
 export const PRIORITE_PAR_JOUR_PAR_DEFAUT: Partial<Readonly<Record<JourSemaine, number>>> = {

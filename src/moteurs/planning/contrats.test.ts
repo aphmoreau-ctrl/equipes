@@ -6,6 +6,7 @@ import { duree, enMinutes } from '../../domaine/temps'
 import { construireEtatReel, type SaisieCollaborateur } from '../../donnees/import-equipe'
 import { ORGANISATION_LA_VAUGINE, RAYON as R } from '../../donnees/modele-la-vaugine'
 import { calculerBesoin, type BesoinJour } from '../besoin'
+import { couvreLaTranche } from '../indicateurs'
 import { contexteDeVerification, PARAMETRES_PAR_DEFAUT, verifier } from '../regles'
 import {
   genererLePlanning,
@@ -192,6 +193,26 @@ describe('chacun fait ses heures', () => {
     const zoe = etat.collaborateurs.find((c) => c.prenom === 'Zoé')!
     expect(zoe.forfait).toBe(true)
     expect(heuresDe(resultat, zoe.id)).toBeGreaterThan(30)
+  })
+
+  it('place les pauses quand un collègue couvre : aucune pause ne vide Fruits & Légumes', () => {
+    for (const besoin of entrees.besoins.filter((b) => b.rayonId === R.fruitsLegumes)) {
+      const duJour = resultat.vacations.filter((v) => v.rayonId === R.fruitsLegumes && v.jour === besoin.date)
+      for (const tranche of besoin.tranches) {
+        if (tranche.personnes === 0) continue
+        const presents = duJour.filter((v) => couvreLaTranche(v, tranche.index)).length
+        if (presents >= tranche.personnes) continue
+        // Sous le minimum : ce ne doit pas etre a cause d'une pause.
+        const debutTranche = tranche.index * 15
+        const enPause = duJour.filter(
+          (v) =>
+            enMinutes(v.debut) <= debutTranche &&
+            debutTranche < enMinutes(v.fin) &&
+            !couvreLaTranche(v, tranche.index),
+        )
+        expect(enPause, `${besoin.date} tranche ${tranche.index}`).toEqual([])
+      }
+    }
   })
 
   it('donne le même planning à données égales', () => {

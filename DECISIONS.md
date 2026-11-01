@@ -1747,3 +1747,16 @@ absente ou en congé, l'écran Planning affiche un bandeau avec un bouton
 **Raison.** Un recalcul silencieux et automatique effacerait sans prévenir
 les retouches faites à la main.
 **Alternative.** Recalcul automatique sans bouton.
+
+### D-145 — La pause se place quand un collègue couvre le rayon
+**Constat d'Arnaud** : « avec 5 personnes en fruits et légumes, le besoin
+n'est pas couvert ». En vérifiant sur un essai réaliste, le minimum n'était
+manqué que 30 min, pendant la pause de la seule personne présente l'après-midi.
+**Décision.** Une dernière étape replace chaque pause : d'abord là où le rayon
+reste à son minimum, puis dans une plage permise hors affluence, puis près du
+milieu du poste. **La couverture passe avant la plage de pause** : si une pause
+doit sortir de 8 h 30-11 h / 15 h-17 h 30 pour que le rayon ne soit pas vide,
+elle en sort (le moteur de contrôle le signalera, étape 2).
+**Reste** : un rayon tenu par une seule personne (Fraîche découpe, Cuisine
+mobile) se retrouve vide pendant sa pause — la relève par un rayon voisin
+viendra avec les tâches et les prêts.

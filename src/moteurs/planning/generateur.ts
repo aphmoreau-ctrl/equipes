@@ -249,7 +249,8 @@ function horairePour(
     (candidat) =>
       candidat.debut === vacation.debut &&
       candidat.fin === vacation.fin &&
-      candidat.pauseMinutes === vacation.pauseMinutes,
+      candidat.pauseMinutes === vacation.pauseMinutes &&
+      (vacation.pauseDebut === undefined || candidat.pauseDebut === vacation.pauseDebut),
   )
   if (connu !== undefined) return connu
 
@@ -1115,6 +1116,92 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   const ajustements = completerLesHeures()
 
+  /*
+   * 6. Les pauses, la ou un collegue couvre.
+   *
+   * Une pause placee pendant que la personne est seule laisse le rayon vide.
+   * Pour chaque poste, on cherche l'heure de pause qui, dans l'ordre :
+   * ne laisse jamais le rayon sous son minimum ; tombe dans une plage
+   * permise, hors affluence ; reste proche du milieu du poste.
+   */
+  const pausesDeplacees = reorganiserLesPauses()
+
+  function reorganiserLesPauses(): number {
+    if (regles === undefined) return 0
+    const regle = regles
+    let deplacees = 0
+    for (let tour = 0; tour < 2; tour += 1) {
+      for (let position = 0; position < placees.length; position += 1) {
+        const ancienne = placees[position] as Vacation
+        if (ancienne.pauseMinutes <= 0) continue
+        const cleCreneau = cle(ancienne.rayonId, ancienne.jour)
+        const creneau = creneaux.get(cleCreneau)
+        const collaborateur = equipe.find((c) => c.id === ancienne.collaborateurId)
+        if (creneau === undefined || creneau.bornes === null || collaborateur === undefined) continue
+
+        const horaireAncien = horairePour(ancienne, horaires, tranchesDe)
+        inscrire(ancienne, horaireAncien, collaborateur, -1)
+
+        const debut = enMinutes(ancienne.debut)
+        const fin = debut + duree(ancienne.debut, ancienne.fin)
+        const pause = ancienne.pauseMinutes
+        const milieu = (debut + fin - pause) / 2
+        const affluence = affluenceDuJour(jourDeLaSemaine(ancienne.jour))
+        let meilleur: { depart: number; score: number } | null = null
+
+        for (let depart = debut + 60; depart + pause <= fin - 60; depart += TRANCHE_MINUTES) {
+          // Quarts d'heure ou la personne serait en pause et le rayon sous son minimum.
+          let trous = 0
+          for (let index = 0; index < TRANCHES_PAR_JOUR; index += 1) {
+            const debutTranche = index * TRANCHE_MINUTES
+            const enPause =
+              Math.min(debutTranche + TRANCHE_MINUTES, depart + pause) - Math.max(debutTranche, depart)
+            if (enPause < TRANCHE_MINUTES / 2) continue
+            if ((creneau.presents[index] ?? 0) < (creneau.besoin.tranches[index]?.personnes ?? 0)) trous += 1
+          }
+          const dansUneFenetre = regle.fenetresPause.some(
+            (f) => depart >= enMinutes(f.debut) && depart + pause <= enMinutes(f.fin),
+          )
+          const pendantLAffluence =
+            regle.pauseInterditeEnAffluence &&
+            affluence.some((a) => depart < enMinutes(a.fin) && depart + pause > enMinutes(a.debut))
+          const score =
+            trous * 1000 +
+            (dansUneFenetre ? 0 : 50) +
+            (pendantLAffluence ? 50 : 0) +
+            Math.abs(depart - milieu) / TRANCHE_MINUTES
+          if (meilleur === null || score < meilleur.score) meilleur = { depart, score }
+        }
+
+        if (meilleur === null || enTexte(meilleur.depart) === ancienne.pauseDebut) {
+          inscrire(ancienne, horaireAncien, collaborateur, 1)
+          continue
+        }
+
+        const pauseDebut = enTexte(meilleur.depart)
+        const id = `pause-${ancienne.debut}-${ancienne.fin}-${pause}-${pauseDebut}`
+        let horaire = horaires.find((h) => h.id === id)
+        if (horaire === undefined) {
+          horaire = {
+            id,
+            nom: `${ancienne.debut}–${ancienne.fin}`,
+            debut: ancienne.debut,
+            fin: ancienne.fin,
+            pauseMinutes: pause,
+            pauseDebut,
+          }
+          horaires.push(horaire)
+          tranchesDe.set(id, tranchesCouvertesPar(horaire))
+        }
+        const nouvelle: Vacation = { ...ancienne, pauseDebut }
+        inscrire(nouvelle, horaire, collaborateur, 1)
+        placees[position] = nouvelle
+        deplacees += 1
+      }
+    }
+    return deplacees
+  }
+
   function posteSurMesure(debut: number, fin: number, jeune: boolean, jour: string): HoraireType {
     const regle = regles as ReglesInternes
     const pause = pauseDuPoste(fin - debut, regle, jeune, entrees.parametres)
@@ -1390,7 +1477,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     ameliorations,
     decalages,
     verrouillees: verrouillees.length,
-    ajustementsDHeures: ajustements,
+    ajustementsDHeures: ajustements + pausesDeplacees,
     dureeMs: Date.now() - debutCalcul,
     restesAExpliquer: restes,
   }

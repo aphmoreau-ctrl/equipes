@@ -16,6 +16,8 @@ import {
   rayonsPrincipaux,
 } from '../../domaine/collaborateur'
 import { CouvertureRayon } from '../composants/CouvertureRayon'
+import { ControleSemaine } from '../composants/ControleSemaine'
+import { controlerLaSemaine } from '../../moteurs/controle'
 import { rayonsActifs } from '../../domaine/magasin'
 import {
   LIBELLES_ORIGINE,
@@ -33,7 +35,6 @@ import { duree, enMinutes, enTexte } from '../../domaine/temps'
 import {
   contexteDeVerification,
   verifier,
-  type Infraction,
   type Vacation,
 } from '../../moteurs/regles'
 import {
@@ -195,22 +196,6 @@ export function Planning() {
         )
   const equipe = [...titulaires, ...renfortsDuRayon]
   const idsRenforts = new Set(renfortsDuRayon.map((collaborateur) => collaborateur.id))
-  /** Vue d'un rayon : les regles enfreintes par ses gens, les jours ou ils y sont. */
-  const filtrerInfractions = <T extends { collaborateurId: string; jour: string }>(
-    liste: readonly T[],
-  ): T[] =>
-    filtreRayon === 'tous'
-      ? [...liste]
-      : liste.filter(
-          (infraction) =>
-            titulaires.some((c) => c.id === infraction.collaborateurId) ||
-            planningCourant.vacations.some(
-              (v) =>
-                v.collaborateurId === infraction.collaborateurId &&
-                v.rayonId === filtreRayon &&
-                v.jour === infraction.jour,
-            ),
-        )
 
   // ------------------------------------------------- Contrôle des règles
   const infractions = useMemo(
@@ -243,7 +228,6 @@ export function Planning() {
     return compte
   }, [infractions])
 
-  const infractionsVisibles = filtrerInfractions(infractions)
   const bloquantes = infractions.filter((infraction) => infraction.severite === 'bloquante')
   const avertissements = infractions.filter((infraction) => infraction.severite === 'avertissement')
   const aConfirmer = infractions.filter((infraction) => infraction.severite === 'a-confirmer')
@@ -464,6 +448,32 @@ export function Planning() {
   const collaborateurChoisi = etat.collaborateurs.find(
     (collaborateur) => collaborateur.id === caseChoisie?.collaborateurId,
   )
+
+  // ------------------------------------------- Controle de la semaine
+  const constatsSemaine = useMemo(
+    () =>
+      controlerLaSemaine({
+        semaine,
+        vacations: planningCourant.vacations,
+        vacationsAnterieures: historique(semaine),
+        infractions,
+        besoins: besoinsDeLaSemaine,
+        rayons: etat.magasin.rayons,
+        collaborateurs: etat.collaborateurs,
+        absences: absencesEffectives(etat),
+        organisation: etat.organisation,
+      }),
+    [semaine, planningCourant.vacations, historique, infractions, besoinsDeLaSemaine, etat],
+  )
+  const constatsVisibles =
+    filtreRayon === 'tous'
+      ? constatsSemaine
+      : constatsSemaine.filter(
+          (constat) =>
+            constat.rayonId === filtreRayon ||
+            (constat.collaborateurId !== null &&
+              titulaires.some((c) => c.id === constat.collaborateurId)),
+        )
 
   return (
     <>
@@ -750,7 +760,7 @@ export function Planning() {
       </section>
 
       <section className="carte">
-        <h2>
+        <h2 id="grille-semaine">
           Grille de la semaine
           {filtreRayon !== 'tous' && ` — ${rayons.find((r) => r.id === filtreRayon)?.nom ?? ''}`}
         </h2>
@@ -864,26 +874,30 @@ export function Planning() {
         )}
       </section>
 
-      {bloquantes.length + avertissements.length > 0 && (
-        <section className="carte">
-          <h2>Contrôle des règles</h2>
-          <ul className="liste-alertes">
-            {infractionsVisibles.map((infraction) => (
-              <LigneInfraction
-                key={`${infraction.regle}-${infraction.collaborateurId}-${infraction.jour}-${infraction.libelle}`}
-                infraction={infraction}
-                nom={
-                  etat.collaborateurs.find((c) => c.id === infraction.collaborateurId) === undefined
-                    ? infraction.collaborateurId
-                    : nomAffiche(
-                        etat.collaborateurs.find((c) => c.id === infraction.collaborateurId)!,
-                      )
-                }
-              />
-            ))}
-          </ul>
-        </section>
-      )}
+      <ControleSemaine
+        constats={constatsVisibles}
+        acceptees={planningCourant.alertesAcceptees ?? []}
+        onAccepter={(id) =>
+          modifierPlanning(semaine, (avant) => ({
+            ...avant,
+            alertesAcceptees: [
+              ...(avant.alertesAcceptees ?? []).filter((a) => a.id !== id),
+              { id, le: aujourdhui() },
+            ],
+          }))
+        }
+        onAnnulerAcceptation={(id) =>
+          modifierPlanning(semaine, (avant) => ({
+            ...avant,
+            alertesAcceptees: (avant.alertesAcceptees ?? []).filter((a) => a.id !== id),
+          }))
+        }
+        onOuvrir={(collaborateurId, jour) => {
+          if (!equipe.some((c) => c.id === collaborateurId)) setFiltreRayon('tous')
+          setCaseChoisie({ collaborateurId, jour })
+          document.getElementById('grille-semaine')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }}
+      />
 
       <section className="carte">
         <h2>Couverture du besoin</h2>
@@ -1084,27 +1098,3 @@ export function Planning() {
   )
 }
 
-function LigneInfraction({
-  infraction,
-  nom,
-}: {
-  readonly infraction: Infraction
-  readonly nom: string
-}) {
-  return (
-    <li
-      className={
-        infraction.severite === 'bloquante'
-          ? 'alerte alerte--urgent'
-          : infraction.severite === 'a-confirmer'
-            ? 'alerte alerte--discret'
-            : 'alerte alerte--attention'
-      }
-    >
-      <p className="alerte__titre">
-        {nom} — {infraction.libelle}
-      </p>
-      <p className="alerte__detail">{infraction.explication}</p>
-    </li>
-  )
-}

@@ -1860,3 +1860,22 @@ et l'iPhone gardent chacun le leur). Dans la vue d'un rayon :
 chacun, heures pauses comprises. Le dossier pour la direction garde son
 tableau de couverture du rayon. Rien d'interne n'y figure (le test des
 documents propres couvre les nouvelles mentions).
+
+### D-153 — Le contrôle de la semaine (étape 2)
+**Décision.** Un moteur pur (`src/moteurs/controle`) vérifie n'importe quel
+planning — proposé, retouché ou saisi à la main — et classe chaque constat :
+- **bloquant** : règles légales du vérificateur, rôtisserie restée plus de
+  5 h au chaud (ou vente commencée avant la première cuisson : alerte) ;
+- **alerte** : pause hors des plages, pendant l'affluence ou plus courte que
+  3 min par heure ; journée de moins de 3 h ; plus de 6 jours d'affilée d'une
+  semaine sur l'autre ; poste hors des horaires du rayon ou dans un rayon que
+  la personne ne tient pas ; dépannage (trop long ou non) ; minimum non tenu,
+  avec ses heures ; cible tenue seulement grâce aux renforts ; écart au
+  contrat (congés et école déduits, contrat ÷ 6 par jour) ; cuisson sans
+  personne formée à la rôtisserie ; réunion sans personne de la fonction ou
+  sans représentant d'un rayon ; tâche confiée nommément sans assez de
+  créneaux possibles.
+**Écran.** La section « Contrôle de la semaine » du Planning remplace l'ancien
+« Contrôle des règles ». Elle suit le rayon choisi. « Voir dans la grille »
+ouvre la case concernée. Une alerte peut être **acceptée pour la semaine**
+(datée, réversible, rangée à part) ; un bloquant ne s'accepte jamais.

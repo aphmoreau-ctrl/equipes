@@ -39,6 +39,11 @@ export interface Planning extends Suivi {
    * s'occuper du reste.
    */
   readonly casesVerrouillees: readonly string[]
+  /**
+   * Alertes (non bloquantes) acceptees pour cette semaine, avec leur date.
+   * Absent = aucune.
+   */
+  readonly alertesAcceptees?: readonly { readonly id: string; readonly le: string }[]
 }
 
 export function planningVide(semaine: string): Planning {

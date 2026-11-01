@@ -2155,3 +2155,42 @@ select.champ__saisie {
 .couverture-rayon__detail {
   margin-top: 8px;
 }
+
+/* ------------------------------------------- Controle de la semaine */
+.controle {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.controle__ligne {
+  border: 1px solid var(--bordure);
+  border-left-width: 4px;
+  border-radius: var(--rayon-petit);
+  padding: 10px 14px;
+}
+.controle__ligne--bloquant {
+  border-left-color: var(--alerte);
+}
+.controle__ligne--alerte {
+  border-left-color: var(--avertissement);
+}
+.controle__tete {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.controle__categorie {
+  font-size: 13px;
+  color: var(--texte-doux);
+}
+.controle__libelle {
+  margin: 6px 0 2px;
+  font-weight: 600;
+}
+.controle__explication {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--texte-doux);
+}

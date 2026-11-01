@@ -89,7 +89,7 @@ describe('écran Planning', () => {
       fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
     }
 
-    expect(screen.getByText('Contrôle des règles')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Contrôle de la semaine' })).toBeInTheDocument()
     // Sept jours d'affilee : interdit en soi (L3132-1), constat ferme.
     // Le constat apparait dans le controle des regles ET dans les controles
     // avant validation : les deux disent la meme chose, a deux endroits.
@@ -578,6 +578,19 @@ describe('vue par rayon', () => {
     const case10h = screen.getByRole('button', { name: /^lundi 10 h : / })
     fireEvent.click(case10h)
     expect(screen.getByText(/10:00 : 0 présent, minimum 1, cible 1 — en pause : Abel/)).toBeInTheDocument()
+  })
+
+  it('contrôle la semaine : une alerte s’accepte, la case s’ouvre', async () => {
+    await preparer()
+    afficher()
+    choisirMaree()
+    const controle = screen.getByRole('heading', { name: 'Contrôle de la semaine' }).parentElement as HTMLElement
+    const pause = within(controle).getByText(/^Abel — pause de 21 min|^Abel — /, { selector: '.controle__libelle' })
+    expect(pause).toBeInTheDocument()
+    const avant = within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' }).length
+    fireEvent.click(within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' })[0] as HTMLElement)
+    expect(within(controle).getAllByRole('button', { name: 'Accepter pour cette semaine' }).length).toBe(avant - 1)
+    expect(within(controle).getByText('Alertes acceptées pour cette semaine')).toBeInTheDocument()
   })
 
   it('se souvient du dernier rayon choisi', async () => {

@@ -76,10 +76,16 @@ export function ecartAuContratEnHeures(
   collaborateur: Collaborateur,
   siennes: readonly Vacation[],
   pausesPayees: boolean,
+  /**
+   * Heures visees cette semaine, si elles different du contrat (conges,
+   * absences). Donnees, elles valent aussi pour le cadre au forfait : sa
+   * presence se planifie, meme si ses heures ne se comptent pas.
+   */
+  heuresVisees?: number,
 ): number {
-  if (horsCalculDHeures(collaborateur)) return 0
+  if (heuresVisees === undefined && horsCalculDHeures(collaborateur)) return 0
   const heures = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
-  return Math.abs(heures - collaborateur.heuresHebdomadaires)
+  return Math.abs(heures - (heuresVisees ?? collaborateur.heuresHebdomadaires))
 }
 
 /** Somme des sujetions deja accumulees par une personne. */
@@ -269,8 +275,10 @@ export function penalitePersonne(
   sujetionMoyenne: number,
   reperesPrecedents: ReadonlySet<string>,
   pausesPayees = false,
+  heuresVisees?: number,
 ): number {
-  let penalite = ecartAuContratEnHeures(collaborateur, siennes, pausesPayees) * poids.ecartAuContrat
+  let penalite =
+    ecartAuContratEnHeures(collaborateur, siennes, pausesPayees, heuresVisees) * poids.ecartAuContrat
 
   penalite +=
     siennes.filter((v) => v.rayonId !== collaborateur.rayonPrincipal).length *

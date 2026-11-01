@@ -232,6 +232,16 @@ describe('chacun fait ses heures', () => {
     }
   })
 
+  it('vendredi et samedi : présence maximale, repos plutôt du lundi au mercredi', () => {
+    const presents = (date: string) => new Set(resultat.vacations.filter((v) => v.jour === date).map((v) => v.collaborateurId)).size
+    expect(presents('2026-11-06')).toBeGreaterThan(presents('2026-11-02'))
+    expect(presents('2026-11-07')).toBeGreaterThan(presents('2026-11-03'))
+    // Qui manque un jour prioritaire est nomme, avec la raison.
+    for (const reste of resultat.restesAExpliquer.filter((r) => r.includes('jour prioritaire'))) {
+      expect(reste).toMatch(/ne travaillent pas .+ \(.+\)/)
+    }
+  })
+
   it('donne le même planning à données égales', () => {
     const encore = genererLePlanning(entrees)
     expect(encore.vacations).toEqual(resultat.vacations)

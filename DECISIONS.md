@@ -1913,3 +1913,24 @@ pause propre au samedi (par exemple 13 h-15 h), ou accepter l'alerte.
 L'heure de fin (12 h ou 13 h 30 selon le jour) reste « à définir », à 13 h 30
 provisoirement, jusqu'à ce qu'Arnaud indique les jours. (Les 14 h de D-131
 sont la fin d'un « poste du matin », pas celle de la préparation.)
+
+### D-155 — Vendredi et samedi : présence maximale (demandé)
+**Décision.** Les **jours prioritaires** (vendredi et samedi par défaut,
+réglables) sont des jours de présence maximale :
+- leur grille est un **plancher** : au-delà de la cible, une heure de plus y
+  est bienvenue (au lieu d'être légèrement pénalisée) ;
+- les **jours de repos de préférence** (lundi, mardi, mercredi, réglables)
+  rendent un peu plus coûteux le surplus d'heures ;
+- une étape « présence maximale » reprend chaque personne absente d'un jour
+  prioritaire sans raison (congé, absence, école, repos fixe) et **déplace
+  une de ses journées** — prise d'abord du lundi au mercredi — vers ce jour,
+  dans un rayon qu'elle tient (le sien d'abord), là où il manque le plus de
+  monde. Le jour de départ doit **garder sa cible** : minimum et cible restent
+  tenus partout, ce sont les heures en plus qui partent vers le week-end ;
+- qui ne travaille toujours pas un jour prioritaire est nommé sous le
+  planning, avec la raison.
+**Constat sur un essai réaliste** : 24 postes le vendredi et 26 le samedi,
+contre 15 à 18 en semaine ; tout le monde le samedi, deux absents le vendredi
+(leurs autres jours tiennent juste leur cible).
+**Réglages** : Paramètres → Règles internes → « Jours prioritaires »,
+« Jours de repos de préférence », « Poids des jours prioritaires ».

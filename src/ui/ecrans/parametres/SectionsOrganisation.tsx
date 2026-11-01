@@ -7,6 +7,8 @@ import {
   LIBELLES_FONCTION,
   LIBELLES_NATURE_TACHE,
   PRIORITE_PAR_JOUR_PAR_DEFAUT,
+  JOURS_DE_REPOS_PREFERES_PAR_DEFAUT,
+  JOURS_PRIORITAIRES_PAR_DEFAUT,
   type CreneauEffectif,
   type GrilleEffectifs,
   type OrganisationPlanning,
@@ -844,25 +846,14 @@ export function SectionReglesInternes() {
           onChange={(dureeMaximaleDepannageMinutes) => reglerRegles({ dureeMaximaleDepannageMinutes })}
         />
         <ChampNombre
-          libelle="Priorité du vendredi"
+          libelle="Poids des jours prioritaires"
           pas={0.25}
-          aide="1 = comme les autres jours. Au-dessus, ses trous passent en premier."
-          valeur={(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[5] ?? 1}
-          onChange={(valeur) =>
-            reglerRegles({
-              prioriteParJour: { ...(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT), 5: Math.max(0.25, valeur) },
-            })
-          }
-        />
-        <ChampNombre
-          libelle="Priorité du samedi"
-          pas={0.25}
-          valeur={(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[6] ?? 1}
-          onChange={(valeur) =>
-            reglerRegles({
-              prioriteParJour: { ...(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT), 6: Math.max(0.25, valeur) },
-            })
-          }
+          aide="1 = comme les autres jours. Au-dessus, leurs trous passent en premier."
+          valeur={(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[5] ?? 1.5}
+          onChange={(valeur) => {
+            const poids = Math.max(1, valeur)
+            reglerRegles({ prioriteParJour: { 1: poids, 2: poids, 3: poids, 4: poids, 5: poids, 6: poids, 7: poids } })
+          }}
         />
         <ChampNombre
           libelle="Jours ouvrables par semaine"
@@ -895,6 +886,17 @@ export function SectionReglesInternes() {
           onChange={(pauseInterditeEnAffluence) => reglerRegles({ pauseInterditeEnAffluence })}
         />
       </div>
+      <p className="champ__libelle">Jours prioritaires (présence maximale : tout le monde y travaille, sauf congé)</p>
+      <ChoixDesJours
+        jours={r.joursPrioritaires ?? JOURS_PRIORITAIRES_PAR_DEFAUT}
+        onChange={(joursPrioritaires) => reglerRegles({ joursPrioritaires })}
+      />
+      <p className="champ__libelle">Jours de repos de préférence</p>
+      <ChoixDesJours
+        jours={r.joursDeReposPreferes ?? JOURS_DE_REPOS_PREFERES_PAR_DEFAUT}
+        onChange={(joursDeReposPreferes) => reglerRegles({ joursDeReposPreferes })}
+      />
+
       <p className="champ__libelle">Plages où la pause peut être prise</p>
       <EditeurPlages plages={r.fenetresPause} onChange={(fenetresPause) => reglerRegles({ fenetresPause })} />
       <button

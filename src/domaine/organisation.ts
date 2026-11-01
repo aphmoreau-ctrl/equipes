@@ -237,7 +237,18 @@ export interface ReglesInternes {
    * 1 = normal. Absent = vendredi et samedi a 1,5 (les plus charges).
    */
   readonly prioriteParJour?: Partial<Readonly<Record<JourSemaine, number>>>
+  /**
+   * Jours de presence maximale : tout le monde y travaille, sauf conge,
+   * absence, ecole ou regle legale ; les heures restantes y vont d'abord, et
+   * leur grille est un plancher, pas un plafond. Absent = vendredi et samedi.
+   */
+  readonly joursPrioritaires?: readonly JourSemaine[]
+  /** Jours ou placer les repos de preference. Absent = lundi, mardi, mercredi. */
+  readonly joursDeReposPreferes?: readonly JourSemaine[]
 }
+
+export const JOURS_PRIORITAIRES_PAR_DEFAUT: readonly JourSemaine[] = [5, 6]
+export const JOURS_DE_REPOS_PREFERES_PAR_DEFAUT: readonly JourSemaine[] = [1, 2, 3]
 
 export const PRIORITE_PAR_JOUR_PAR_DEFAUT: Partial<Readonly<Record<JourSemaine, number>>> = {
   5: 1.5,
@@ -275,6 +286,8 @@ export const REGLES_INTERNES_PAR_DEFAUT: ReglesInternes = {
   depassementContratMaximumMinutes: 60,
   joursHabituelsParSemaine: 6,
   prioriteParJour: PRIORITE_PAR_JOUR_PAR_DEFAUT,
+  joursPrioritaires: [5, 6],
+  joursDeReposPreferes: [1, 2, 3],
 }
 
 /** Organisation vide : aucune tache, aucune rotation. Celle de la demonstration. */

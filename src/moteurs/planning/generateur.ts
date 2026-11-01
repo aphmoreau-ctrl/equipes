@@ -11,7 +11,13 @@ import {
   rayonsPossibles,
   type Collaborateur,
 } from '../../domaine/collaborateur'
-import { PRIORITE_PAR_JOUR_PAR_DEFAUT, type Plage, type ReglesInternes } from '../../domaine/organisation'
+import {
+  JOURS_DE_REPOS_PREFERES_PAR_DEFAUT,
+  JOURS_PRIORITAIRES_PAR_DEFAUT,
+  PRIORITE_PAR_JOUR_PAR_DEFAUT,
+  type Plage,
+  type ReglesInternes,
+} from '../../domaine/organisation'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
 import {
   MINUTES_PAR_JOUR,
@@ -558,10 +564,16 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     heuresVisees.get(collaborateur.id)
 
   /** Priorite d'un jour (vendredi et samedi d'abord, par defaut). */
+  const joursPrioritaires = regles?.joursPrioritaires ?? JOURS_PRIORITAIRES_PAR_DEFAUT
+  const joursDeRepos = regles?.joursDeReposPreferes ?? JOURS_DE_REPOS_PREFERES_PAR_DEFAUT
+  const estPrioritaire = (date: string): boolean =>
+    regles !== undefined && joursPrioritaires.includes(jourDeLaSemaine(date))
+  const estJourDeRepos = (date: string): boolean =>
+    regles !== undefined && joursDeRepos.includes(jourDeLaSemaine(date))
   const prioriteDuJour = (date: string): number =>
-    regles === undefined
+    !estPrioritaire(date)
       ? 1
-      : ((regles.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[jourDeLaSemaine(date)] ?? 1)
+      : ((regles?.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[jourDeLaSemaine(date)] ?? 1.5)
   const horaires: HoraireType[] = [
     ...entrees.horairesTypes,
     ...postesCourts(entrees.besoins),
@@ -778,7 +790,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           variation += (sousCibleApres - sousCibleAvant) * (poids.cible ?? 0) * priorite
           const tropAvant = Math.max(0, presents - cible)
           const tropApres = Math.max(0, presents + 1 - cible)
-          variation += (tropApres - tropAvant) * (poids.audelaDeLaCible ?? poids.sureffectif)
+          // Jours prioritaires : la grille est un plancher, les heures en plus y
+          // sont bienvenues. Jours de repos preferes : le surplus y coute un peu plus.
+          const audela = estPrioritaire(creneau.besoin.date)
+            ? -0.3
+            : (poids.audelaDeLaCible ?? poids.sureffectif) + (estJourDeRepos(creneau.besoin.date) ? 0.3 : 0)
+          variation += (tropApres - tropAvant) * audela
         }
 
         for (const competence of creneau.besoin.tranches[index]?.competencesCritiques ?? []) {
@@ -1146,7 +1163,104 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    * (fin a 20 h pour un trou a 19 h 30). Minimum d'abord, cible ensuite.
    */
   const reparations = reparerLesTrous()
-  const ajustements = ajustementsAvant + reparations + completerLesHeures()
+  const versLesJoursPrioritaires = presenceMaximale()
+  const ajustements =
+    ajustementsAvant + reparations + versLesJoursPrioritaires + completerLesHeures()
+
+  /*
+   * 5 ter. Presence maximale les jours prioritaires (vendredi, samedi).
+   *
+   * Tout le monde y travaille, sauf conge, absence, ecole ou regle legale.
+   * Pour chacun qui n'y est pas, on deplace une de ses journees — prise de
+   * preference un jour de repos prefere (lundi a mercredi) — vers le jour
+   * prioritaire, dans un rayon qu'il tient (le sien d'abord). Le jour de
+   * depart garde sa CIBLE : minimum et cible restent tenus partout, ce sont
+   * les heures en plus qui partent vers le week-end.
+   */
+  function presenceMaximale(): number {
+    if (regles === undefined) return 0
+    const finDuTemps = Date.now() + 1500
+    let deplacees = 0
+    const prioritaires = jours.filter(estPrioritaire)
+    for (const collaborateur of equipe) {
+      for (const jourCible of prioritaires) {
+        if (Date.now() >= finDuTemps) return deplacees
+        if (joursOccupes.get(collaborateur.id)?.has(jourCible) === true) continue
+        // Jours de depart, du plus au moins souhaitable.
+        const sources = placees
+          .map((vacation, position) => ({ vacation, position }))
+          .filter(
+            ({ vacation }) =>
+              vacation.collaborateurId === collaborateur.id && !estPrioritaire(vacation.jour),
+          )
+          .sort(
+            (a, b) =>
+              Number(estJourDeRepos(b.vacation.jour)) - Number(estJourDeRepos(a.vacation.jour)) ||
+              a.vacation.jour.localeCompare(b.vacation.jour),
+          )
+        let fait = false
+        for (const { vacation: ancienne, position } of sources) {
+          if (fait) break
+          const horaireAncien = horairePour(ancienne, horaires, tranchesDe)
+          inscrire(ancienne, horaireAncien, collaborateur, -1)
+          if (!departTient(ancienne, horaireAncien, 'cible')) {
+            inscrire(ancienne, horaireAncien, collaborateur, 1)
+            continue
+          }
+          const siennes = (parPersonne.get(collaborateur.id) ?? []).filter((v) => v.id !== ancienne.id)
+          let meilleur: { nouvelle: Vacation; horaire: HoraireType; gain: number } | null = null
+          for (const rayonId of rayonsPossibles(collaborateur)) {
+            const creneau = creneaux.get(cle(rayonId, jourCible))
+            const rayon = rayons.find((r) => r.id === rayonId)
+            if (creneau === undefined || rayon === undefined || creneau.bornes === null || creneau.bornes === 'ferme') continue
+            const ouverture = enMinutes(creneau.bornes.debut)
+            const fermeture = enMinutes(creneau.bornes.fin)
+            const longueur = Math.min(duree(ancienne.debut, ancienne.fin), fermeture - ouverture)
+            const affluence = affluenceDuJour(jourDeLaSemaine(jourCible))
+            const departs = new Set(
+              [ouverture, fermeture - longueur, ...affluence.map((p) => enMinutes(p.debut) - 60)].map(
+                (d) => Math.min(Math.max(Math.round(d / TRANCHE_MINUTES) * TRANCHE_MINUTES, ouverture), fermeture - longueur),
+              ),
+            )
+            for (const depart of departs) {
+              const horaire = posteSurMesure(depart, depart + longueur, estMineur(collaborateur), jourCible)
+              // Gain : sous le minimum d'abord, sous la cible ensuite, puis l'affluence.
+              let gain = rayonId === collaborateur.rayonPrincipal ? 1 : 0
+              for (const index of tranchesDe.get(horaire.id) ?? []) {
+                const presents = creneau.presents[index] ?? 0
+                if (presents < seuilDe(creneau, index, 'minimum')) gain += 10
+                else if (presents < seuilDe(creneau, index, 'cible')) gain += 3
+                const minute = index * TRANCHE_MINUTES
+                if (affluence.some((p) => minute >= enMinutes(p.debut) && minute < enMinutes(p.fin))) gain += 0.5
+              }
+              const nouvelle: Vacation = {
+                ...ancienne,
+                id: `${ancienne.id}-p-${rayonId}-${jourCible}-${enTexte(depart)}`,
+                rayonId,
+                jour: jourCible,
+                debut: horaire.debut,
+                fin: horaire.fin,
+                pauseMinutes: horaire.pauseMinutes,
+                pauseDebut: horaire.pauseDebut,
+              }
+              if (meilleur !== null && gain <= meilleur.gain) continue
+              if (!affectationPermise(nouvelle, collaborateur, siennes, entrees, [])) continue
+              meilleur = { nouvelle, horaire, gain }
+            }
+          }
+          if (meilleur === null) {
+            inscrire(ancienne, horaireAncien, collaborateur, 1)
+            continue
+          }
+          placees[position] = meilleur.nouvelle
+          inscrire(meilleur.nouvelle, meilleur.horaire, collaborateur, 1)
+          deplacees += 1
+          fait = true
+        }
+      }
+    }
+    return deplacees
+  }
 
   type Phase = 'minimum' | 'cible'
 
@@ -1749,6 +1863,46 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           (raisons.length > 0 ? ` (${raisons.join(', ')})` : '') +
           `. ${explication}`,
       )
+    }
+  }
+
+  /*
+   * Jours prioritaires : qui n'y travaille pas, et pourquoi. Un conge ou un
+   * jour d'ecole est une raison suffisante, on ne le repete pas.
+   */
+  if (regles !== undefined) {
+    for (const jourPrioritaire of jours.filter(estPrioritaire)) {
+      const manquants: string[] = []
+      for (const collaborateur of equipe) {
+        if (ordonnees.some((v) => v.collaborateurId === collaborateur.id && v.jour === jourPrioritaire)) continue
+        if (
+          estAbsent(entrees.absences, collaborateur.id, jourPrioritaire) ||
+          enFormation(collaborateur, jourPrioritaire) !== undefined ||
+          estJourDEcole(collaborateur, jourDeLaSemaine(jourPrioritaire)) ||
+          !estDisponible(collaborateur, jourDeLaSemaine(jourPrioritaire))
+        ) {
+          continue
+        }
+        const siennes = ordonnees.filter((v) => v.collaborateurId === collaborateur.id)
+        const essai: Vacation = {
+          id: 'diagnostic',
+          collaborateurId: collaborateur.id,
+          rayonId: collaborateur.rayonPrincipal,
+          jour: jourPrioritaire,
+          debut: '08:30',
+          fin: '11:30',
+          pauseMinutes: 0,
+        }
+        const refus = raisonDeRefus(essai, collaborateur, siennes, entrees, [])
+        manquants.push(
+          `${nomAffiche(collaborateur)} (${refus ?? 'ses autres jours tiennent tout juste leur cible : les déplacer dégarnirait un rayon'})`,
+        )
+      }
+      if (manquants.length > 0) {
+        restes.push(
+          `${jourEnTexte(jourPrioritaire)}, jour prioritaire : ne travaillent pas ${manquants.join(', ')}.`,
+        )
+      }
     }
   }
 

@@ -18,6 +18,7 @@ export {
   pointeDeLaJournee,
 } from './calcul'
 export { effectifDeLaTranche, type EffectifTranche } from './effectifs'
+export { blocDeLaTache, configurationAvecTaches, joursDeLaTache, plageDeLaTache } from './taches'
 export type {
   BesoinJour,
   Bloc,

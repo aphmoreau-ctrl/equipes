@@ -135,9 +135,13 @@ export function calculerBesoin(
       ) {
         effectif = { minimum: 0, cible: 0 }
       }
-      personnes = effectif.minimum
-      cible = effectif.cible
-      if (effectif.cible > 0) competences.add(grille.competence)
+      // Les taches du rayon s'AJOUTENT a la presence en vente (D-159) : la
+      // charge du quart d'heure, convertie en personnes avec la tolerance.
+      const pourLesTaches =
+        minutesDeLaTranche > 0 ? personnesNecessaires(minutesDeLaTranche, 0, configuration.tolerance) : 0
+      personnes = effectif.minimum + pourLesTaches
+      cible = effectif.cible + pourLesTaches
+      if (cible > 0) competences.add(grille.competence)
       // La competence n'est indispensable que la ou un minimum est exige.
       if (effectif.minimum > 0) {
         competences.add(grille.competence)

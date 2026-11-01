@@ -76,6 +76,11 @@ export interface BlocCommun {
   /** Coefficients qui font varier ce bloc. */
   readonly coefficients: readonly NatureCoefficient[]
   /**
+   * Personnes a qui la tache est confiee nommement (identifiants). Absent ou
+   * vide = toute personne qui a la competence.
+   */
+  readonly personnesDesignees?: readonly string[]
+  /**
    * Personnes presentes au minimum pendant la plage de ce bloc, quel que soit
    * le volume calcule. Un comptoir ouvert exige quelqu'un derriere, meme sans
    * client. Absent = aucune exigence propre au bloc.

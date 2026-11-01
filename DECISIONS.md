@@ -1994,3 +1994,22 @@ elle s'arrêtait plus tôt. Elle est désormais bornée par un nombre d'essais
 (le temps n'est plus qu'un garde-fou très large) et ne réexamine, après un
 déplacement, que les deux rayons-jours touchés. Même chose pour la complétion
 des heures et la présence maximale.
+
+### D-159 — Les tâches d'un rayon s'ajoutent à sa présence en vente
+**Décision.** La section « Effectifs par rayon » devient la **Fiche rayon** :
+effectifs rangés par phase, remballe du jour, règle du titulaire, et
+**tâches du rayon** (nom, durée, jours ou nombre de fois par semaine, heure
+fixe ou plage « au plus tôt / heure limite », personnes à la fois,
+compétence, personnes désignées). Les tâches restent rangées à **un seul
+endroit** (l'organisation) ; au moment du calcul, chacune devient une
+« tâche fixe » du moteur de besoin existant (réutilisé, pas refait) : sa
+charge (durée × personnes) se répartit sur sa plage, se convertit en
+personnes avec la tolérance du rayon, et **s'ajoute** au minimum et à la
+cible de la vente. Les feuilles de route la donnent aux personnes présentes
+qui la savent faire — seulement aux personnes désignées, s'il y en a.
+Une tâche sans plage, sans durée ou sans jours ne compte pas encore (signalée
+« à définir »). Tant qu'un rayon n'a pas de tâche, seule sa grille compte.
+La section « Réunions » ne garde que ce qui ne dépend d'aucun rayon.
+**Limite.** Le générateur ne force pas encore la présence d'une personne
+désignée dans la plage de sa tâche : le contrôle de la semaine signale une
+tâche nommée qui n'a pas assez de créneaux possibles.

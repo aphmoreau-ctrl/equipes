@@ -6,6 +6,9 @@ import {
   jourDeRemplacement,
   LIBELLES_FONCTION,
   LIBELLES_NATURE_TACHE,
+  LIBELLES_PHASE,
+  phaseDuCreneau,
+  type RemballeDuJour,
   PRIORITE_PAR_JOUR_PAR_DEFAUT,
   FENETRES_PAUSE_PAR_JOUR_PAR_DEFAUT,
   fenetresDuJour,
@@ -27,7 +30,7 @@ import {
 } from '../../../moteurs/organisation'
 import { useDonnees } from '../../DonneesProvider'
 import { appliquerGrillesDuWeekEnd, journeesARemplir } from '../../../donnees/grilles-week-end'
-import { ChampHeure, ChampNombre, Depliant, Interrupteur } from '../../composants/Champ'
+import { ChampHeure, ChampNombre, ChampTexte, Depliant, Interrupteur } from '../../composants/Champ'
 
 /**
  * Reglages des regles du planning v2 : points a definir, effectifs,
@@ -207,6 +210,7 @@ export function SectionEffectifs() {
   const avecGrille = etat.configurations.filter((c) => c.grilleEffectifs !== undefined)
   const [rayonId, setRayonId] = useState(avecGrille[0]?.rayonId ?? '')
   const [jour, setJour] = useState<JourSemaine>(1)
+  const [nouvelleTache, setNouvelleTache] = useState('')
   if (avecGrille.length === 0) return null
 
   const configuration = avecGrille.find((c) => c.rayonId === rayonId) ?? avecGrille[0]
@@ -240,10 +244,64 @@ export function SectionEffectifs() {
   }
 
   const joursSources = JOURS_SEMAINE.filter((j) => j !== jour && (grille.jours[j] ?? []).length > 0)
+  const rayonDuJour = rayonParId(etat.magasin, configuration.rayonId)
+  const remballe = grille.remballe?.[jour]
+
+  function reglerRemballe(valeur: RemballeDuJour | null): void {
+    if (grille === undefined) return
+    reglerGrille({ remballe: { ...(grille.remballe ?? {}), [jour]: valeur } })
+  }
+
+  const tachesDuRayon = etat.organisation.taches.filter(
+    (t) => t.rayonId === configuration.rayonId && t.nature !== 'remballe',
+  )
+  function reglerTache(id: string, changement: Partial<TachePlanifiee>): void {
+    modifier((precedent) => ({
+      ...precedent,
+      organisation: {
+        ...precedent.organisation,
+        taches: precedent.organisation.taches.map((t) => (t.id === id ? { ...t, ...changement } : t)),
+      },
+    }))
+  }
+  function ajouterTache(nom: string): void {
+    const rayonCible = configuration?.rayonId ?? null
+    modifier((precedent) => ({
+      ...precedent,
+      organisation: {
+        ...precedent.organisation,
+        taches: [
+          ...precedent.organisation.taches,
+          {
+            id: `tache-${rayonCible ?? 'x'}-${precedent.organisation.taches.length + 1}`,
+            nom,
+            nature: 'tache',
+            actif: true,
+            rayonId: rayonCible,
+            competence: grille?.competence ?? null,
+            fonction: null,
+            rayonsRepresentes: [],
+            personnesDesignees: [],
+            jours: null,
+            moment: { type: 'libre' },
+            dureeMinutes: null,
+            occurrencesParSemaine: null,
+            fenetre: null,
+          },
+        ],
+      },
+    }))
+  }
 
   return (
     <section className="carte" aria-labelledby="titre-effectifs">
-      <h2 id="titre-effectifs">Effectifs par rayon</h2>
+      <h2 id="titre-effectifs">Fiche rayon</h2>
+      <p>
+        Chaque journée se découpe en trois phases : <strong>préparation</strong> (de l’ouverture à
+        8 h 30), <strong>vente</strong> (8 h 30-20 h, dimanche 8 h 30-12 h 30) et{' '}
+        <strong>remballe</strong>. Chacune a son minimum, sa cible et ses tâches ; les tâches
+        s’ajoutent aux personnes demandées.
+      </p>
       <p>
         Le <strong>minimum</strong> est obligatoire : le planning alerte s’il n’est pas tenu. La{' '}
         <strong>cible</strong> est souhaitée : elle peut être atteinte avec des renforts. Un champ
@@ -317,6 +375,7 @@ export function SectionEffectifs() {
       ) : (
         creneaux.map((creneau, index) => (
           <div className="champs" key={`${jour}-${index}`}>
+            <span className="etiquette fiche-rayon__phase">{LIBELLES_PHASE[phaseDuCreneau(creneau)]}</span>
             <ChampHeure libelle="De" valeur={creneau.debut} onChange={(debut) => reglerCreneau(index, { debut })} />
             <ChampHeure libelle="À" valeur={creneau.fin} onChange={(fin) => reglerCreneau(index, { fin })} />
             <ChampADefinir
@@ -377,6 +436,104 @@ export function SectionEffectifs() {
             Personne ce jour-là
           </button>
         )}
+      </div>
+
+      {rayonDuJour?.vente !== false && rayonDuJour?.horairesPropres?.[jour].ouvert !== false && (
+        <div className="fiche-rayon__remballe">
+          <p className="champ__libelle">
+            Remballe du {nomDuJour(jour)} {remballe == null && <AuMoinsUnPoint />}
+          </p>
+          {remballe == null ? (
+            <button
+              type="button"
+              className="bouton"
+              onClick={() =>
+                reglerRemballe({ debut: '19:00', dureeMinutes: 60, minimum: 1, cible: 1 })
+              }
+            >
+              Définir la remballe
+            </button>
+          ) : (
+            <div className="champs">
+              <ChampHeure
+                libelle="Début"
+                valeur={remballe.debut}
+                onChange={(debut) => reglerRemballe({ ...remballe, debut })}
+              />
+              <ChampNombre
+                libelle="Durée"
+                suffixe="min"
+                pas={15}
+                valeur={remballe.dureeMinutes}
+                onChange={(dureeMinutes) => reglerRemballe({ ...remballe, dureeMinutes })}
+              />
+              <ChampNombre
+                libelle="Minimum"
+                valeur={remballe.minimum}
+                onChange={(minimum) => reglerRemballe({ ...remballe, minimum })}
+              />
+              <ChampNombre
+                libelle="Cible"
+                valeur={remballe.cible}
+                onChange={(cible) => reglerRemballe({ ...remballe, cible })}
+              />
+              <button type="button" className="bouton" onClick={() => reglerRemballe(null)}>
+                Remettre « à définir »
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="groupe-boutons">
+        <Interrupteur
+          libelle="Un titulaire à l’ouverture et à la fermeture"
+          actif={grille.titulaireOuvertureFermeture !== false}
+          onChange={(titulaireOuvertureFermeture) => reglerGrille({ titulaireOuvertureFermeture })}
+        />
+      </div>
+
+      <h3>Tâches du rayon</h3>
+      {tachesDuRayon.length === 0 ? (
+        <p className="champ__aide">
+          Aucune tâche : seule la grille compte. Ajoutez les tâches qui demandent des bras en plus
+          (emballage, préparation de commandes…).
+        </p>
+      ) : (
+        tachesDuRayon.map((tache) => (
+          <Depliant
+            key={tache.id}
+            titre={tache.nom}
+            resume={
+              !tache.actif
+                ? 'désactivée'
+                : tache.dureeMinutes === null || tache.jours === null || tache.moment.type === 'a-definir'
+                  ? 'à définir'
+                  : 'complète'
+            }
+          >
+            <EditeurTache tache={tache} onChange={(changement) => reglerTache(tache.id, changement)} />
+          </Depliant>
+        ))
+      )}
+      <div className="champs">
+        <ChampTexte
+          libelle="Nouvelle tâche"
+          valeur={nouvelleTache}
+          placeholder="ex. Préparation des commandes"
+          onChange={setNouvelleTache}
+        />
+        <button
+          type="button"
+          className="bouton"
+          disabled={nouvelleTache.trim() === ''}
+          onClick={() => {
+            ajouterTache(nouvelleTache.trim())
+            setNouvelleTache('')
+          }}
+        >
+          Ajouter la tâche
+        </button>
       </div>
 
       <Depliant titre="Planchers de couverture" resume={`${grille.planchers.length}`}>
@@ -580,8 +737,50 @@ function EditeurTache({
           valeur={tache.occurrencesParSemaine}
           onChange={(occurrencesParSemaine) => onChange({ occurrencesParSemaine })}
         />
+        {tache.fonction === null && (
+          <ChampNombre
+            libelle="Personnes à la fois"
+            minimum={1}
+            valeur={tache.personnes ?? 1}
+            onChange={(personnes) => onChange({ personnes: Math.max(1, Math.round(personnes)) })}
+          />
+        )}
       </div>
       <p className="champ__aide">« Fois par semaine » vide : une fois chaque jour prévu.</p>
+
+      {tache.moment.type === 'libre' && tache.fonction === null && (
+        <>
+          <p className="champ__libelle">
+            Plage horaire {tache.fenetre == null && <AuMoinsUnPoint />}
+          </p>
+          {tache.fenetre == null ? (
+            <button
+              type="button"
+              className="bouton"
+              onClick={() => onChange({ fenetre: { debut: '08:30', fin: '11:00' } })}
+            >
+              Fixer la plage horaire
+            </button>
+          ) : (
+            <div className="champs">
+              <ChampHeure
+                libelle="Au plus tôt"
+                valeur={tache.fenetre.debut}
+                onChange={(debut) => onChange({ fenetre: { ...(tache.fenetre as Plage), debut } })}
+              />
+              <ChampHeure
+                libelle="Heure limite de fin"
+                valeur={tache.fenetre.fin}
+                onChange={(fin) => onChange({ fenetre: { ...(tache.fenetre as Plage), fin } })}
+              />
+            </div>
+          )}
+          <p className="champ__aide">
+            La durée se répartit entre ces deux heures, et s’ajoute aux personnes demandées pour la
+            vente.
+          </p>
+        </>
+      )}
 
       {tache.fonction === null && (
         <>
@@ -620,7 +819,10 @@ function EditeurTache({
 export function SectionTachesPlanifiees() {
   const { etat } = useDonnees()
   const [organisation, regler] = useOrganisation()
-  if (organisation.taches.length === 0) return null
+  // Les taches d'un rayon se reglent dans sa fiche ; ici, ce qui ne depend
+  // d'aucun rayon : les reunions.
+  const horsRayon = organisation.taches.filter((t) => t.rayonId === null)
+  if (horsRayon.length === 0) return null
 
   function reglerTache(id: string, changement: Partial<TachePlanifiee>): void {
     regler({ taches: organisation.taches.map((t) => (t.id === id ? { ...t, ...changement } : t)) })
@@ -628,9 +830,12 @@ export function SectionTachesPlanifiees() {
 
   return (
     <section className="carte" aria-labelledby="titre-taches-nommees">
-      <h2 id="titre-taches-nommees">Tâches, réunions et réserves</h2>
-      <p>Emballages, réunions, skin marée, remballe : qui, quels jours, à quelle heure, combien de temps.</p>
-      {organisation.taches.map((tache) => {
+      <h2 id="titre-taches-nommees">Réunions</h2>
+      <p>
+        Ce qui ne dépend d’aucun rayon. Les tâches d’un rayon (emballages, skin marée…) se règlent
+        dans sa fiche, plus haut.
+      </p>
+      {horsRayon.map((tache) => {
         const rayon = tache.rayonId === null ? '' : ` — ${rayonParId(etat.magasin, tache.rayonId)?.nom ?? ''}`
         const incomplet =
           tache.jours === null || tache.dureeMinutes === null || tache.moment.type === 'a-definir'

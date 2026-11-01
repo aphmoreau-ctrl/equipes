@@ -184,6 +184,9 @@ function manquesDeLaTache(tache: TachePlanifiee): string[] {
   }
   if (tache.jours === null) manques.push('les jours')
   if (tache.moment.type === 'a-definir') manques.push('l’heure')
+  if (tache.moment.type === 'libre' && tache.fenetre == null && tache.fonction === null) {
+    manques.push('la plage horaire (au plus tôt, limite)')
+  }
   if (tache.dureeMinutes === null) manques.push('la durée')
   return manques
 }

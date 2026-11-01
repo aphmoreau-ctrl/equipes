@@ -4,6 +4,7 @@ import { nomAffiche } from '../../domaine/collaborateur'
 import { rayonParId, rayonsActifs } from '../../domaine/magasin'
 import { dateEnTexte, semaineDe } from '../../domaine/calendrier'
 import { construireLesFeuilles, plageEnTexte } from '../../moteurs/planning/feuilles'
+import { configurationAvecTaches } from '../../moteurs/besoin'
 import type { Vacation } from '../../moteurs/regles'
 import { heuresEnTexte } from '../../domaine/nombres'
 
@@ -36,10 +37,12 @@ export function FeuillesDeRoute({ semaine, vacations, besoinDuJour }: Proprietes
       jour,
       vacations,
       besoins,
-      configurations: etat.configurations,
+      configurations: etat.configurations.map((c) =>
+        configurationAvecTaches(c, etat.organisation.taches),
+      ),
       collaborateurs: etat.collaborateurs,
     })
-  }, [jour, vacations, rayons, besoinDuJour, etat.configurations, etat.collaborateurs])
+  }, [jour, vacations, rayons, besoinDuJour, etat.configurations, etat.collaborateurs, etat.organisation.taches])
 
   const nom = (identifiant: string): string => {
     const collaborateur = etat.collaborateurs.find((c) => c.id === identifiant)

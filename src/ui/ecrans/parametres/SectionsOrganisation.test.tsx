@@ -104,14 +104,46 @@ describe('effectifs', () => {
 })
 
 describe('tâches, rôtisserie et règles internes', () => {
-  it('renseigne la durée d’une tâche', () => {
+  it('la fiche rayon règle ses tâches : durée, plage horaire, personnes', () => {
     chargerLeMagasin()
-    afficher(<SectionTachesPlanifiees />)
+    afficher(<SectionEffectifs />)
+    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: RAYON.boucherieLs } })
     const bloc = screen.getByText('Emballage boucherie').closest('details') as HTMLElement
     fireEvent.change(within(bloc).getByLabelText(/Durée/), { target: { value: '90' } })
+    fireEvent.change(within(bloc).getByLabelText('Moment'), { target: { value: 'libre' } })
+    fireEvent.click(within(bloc).getByRole('button', { name: 'Fixer la plage horaire' }))
+    fireEvent.change(within(bloc).getByLabelText('Personnes à la fois'), { target: { value: '2' } })
     const tache = lireEtat().organisation.taches.find((t) => t.id === TACHE.emballageBoucherie)
-    expect(tache?.dureeMinutes).toBe(90)
+    expect(tache).toMatchObject({ dureeMinutes: 90, personnes: 2, fenetre: { debut: '08:30', fin: '11:00' } })
     expect(tache?.personnesDesignees).toEqual(['c-basile'])
+  })
+
+  it('la fiche rayon règle la remballe du jour et la règle du titulaire', () => {
+    chargerLeMagasin()
+    afficher(<SectionEffectifs />)
+    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: RAYON.maree } })
+    fireEvent.click(screen.getByRole('button', { name: 'Définir la remballe' }))
+    const grille = () => lireEtat().configurations.find((c) => c.rayonId === RAYON.maree)!.grilleEffectifs!
+    expect(grille().remballe?.[1]).toEqual({ debut: '19:00', dureeMinutes: 60, minimum: 1, cible: 1 })
+    fireEvent.click(screen.getByRole('button', { name: 'Un titulaire à l’ouverture et à la fermeture' }))
+    expect(grille().titulaireOuvertureFermeture).toBe(false)
+  })
+
+  it('ajoute une tâche au rayon', () => {
+    chargerLeMagasin()
+    afficher(<SectionEffectifs />)
+    fireEvent.change(screen.getByLabelText('Rayon'), { target: { value: RAYON.maree } })
+    fireEvent.change(screen.getByLabelText('Nouvelle tâche'), { target: { value: 'Commandes clients' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter la tâche' }))
+    expect(lireEtat().organisation.taches.some((t) => t.nom === 'Commandes clients' && t.rayonId === RAYON.maree)).toBe(true)
+  })
+
+  it('la section des réunions ne garde que ce qui ne dépend d’aucun rayon', () => {
+    chargerLeMagasin()
+    afficher(<SectionTachesPlanifiees />)
+    expect(screen.getByRole('heading', { name: 'Réunions' })).toBeInTheDocument()
+    expect(screen.queryByText('Emballage boucherie')).not.toBeInTheDocument()
+    expect(screen.getByText('Réunion managers')).toBeInTheDocument()
   })
 
   it('renseigne la durée de cuisson', () => {

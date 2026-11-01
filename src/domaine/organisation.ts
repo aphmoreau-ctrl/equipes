@@ -190,6 +190,14 @@ export interface TachePlanifiee {
    * null = une par jour prevu.
    */
   readonly occurrencesParSemaine: number | null
+  /**
+   * Pour une tache « au choix du planning » : heure de debut au plus tot et
+   * heure limite de fin. La charge se repartit dans cette fenetre. Absent ou
+   * null = A DEFINIR (la tache ne compte pas encore dans le besoin).
+   */
+  readonly fenetre?: Plage | null
+  /** Personnes a la fois (2 = deux personnes pendant toute la duree). Absent = 1. */
+  readonly personnes?: number
 }
 
 /* ------------------------------------------------------------------ */

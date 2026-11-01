@@ -65,6 +65,9 @@ function peutTenir(
   bloc: Bloc,
   presents: readonly Collaborateur[],
 ): boolean {
+  // Tache confiee nommement : seulement aux personnes designees.
+  const designees = bloc.personnesDesignees ?? []
+  if (designees.length > 0 && !designees.includes(collaborateur.id)) return false
   return bloc.competences.every((exigence) => {
     const sien = collaborateur.competences[exigence.competence] ?? 0
     if (sien >= exigence.niveauMinimum) return true

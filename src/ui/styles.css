@@ -2229,3 +2229,15 @@ select.champ__saisie {
   width: 24px;
   height: 24px;
 }
+
+/* Fiche rayon : phase de chaque creneau, bloc de remballe. */
+.fiche-rayon__phase {
+  align-self: center;
+  min-width: 96px;
+  text-align: center;
+}
+.fiche-rayon__remballe {
+  border-top: 1px solid var(--bordure);
+  padding-top: 10px;
+  margin-top: 10px;
+}

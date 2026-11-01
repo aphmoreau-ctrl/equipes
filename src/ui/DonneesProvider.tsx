@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { clientsParTranche, tranchesOuvertes } from '../domaine/magasin'
-import { calculerBesoin, type BesoinJour, type ContexteJour } from '../moteurs/besoin'
+import { calculerBesoin, configurationAvecTaches, type BesoinJour, type ContexteJour } from '../moteurs/besoin'
 import { coefficientEvenements } from '../domaine/magasin'
 import type { Planning } from '../domaine/planning'
 import { aujourdhui } from '../domaine/calendrier'
@@ -99,6 +99,7 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
       etat.saisiesQualite,
       etat.meteoParDate,
       etat.promotionsParDate,
+      etat.organisation.taches,
     ],
   )
 
@@ -128,7 +129,11 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
         ),
       }
 
-      const besoin = calculerBesoin(configuration, contexte)
+      // Les taches de la fiche rayon s'ajoutent a sa grille (D-159).
+      const besoin = calculerBesoin(
+        configurationAvecTaches(configuration, etat.organisation.taches),
+        contexte,
+      )
       memoireDesBesoins.set(cle, besoin)
       return besoin
     },
@@ -139,6 +144,7 @@ export function DonneesProvider({ children }: { readonly children: ReactNode }) 
       etat.saisiesQualite,
       etat.meteoParDate,
       etat.promotionsParDate,
+      etat.organisation.taches,
     ],
   )
 

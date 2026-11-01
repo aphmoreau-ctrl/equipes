@@ -2041,3 +2041,10 @@ select.champ__saisie {
   border-style: dashed;
   border-color: var(--avertissement);
 }
+
+/* Pause du poste, sous l'horaire : discrete mais lisible sur iPad. */
+.case__pause {
+  display: block;
+  font-size: 12px;
+  color: var(--texte-doux);
+}

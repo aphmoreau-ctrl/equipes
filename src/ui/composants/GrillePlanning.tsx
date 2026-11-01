@@ -132,6 +132,9 @@ export function GrillePlanning({
                                 {vacation.debut}–{vacation.fin}
                               </span>
                               <span className="case__rayon">{nomDuRayon(vacation.rayonId)}</span>
+                              {texteDeLaPause(vacation) !== null && (
+                                <span className="case__pause">{texteDeLaPause(vacation)}</span>
+                              )}
                             </span>
                           ))
                         )}
@@ -233,4 +236,15 @@ export function GrillePlanning({
       )}
     </div>
   )
+}
+
+/** « Pause 15:45 (24 min) », ou rien s'il n'y a pas de pause. */
+export function texteDeLaPause(vacation: {
+  readonly pauseMinutes: number
+  readonly pauseDebut?: string
+}): string | null {
+  if (vacation.pauseMinutes <= 0) return null
+  return vacation.pauseDebut === undefined
+    ? `Pause ${vacation.pauseMinutes} min`
+    : `Pause ${vacation.pauseDebut} (${vacation.pauseMinutes} min)`
 }

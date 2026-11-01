@@ -205,6 +205,12 @@ export interface ReglesInternes {
    * semaine. Absent (reglage anterieur) = 1 h.
    */
   readonly depassementContratMaximumMinutes?: Minutes
+  /**
+   * Jours ouvrables par semaine (decompte legal des conges payes : 6, du
+   * lundi au samedi). Un jour de conge, d'absence ou d'ecole vaut contrat /
+   * ce nombre. Absent = 6.
+   */
+  readonly joursHabituelsParSemaine?: number
 }
 
 /** Une verification a faire hors de l'application (RH, convention). */
@@ -236,6 +242,7 @@ export const REGLES_INTERNES_PAR_DEFAUT: ReglesInternes = {
   finDuMatin: '14:00',
   dureeMaximaleDepannageMinutes: 2 * 60,
   depassementContratMaximumMinutes: 60,
+  joursHabituelsParSemaine: 6,
 }
 
 /** Organisation vide : aucune tache, aucune rotation. Celle de la demonstration. */

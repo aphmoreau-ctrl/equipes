@@ -6,9 +6,9 @@ import {
   estDisponible,
   estJourDEcole,
   estMineur,
-  horsCalculDHeures,
   nomAffiche,
   peutTravaillerDans,
+  rayonsPossibles,
   type Collaborateur,
 } from '../../domaine/collaborateur'
 import type { Plage, ReglesInternes } from '../../domaine/organisation'
@@ -96,6 +96,8 @@ export interface ResultatGeneration {
   readonly decalages: number
   /** Nombre de vacations laissees intactes parce qu'elles etaient verrouillees. */
   readonly verrouillees: number
+  /** Retouches faites pour amener chacun a ses heures. */
+  readonly ajustementsDHeures?: number
   readonly dureeMs: number
   /** Ce que le moteur n'a pas su resoudre, en francais. */
   readonly restesAExpliquer: readonly string[]
@@ -512,6 +514,36 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   const pausesPayees = regles?.pausesPayeesIncluses ?? false
   const affluenceDuJour = (jour: number): readonly Plage[] =>
     entrees.plagesAffluence?.[jour] ?? []
+
+  /*
+   * Heures a placer cette semaine, par personne.
+   *
+   * Le contrat est la reference. Un jour de conge, d'absence, de formation
+   * au CFA ou d'ecole compte pour un jour ouvrable (contrat / 6, decompte
+   * legal des conges payes) : il est deja paye, on ne le fait pas
+   * rattraper sur les autres jours.
+   */
+  const joursHabituels = regles?.joursHabituelsParSemaine ?? 6
+  function joursNonTravailles(collaborateur: Collaborateur): string[] {
+    return jours.filter(
+      (jour) =>
+        estAbsent(entrees.absences, collaborateur.id, jour) ||
+        enFormation(collaborateur, jour) !== undefined ||
+        estJourDEcole(collaborateur, jourDeLaSemaine(jour)),
+    )
+  }
+  const heuresVisees = new Map<string, number>()
+  if (regles !== undefined) {
+    for (const collaborateur of entrees.collaborateurs) {
+      const absents = Math.min(joursNonTravailles(collaborateur).length, joursHabituels)
+      heuresVisees.set(
+        collaborateur.id,
+        (collaborateur.heuresHebdomadaires * (joursHabituels - absents)) / joursHabituels,
+      )
+    }
+  }
+  const visee = (collaborateur: Collaborateur): number | undefined =>
+    heuresVisees.get(collaborateur.id)
   const horaires: HoraireType[] = [
     ...entrees.horairesTypes,
     ...postesCourts(entrees.besoins),
@@ -657,8 +689,15 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
     const siennes = parPersonne.get(collaborateur.id) ?? []
     variation +=
-      penalitePersonne(collaborateur, [...siennes, vacation], poids, moyenne, reperesPrecedents, pausesPayees) -
-      penaliteActuelle(collaborateur)
+      penalitePersonne(
+        collaborateur,
+        [...siennes, vacation],
+        poids,
+        moyenne,
+        reperesPrecedents,
+        pausesPayees,
+        visee(collaborateur),
+      ) - penaliteActuelle(collaborateur)
 
     return variation
   }
@@ -675,6 +714,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       moyenne,
       reperesPrecedents,
       pausesPayees,
+      visee(collaborateur),
     )
     memoirePersonne.set(collaborateur.id, { version, valeur })
     return valeur
@@ -744,14 +784,14 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   const depassementMaximum = regles?.depassementContratMaximumMinutes ?? 60
   function auDelaDuPlafond(collaborateur: Collaborateur, vacation: Vacation): boolean {
-    if (regles === undefined || horsCalculDHeures(collaborateur)) return false
+    if (regles === undefined) return false
     const deja = (parPersonne.get(collaborateur.id) ?? []).reduce(
       (somme, v) => somme + minutesAuContrat(v, pausesPayees),
       0,
     )
     return (
       deja + minutesAuContrat(vacation, pausesPayees) >
-      collaborateur.heuresHebdomadaires * 60 + depassementMaximum
+      (visee(collaborateur) ?? collaborateur.heuresHebdomadaires) * 60 + depassementMaximum
     )
   }
 
@@ -1064,6 +1104,183 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     }
   }
 
+  /*
+   * 5. Chacun a ses heures, a un quart d'heure pres.
+   *
+   * Les etapes precedentes cherchent le meilleur planning d'ensemble ; il
+   * reste souvent quelques heures a placer, ou une demi-heure de trop. On
+   * reprend chaque personne : on allonge ou raccourcit un de ses postes par
+   * quarts d'heure, ou on lui ajoute un jour, jusqu'a atteindre ses heures.
+   * Chaque retouche repasse au crible des regles legales.
+   */
+  const ajustements = completerLesHeures()
+
+  function posteSurMesure(debut: number, fin: number, jeune: boolean, jour: string): HoraireType {
+    const regle = regles as ReglesInternes
+    const pause = pauseDuPoste(fin - debut, regle, jeune, entrees.parametres)
+    const pauseDebut = placerLaPause(
+      debut,
+      fin,
+      pause,
+      regle,
+      affluenceDuJour(jourDeLaSemaine(jour)),
+    )
+    const id = `mesure-${jeune ? 'j' : 'a'}-${enTexte(debut)}-${enTexte(fin)}-${pause}-${enTexte(pauseDebut)}`
+    const connu = horaires.find((horaire) => horaire.id === id)
+    if (connu !== undefined) return connu
+    const horaire: HoraireType = {
+      id,
+      nom: `${enTexte(debut)}–${enTexte(fin)}`,
+      debut: enTexte(debut),
+      fin: enTexte(fin),
+      pauseMinutes: pause,
+      pauseDebut: enTexte(pauseDebut),
+    }
+    horaires.push(horaire)
+    tranchesDe.set(horaire.id, tranchesCouvertesPar(horaire))
+    return horaire
+  }
+
+  function minutesPlacees(collaborateur: Collaborateur): number {
+    return (parPersonne.get(collaborateur.id) ?? []).reduce(
+      (somme, v) => somme + minutesAuContrat(v, pausesPayees),
+      0,
+    )
+  }
+
+  interface Retouche {
+    readonly ancienne: Vacation | null
+    readonly position: number
+    readonly nouvelle: Vacation
+    readonly horaire: HoraireType
+    readonly variation: number
+  }
+
+  /** Meilleure retouche qui rapproche la personne de ses heures. */
+  function meilleureRetouche(collaborateur: Collaborateur, ecart: number): Retouche | null {
+    const retouches: Retouche[] = []
+    const jeune = estMineur(collaborateur)
+    const PAS = TRANCHE_MINUTES
+
+    // a. Allonger ou raccourcir un poste existant.
+    placees.forEach((ancienne, position) => {
+      if (ancienne.collaborateurId !== collaborateur.id) return
+      const horaireAncien = horairePour(ancienne, horaires, tranchesDe)
+      inscrire(ancienne, horaireAncien, collaborateur, -1)
+      const cout = variationDAjout(ancienne, horaireAncien, collaborateur)
+      const debut = enMinutes(ancienne.debut)
+      const fin = debut + duree(ancienne.debut, ancienne.fin)
+      for (let delta = PAS; delta <= 2 * 60; delta += PAS) {
+        const formes =
+          ecart > 0
+            ? [
+                [debut - delta, fin],
+                [debut, fin + delta],
+              ]
+            : [
+                [debut + delta, fin],
+                [debut, fin - delta],
+              ]
+        for (const [d, f] of formes as [number, number][]) {
+          if (d < 0 || f > MINUTES_PAR_JOUR || f - d < DUREE_MINIMALE_POSTE) continue
+          if (!dansLesBornes(ancienne.rayonId, ancienne.jour, enTexte(d), enTexte(f))) continue
+          const horaire = posteSurMesure(d, f, jeune, ancienne.jour)
+          const nouvelle: Vacation = {
+            ...ancienne,
+            id: `${ancienne.id}-m${enTexte(d)}${enTexte(f)}`,
+            debut: horaire.debut,
+            fin: horaire.fin,
+            pauseMinutes: horaire.pauseMinutes,
+            pauseDebut: horaire.pauseDebut,
+          }
+          const apres = ecart - (minutesAuContrat(nouvelle, pausesPayees) - minutesAuContrat(ancienne, pausesPayees))
+          if (Math.abs(apres) >= Math.abs(ecart)) continue
+          retouches.push({
+            ancienne,
+            position,
+            nouvelle,
+            horaire,
+            variation: variationDAjout(nouvelle, horaire, collaborateur) - cout,
+          })
+        }
+      }
+      inscrire(ancienne, horaireAncien, collaborateur, 1)
+    })
+
+    // b. Ajouter un jour, s'il manque au moins un poste minimal.
+    if (ecart >= DUREE_MINIMALE_POSTE - PAS) {
+      for (const jour of jours) {
+        for (const rayonId of rayonsPossibles(collaborateur)) {
+          const rayon = rayons.find((r) => r.id === rayonId)
+          const creneau = creneaux.get(cle(rayonId, jour))
+          if (rayon === undefined || creneau === undefined || creneau.bornes === 'ferme') continue
+          if (ecarteDEmblee(collaborateur, rayonId, jour)) continue
+          for (const horaire of horairesDuCreneau(rayonId, jour, creneau.bornes !== null)) {
+            if (horaire.id.startsWith('contrat-') && horaire.id.startsWith('contrat-j-') !== jeune) continue
+            const nouvelle = enVacation({ collaborateur, rayon, jour, horaire })
+            const apres = ecart - minutesAuContrat(nouvelle, pausesPayees)
+            if (Math.abs(apres) >= Math.abs(ecart)) continue
+            retouches.push({
+              ancienne: null,
+              position: -1,
+              nouvelle,
+              horaire,
+              variation: variationDAjout(nouvelle, horaire, collaborateur),
+            })
+          }
+        }
+      }
+    }
+
+    retouches.sort(
+      (a, b) => a.variation - b.variation || a.nouvelle.id.localeCompare(b.nouvelle.id),
+    )
+    for (const retouche of retouches) {
+      const siennes = (parPersonne.get(collaborateur.id) ?? []).filter(
+        (v) => v.id !== retouche.ancienne?.id,
+      )
+      if (affectationPermise(retouche.nouvelle, collaborateur, siennes, entrees, [])) return retouche
+    }
+    return null
+  }
+
+  function completerLesHeures(): number {
+    if (regles === undefined) return 0
+    // Un temps propre a cette etape : elle passe meme si les precedentes
+    // ont consomme le leur.
+    const fin = Date.now() + 2000
+    let retouches = 0
+    for (let tour = 0; tour < 4; tour += 1) {
+      let changement = false
+      for (const collaborateur of equipe) {
+        const vise = visee(collaborateur)
+        if (vise === undefined) continue
+        for (let essai = 0; essai < 16 && Date.now() < fin; essai += 1) {
+          const ecart = vise * 60 - minutesPlacees(collaborateur)
+          if (Math.abs(ecart) <= TRANCHE_MINUTES) break
+          const retouche = meilleureRetouche(collaborateur, ecart)
+          if (retouche === null) break
+          if (retouche.ancienne !== null) {
+            inscrire(
+              retouche.ancienne,
+              horairePour(retouche.ancienne, horaires, tranchesDe),
+              collaborateur,
+              -1,
+            )
+            placees[retouche.position] = retouche.nouvelle
+          } else {
+            placees.push(retouche.nouvelle)
+          }
+          inscrire(retouche.nouvelle, retouche.horaire, collaborateur, 1)
+          retouches += 1
+          changement = true
+        }
+      }
+      if (!changement) break
+    }
+    return retouches
+  }
+
   // ------------------------------------------------ Resultat et restes
   const ordonnees = [...verrouillees, ...placees].sort(
     (a, b) =>
@@ -1128,15 +1345,33 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    */
   if (regles !== undefined) {
     for (const collaborateur of equipe) {
-      if (horsCalculDHeures(collaborateur)) continue
+      const vise = visee(collaborateur) ?? collaborateur.heuresHebdomadaires
       const siennes = ordonnees.filter((v) => v.collaborateurId === collaborateur.id)
-      const placees = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
-      const manque = collaborateur.heuresHebdomadaires - placees
-      if (manque < 1 || ecartAuContratEnHeures(collaborateur, siennes, pausesPayees) < 1) continue
+      const faites = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
+      if (ecartAuContratEnHeures(collaborateur, siennes, pausesPayees, vise) <= 0.25) continue
+
+      // Ce qu'on sait de sa semaine, en clair.
+      const raisons: string[] = []
+      const absents = jours.filter((jour) => estAbsent(entrees.absences, collaborateur.id, jour))
+      if (absents.length > 0) raisons.push(`absent ou en congé ${absents.length} jour${absents.length > 1 ? 's' : ''}`)
+      const ecole = jours.filter(
+        (jour) =>
+          enFormation(collaborateur, jour) !== undefined ||
+          estJourDEcole(collaborateur, jourDeLaSemaine(jour)),
+      )
+      if (ecole.length > 0) raisons.push(`${ecole.length} jour${ecole.length > 1 ? 's' : ''} d’école`)
+      const indisponibles = jours.filter((jour) => !estDisponible(collaborateur, jourDeLaSemaine(jour)))
+      if (indisponibles.length > 0) raisons.push(`${indisponibles.length} jour${indisponibles.length > 1 ? 's' : ''} de repos fixe`)
+      const explication =
+        faites < vise
+          ? 'Aucun poste de plus n’était possible sans enfreindre une règle (repos, six jours, ' +
+            'durée maximale) ou sortir des horaires de ses rayons.'
+          : 'Ses postes ne pouvaient pas être raccourcis sans laisser un rayon sous son minimum.'
       restes.push(
-        `${nomAffiche(collaborateur)} : ${heuresEnTexte(placees)} placées sur ` +
-          `${heuresEnTexte(collaborateur.heuresHebdomadaires)} au contrat. Les règles, ses ` +
-          `disponibilités ou les horaires de ses rayons n’ont pas permis davantage.`,
+        `${nomAffiche(collaborateur)} : ${heuresEnTexte(faites, 2)} placées pour ` +
+          `${heuresEnTexte(vise, 2)} à faire cette semaine` +
+          (raisons.length > 0 ? ` (${raisons.join(', ')})` : '') +
+          `. ${explication}`,
       )
     }
   }
@@ -1155,6 +1390,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     ameliorations,
     decalages,
     verrouillees: verrouillees.length,
+    ajustementsDHeures: ajustements,
     dureeMs: Date.now() - debutCalcul,
     restesAExpliquer: restes,
   }

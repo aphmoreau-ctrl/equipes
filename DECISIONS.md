@@ -1714,3 +1714,36 @@ la semaine se calcule en 3 à 4 secondes au lieu de dépasser la limite de 5.
 Le message « il manque encore … de présence » comptait encore en
 demi-heures depuis le passage au quart d'heure : il annonçait le double de
 la réalité. Corrigé.
+
+### D-141 — Tout le monde travaille et fait ses heures (demandé par Arnaud)
+**Décision.** Après le calcul d'ensemble, chaque personne est reprise une à
+une : un de ses postes est allongé ou raccourci par quarts d'heure, ou un
+jour lui est ajouté, jusqu'à atteindre ses heures **à 15 minutes près**.
+Chaque retouche repasse au crible des règles légales. Le cadre au forfait
+est placé lui aussi (ses 35 h servent de repère de présence ; ses heures ne
+se comptent toujours pas).
+**Si ce n'est pas possible**, le planning le dit, nom par nom, avec ce qu'il
+sait de sa semaine (congé, école, repos fixe) et la raison.
+
+### D-142 — Congé payé : un jour ouvrable vaut le contrat divisé par 6 (validé)
+**Décision.** Arnaud a demandé « la légalité avec les heures contractuelles,
+simplement », en rappelant que la grande distribution travaille le dimanche
+et jusqu'à 6 jours par semaine. On retient le **décompte légal des congés
+payés en jours ouvrables** : 6 par semaine. Heures à placer dans la semaine =
+contrat × (6 − jours de congé, d'absence ou d'école) ÷ 6. Exemple : 2 jours
+de CP sur 36 h 75 → 24 h 30 à faire au magasin.
+Les congés sont **demandés par les salariés** et saisis dans le menu Congés ;
+le planning ne fait que s'y adapter.
+**Réglable** : Paramètres → Règles internes → « Jours ouvrables par semaine ».
+
+### D-143 — La pause s'affiche dans chaque case du planning
+« Pause 15:45 (24 min) » apparaît sous l'horaire. Elle était calculée mais
+invisible.
+
+### D-144 — Après un congé, un bandeau propose de recalculer
+**Décision.** Dès qu'une vacation tombe un jour où la personne est désormais
+absente ou en congé, l'écran Planning affiche un bandeau avec un bouton
+« Recalculer la semaine » (les cases verrouillées ne bougent pas).
+**Raison.** Un recalcul silencieux et automatique effacerait sans prévenir
+les retouches faites à la main.
+**Alternative.** Recalcul automatique sans bouton.

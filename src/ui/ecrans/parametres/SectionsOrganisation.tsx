@@ -817,6 +817,14 @@ export function SectionReglesInternes() {
           onChange={(dureeMaximaleDepannageMinutes) => reglerRegles({ dureeMaximaleDepannageMinutes })}
         />
         <ChampNombre
+          libelle="Jours ouvrables par semaine"
+          aide="Un jour de congé vaut le contrat divisé par ce nombre (6 : décompte légal des congés payés)."
+          valeur={r.joursHabituelsParSemaine ?? 6}
+          onChange={(joursHabituelsParSemaine) =>
+            reglerRegles({ joursHabituelsParSemaine: Math.min(7, Math.max(1, joursHabituelsParSemaine)) })
+          }
+        />
+        <ChampNombre
           libelle="Dépassement du contrat au plus"
           suffixe="h / semaine"
           pas={0.25}

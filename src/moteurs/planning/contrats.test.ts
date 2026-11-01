@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { jourDeLaSemaine, semaineDe } from '../../domaine/calendrier'
-import { horsCalculDHeures, estMineur } from '../../domaine/collaborateur'
+import { estMineur } from '../../domaine/collaborateur'
 import { REGLES_INTERNES_PAR_DEFAUT } from '../../domaine/organisation'
 import { duree, enMinutes } from '../../domaine/temps'
 import { construireEtatReel, type SaisieCollaborateur } from '../../donnees/import-equipe'
@@ -104,19 +104,41 @@ function preparer() {
 }
 
 const { etat, entrees } = preparer()
+
+function heuresDe(r: { vacations: readonly { collaborateurId: string; debut: string; fin: string }[] }, id: string): number {
+  return r.vacations.filter((v) => v.collaborateurId === id).reduce((s, v) => s + duree(v.debut, v.fin), 0) / 60
+}
 const resultat = genererLePlanning(entrees)
 
 describe('chacun fait ses heures', () => {
-  it('chaque salarié est à moins d’1 h 30 sous son contrat, et jamais plus d’1 h au-dessus', () => {
+  it('chacun fait ses heures, à un quart d’heure près, sauf l’apprenti à l’école', () => {
     for (const collaborateur of etat.collaborateurs) {
-      if (horsCalculDHeures(collaborateur)) continue
-      const heures =
-        resultat.vacations
-          .filter((v) => v.collaborateurId === collaborateur.id)
-          .reduce((somme, v) => somme + duree(v.debut, v.fin), 0) / 60
-      expect(heures, collaborateur.prenom).toBeGreaterThanOrEqual(collaborateur.heuresHebdomadaires - 1.5)
-      expect(heures, collaborateur.prenom).toBeLessThanOrEqual(collaborateur.heuresHebdomadaires + 1)
+      // Ulysse a un jour d'ecole : 36 h 75 x 5/6 a faire au magasin.
+      const vise =
+        collaborateur.prenom === 'Ulysse'
+          ? (collaborateur.heuresHebdomadaires * 5) / 6
+          : collaborateur.heuresHebdomadaires
+      expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeCloseTo(vise, 0)
+      expect(Math.abs(heuresDe(resultat, collaborateur.id) - vise), collaborateur.prenom).toBeLessThanOrEqual(0.25)
     }
+    expect(resultat.restesAExpliquer.filter((r) => r.includes('à faire cette semaine'))).toEqual([])
+  })
+
+  it('un congé payé vaut un jour ouvrable : contrat / 6', () => {
+    const abel = etat.collaborateurs.find((c) => c.prenom === 'Abel')!
+    const avecConge = genererLePlanning({
+      ...entrees,
+      absences: [
+        { id: 'cp', collaborateurId: abel.id, debut: '2026-11-05', fin: '2026-11-06', type: 'conge-paye', prevue: true },
+      ],
+    })
+    // 36 h 75 - 2 x 6 h 07 = 24 h 30, au quart d'heure pres.
+    expect(Math.abs(heuresDe(avecConge, abel.id) - 24.5)).toBeLessThanOrEqual(0.25)
+    expect(
+      avecConge.vacations.some(
+        (v) => v.collaborateurId === abel.id && (v.jour === '2026-11-05' || v.jour === '2026-11-06'),
+      ),
+    ).toBe(false)
   })
 
   it('n’enfreint aucune règle légale', () => {
@@ -166,10 +188,10 @@ describe('chacun fait ses heures', () => {
     }
   })
 
-  it('n’attribue pas d’heures au cadre au forfait', () => {
-    const zoe = etat.collaborateurs.find((c) => c.prenom === 'Zoé')
-    expect(resultat.restesAExpliquer.some((reste) => reste.startsWith('Zoé'))).toBe(false)
-    expect(zoe?.forfait).toBe(true)
+  it('place aussi le cadre au forfait : il travaille, même si ses heures ne se comptent pas', () => {
+    const zoe = etat.collaborateurs.find((c) => c.prenom === 'Zoé')!
+    expect(zoe.forfait).toBe(true)
+    expect(heuresDe(resultat, zoe.id)).toBeGreaterThan(30)
   })
 
   it('donne le même planning à données égales', () => {

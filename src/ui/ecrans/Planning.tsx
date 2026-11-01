@@ -36,6 +36,7 @@ import {
 } from '../../moteurs/indicateurs'
 import { alertesDAnticipation, anticiper } from '../../moteurs/indicateurs/anticipation'
 import { absencesEffectives } from '../../donnees/etat'
+import { estAbsent } from '../../domaine/absence'
 import { useDonnees } from '../DonneesProvider'
 import { useGenerateur } from '../useGenerateur'
 import { FeuillesDeRoute } from '../composants/FeuillesDeRoute'
@@ -68,6 +69,17 @@ export function Planning() {
   const [confirmationGeneration, setConfirmationGeneration] = useState(false)
 
   const jours = useMemo(() => semaineDe(semaine), [semaine])
+  /** Vacations posees un jour ou la personne est desormais absente ou en conge. */
+  const surAbsence = useMemo(() => {
+    const absences = absencesEffectives(etat)
+    return planning(semaine).vacations.filter((vacation) =>
+      estAbsent(absences, vacation.collaborateurId, vacation.jour),
+    )
+  }, [etat, planning, semaine])
+  const nomDe = (identifiant: string): string => {
+    const collaborateur = etat.collaborateurs.find((c) => c.id === identifiant)
+    return collaborateur === undefined ? identifiant : nomAffiche(collaborateur)
+  }
   const planningCourant = planning(semaine)
 
   /** Toutes les vacations enregistrees, pour mesurer l'equite sur quatre semaines. */
@@ -443,6 +455,22 @@ export function Planning() {
           légale, couvre le besoin au mieux et répartit équitablement les sujétions. Ce n’est
           qu’une proposition : vous la corrigez case par case ensuite.
         </p>
+
+        {surAbsence.length > 0 && etatGeneration !== 'en-cours' && (
+          <div className="avis avis--attention" role="status">
+            <p>
+              <strong>Congé ou absence saisi depuis ce planning :</strong>{' '}
+              {[...new Set(surAbsence.map((v) => nomDe(v.collaborateurId)))].join(', ')}{' '}
+              {surAbsence.length > 1 ? 'sont prévus' : 'est prévu'} un jour où{' '}
+              {surAbsence.length > 1 ? 'ils sont absents' : 'il ou elle est absent(e)'}. Le planning
+              est à revoir : chacun garde ses heures, l’absent les a déjà au titre de son congé.
+            </p>
+            <button type="button" className="bouton bouton--principal" onClick={proposerUnPlanning}>
+              Recalculer la semaine
+            </button>
+            <span className="bouton__aide">les cases verrouillées ne bougent pas</span>
+          </div>
+        )}
 
         {confirmationGeneration ? (
           <>

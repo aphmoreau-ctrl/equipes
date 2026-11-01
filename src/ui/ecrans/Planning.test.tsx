@@ -428,3 +428,46 @@ describe('verrouillage des cases', () => {
     expect(apres?.textContent).toBe(horaireAvant)
   })
 })
+
+describe('pauses et absences dans le planning', () => {
+  it('affiche la pause de chaque poste', () => {
+    afficher()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    expect(within(grille()).getAllByText('Pause 09:00 (20 min)').length).toBeGreaterThan(0)
+  })
+
+  it('propose de recalculer quand un congé tombe sur un jour déjà planifié', async () => {
+    const { enregistrerEtat } = await import('../../donnees/etat')
+    const { planningVide } = await import('../../domaine/planning')
+    const semaine = lundiDeLaSemaine(aujourdhui())
+    const base = etatInitial()
+    const camille = base.collaborateurs.find((c) => c.prenom === 'Camille')!
+    enregistrerEtat({
+      ...base,
+      absences: [
+        { id: 'cp', collaborateurId: camille.id, debut: semaine, fin: semaine, type: 'conge-paye', prevue: true },
+      ],
+      plannings: {
+        [semaine]: {
+          ...planningVide(semaine),
+          vacations: [
+            {
+              id: 'v1',
+              collaborateurId: camille.id,
+              rayonId: camille.rayonPrincipal,
+              jour: semaine,
+              debut: '06:00',
+              fin: '13:00',
+              pauseMinutes: 20,
+              pauseDebut: '09:00',
+            },
+          ],
+        },
+      },
+    })
+    afficher()
+    expect(screen.getByText(/Congé ou absence saisi depuis ce planning/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Recalculer la semaine' })).toBeInTheDocument()
+  })
+})

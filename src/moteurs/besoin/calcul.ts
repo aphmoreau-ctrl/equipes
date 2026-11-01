@@ -126,7 +126,15 @@ export function calculerBesoin(
     // Grille d'effectifs : elle REMPLACE le nombre deduit du volume (D-123).
     let cible: number | undefined
     if (grille !== undefined && jour !== null) {
-      const effectif = effectifDeLaTranche(grille, jour, index)
+      let effectif = effectifDeLaTranche(grille, jour, index)
+      // Un jour emprunte s'arrete aux horaires du rayon CE jour-la.
+      if (
+        effectif.provisoireDepuis !== undefined &&
+        contexte.tranchesOuvertes.size > 0 &&
+        !contexte.tranchesOuvertes.has(index)
+      ) {
+        effectif = { minimum: 0, cible: 0 }
+      }
       personnes = effectif.minimum
       cible = effectif.cible
       if (effectif.cible > 0) competences.add(grille.competence)

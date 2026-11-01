@@ -68,6 +68,27 @@ export interface GrilleEffectifs {
    */
   readonly jours: Readonly<Record<JourSemaine, readonly CreneauEffectif[] | null>>
   readonly planchers: readonly PlancherCouverture[]
+  /**
+   * Jours encore A DEFINIR remplis provisoirement avec un autre jour : sa
+   * CIBLE devient le minimum et la cible. Absent = vendredi et samedi pris
+   * sur le jeudi (les jours les plus charges, demande d'Arnaud). Objet vide
+   * = aucun remplissage provisoire.
+   */
+  readonly joursVidesRemplisPar?: Partial<Readonly<Record<JourSemaine, JourSemaine>>>
+}
+
+/** Vendredi et samedi, tant qu'ils sont vides, prennent la cible du jeudi. */
+export const REMPLISSAGE_PROVISOIRE_PAR_DEFAUT: Partial<Readonly<Record<JourSemaine, JourSemaine>>> = {
+  5: 4,
+  6: 4,
+}
+
+/** Jour dont un jour vide emprunte provisoirement les creneaux, ou null. */
+export function jourDeRemplacement(grille: GrilleEffectifs, jour: JourSemaine): JourSemaine | null {
+  if (grille.jours[jour] !== null) return null
+  const source = (grille.joursVidesRemplisPar ?? REMPLISSAGE_PROVISOIRE_PAR_DEFAUT)[jour]
+  if (source === undefined || grille.jours[source] == null) return null
+  return source
 }
 
 /* ------------------------------------------------------------------ */
@@ -211,6 +232,16 @@ export interface ReglesInternes {
    * ce nombre. Absent = 6.
    */
   readonly joursHabituelsParSemaine?: number
+  /**
+   * Priorite de chaque jour quand il faut choisir ou combler un trou :
+   * 1 = normal. Absent = vendredi et samedi a 1,5 (les plus charges).
+   */
+  readonly prioriteParJour?: Partial<Readonly<Record<JourSemaine, number>>>
+}
+
+export const PRIORITE_PAR_JOUR_PAR_DEFAUT: Partial<Readonly<Record<JourSemaine, number>>> = {
+  5: 1.5,
+  6: 1.5,
 }
 
 /** Une verification a faire hors de l'application (RH, convention). */
@@ -243,6 +274,7 @@ export const REGLES_INTERNES_PAR_DEFAUT: ReglesInternes = {
   dureeMaximaleDepannageMinutes: 2 * 60,
   depassementContratMaximumMinutes: 60,
   joursHabituelsParSemaine: 6,
+  prioriteParJour: PRIORITE_PAR_JOUR_PAR_DEFAUT,
 }
 
 /** Organisation vide : aucune tache, aucune rotation. Celle de la demonstration. */

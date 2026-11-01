@@ -11,7 +11,7 @@ import {
   rayonsPossibles,
   type Collaborateur,
 } from '../../domaine/collaborateur'
-import type { Plage, ReglesInternes } from '../../domaine/organisation'
+import { PRIORITE_PAR_JOUR_PAR_DEFAUT, type Plage, type ReglesInternes } from '../../domaine/organisation'
 import type { HoraireType, Rayon } from '../../domaine/magasin'
 import {
   MINUTES_PAR_JOUR,
@@ -133,26 +133,26 @@ function enVacation(candidat: Candidat): Vacation {
  * Contraintes DURES. Une affectation qui en viole une seule est rejetee,
  * quel que soit son interet par ailleurs.
  */
-function affectationPermise(
+function raisonDeRefus(
   vacation: Vacation,
   collaborateur: Collaborateur,
   dejaPlacees: readonly Vacation[],
   entrees: EntreesGeneration,
   competencesCritiques: readonly string[],
-): boolean {
-  if (!collaborateur.actif) return false
-  if (!peutTravaillerDans(collaborateur, vacation.rayonId)) return false
-  if (estAbsent(entrees.absences, collaborateur.id, vacation.jour)) return false
-  if (!estDisponible(collaborateur, jourDeLaSemaine(vacation.jour))) return false
+): string | null {
+  if (!collaborateur.actif) return 'ne fait plus partie de l’équipe'
+  if (!peutTravaillerDans(collaborateur, vacation.rayonId)) return 'ne tient pas ce rayon'
+  if (estAbsent(entrees.absences, collaborateur.id, vacation.jour)) return 'absent ou en congé'
+  if (!estDisponible(collaborateur, jourDeLaSemaine(vacation.jour))) return 'jour de repos fixe'
 
   // Hors des dates du contrat : la personne n'est pas (ou plus) dans l'effectif.
-  if (vacation.jour < collaborateur.dateEntree) return false
-  if (collaborateur.finContrat !== null && vacation.jour > collaborateur.finContrat) return false
+  if (vacation.jour < collaborateur.dateEntree) return 'pas encore entré'
+  if (collaborateur.finContrat !== null && vacation.jour > collaborateur.finContrat) return 'contrat terminé'
 
   // En formation au CFA : ce temps est deja du temps de travail (L6222-24).
-  if (enFormation(collaborateur, vacation.jour) !== undefined) return false
+  if (enFormation(collaborateur, vacation.jour) !== undefined) return 'en formation (CFA)'
   // Jour d'ecole habituel : jamais planifie en magasin.
-  if (estJourDEcole(collaborateur, jourDeLaSemaine(vacation.jour))) return false
+  if (estJourDEcole(collaborateur, jourDeLaSemaine(vacation.jour))) return 'jour d’école'
 
   // « Le matin uniquement » : le poste finit au plus tard a l'heure reglee.
   if (
@@ -161,7 +161,7 @@ function affectationPermise(
     enMinutes(vacation.debut) + duree(vacation.debut, vacation.fin) >
       enMinutes(entrees.reglesInternes.finDuMatin)
   ) {
-    return false
+    return 'le matin uniquement'
   }
 
   // Plage de disponibilite restreinte : la vacation doit tenir dedans.
@@ -169,18 +169,18 @@ function affectationPermise(
     (candidate) => candidate.jour === jourDeLaSemaine(vacation.jour),
   )
   if (disponibilite?.plage != null) {
-    if (enMinutes(vacation.debut) < enMinutes(disponibilite.plage.debut)) return false
+    if (enMinutes(vacation.debut) < enMinutes(disponibilite.plage.debut)) return 'hors de ses disponibilités'
     if (
       enMinutes(vacation.debut) + duree(vacation.debut, vacation.fin) >
       enMinutes(disponibilite.plage.fin)
     ) {
-      return false
+      return 'hors de ses disponibilités'
     }
   }
 
   // Competences critiques du poste : sans elles, le poste n'est pas tenu.
   for (const competence of competencesCritiques) {
-    if (!estAutonome(collaborateur, competence)) return false
+    if (!estAutonome(collaborateur, competence)) return `pas autonome en « ${competence} »`
   }
 
   // Une seule vacation par personne et par jour dans la proposition initiale :
@@ -190,7 +190,7 @@ function affectationPermise(
       (autre) => autre.collaborateurId === collaborateur.id && autre.jour === vacation.jour,
     )
   ) {
-    return false
+    return 'travaille déjà ce jour-là'
   }
 
   /*
@@ -220,7 +220,18 @@ function affectationPermise(
       vacationsAnterieures: anterieures.filter((autre) => !voisines.includes(autre)),
     }),
   )
-  return !infractions.some((infraction) => infraction.severite === 'bloquante')
+  const bloquante = infractions.find((infraction) => infraction.severite === 'bloquante')
+  return bloquante === undefined ? null : `règle légale : ${bloquante.libelle.toLowerCase()}`
+}
+
+function affectationPermise(
+  vacation: Vacation,
+  collaborateur: Collaborateur,
+  dejaPlacees: readonly Vacation[],
+  entrees: EntreesGeneration,
+  competencesCritiques: readonly string[],
+): boolean {
+  return raisonDeRefus(vacation, collaborateur, dejaPlacees, entrees, competencesCritiques) === null
 }
 
 /**
@@ -545,6 +556,12 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   }
   const visee = (collaborateur: Collaborateur): number | undefined =>
     heuresVisees.get(collaborateur.id)
+
+  /** Priorite d'un jour (vendredi et samedi d'abord, par defaut). */
+  const prioriteDuJour = (date: string): number =>
+    regles === undefined
+      ? 1
+      : ((regles.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[jourDeLaSemaine(date)] ?? 1)
   const horaires: HoraireType[] = [
     ...entrees.horairesTypes,
     ...postesCourts(entrees.besoins),
@@ -738,6 +755,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
     let variation = 0
     const critiques = new Map<string, number>()
+    const priorite = prioriteDuJour(creneau.besoin.date)
     {
       for (const index of tranchesDe.get(horaire.id) ?? []) {
         const tranche = creneau.besoin.tranches[index]
@@ -746,7 +764,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
 
         const manqueAvant = Math.max(0, attendu - presents)
         const manqueApres = Math.max(0, attendu - (presents + 1))
-        variation += (manqueApres - manqueAvant) * poids.manque
+        variation += (manqueApres - manqueAvant) * poids.manque * priorite
 
         if (tranche?.cible === undefined) {
           const tropAvant = Math.max(0, presents - attendu)
@@ -757,7 +775,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           const cible = Math.max(tranche.cible, attendu)
           const sousCibleAvant = Math.max(0, cible - Math.max(presents, attendu))
           const sousCibleApres = Math.max(0, cible - Math.max(presents + 1, attendu))
-          variation += (sousCibleApres - sousCibleAvant) * (poids.cible ?? 0)
+          variation += (sousCibleApres - sousCibleAvant) * (poids.cible ?? 0) * priorite
           const tropAvant = Math.max(0, presents - cible)
           const tropApres = Math.max(0, presents + 1 - cible)
           variation += (tropApres - tropAvant) * (poids.audelaDeLaCible ?? poids.sureffectif)
@@ -1114,7 +1132,206 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
    * quarts d'heure, ou on lui ajoute un jour, jusqu'a atteindre ses heures.
    * Chaque retouche repasse au crible des regles legales.
    */
-  const ajustements = completerLesHeures()
+  const ajustementsAvant = completerLesHeures()
+
+  /*
+   * 5 bis. Reparer les trous.
+   *
+   * Une fois chacun a ses heures, il reste des trous : une fin de soiree en
+   * maree, le samedi matin en charcuterie. Ajouter des heures n'est plus
+   * possible (plafond) ; on DEPLACE donc un poste : celui d'une personne qui
+   * tient aussi le rayon en manque (titulaire ou renfort), pris dans un
+   * rayon — ou un jour — ou il est en surplus. Son rayon de depart ne doit
+   * jamais tomber sous son minimum. Le poste deplace est cale sur le trou
+   * (fin a 20 h pour un trou a 19 h 30). Minimum d'abord, cible ensuite.
+   */
+  const reparations = reparerLesTrous()
+  const ajustements = ajustementsAvant + reparations + completerLesHeures()
+
+  type Phase = 'minimum' | 'cible'
+
+  function seuilDe(creneau: EtatCreneau, index: number, phase: Phase): number {
+    const tranche = creneau.besoin.tranches[index]
+    const minimum = tranche?.personnes ?? 0
+    return phase === 'minimum' ? minimum : Math.max(minimum, tranche?.cible ?? minimum)
+  }
+
+  interface Trou {
+    readonly cleCreneau: string
+    readonly creneau: EtatCreneau
+    readonly rayonId: string
+    readonly jour: string
+    readonly debut: number
+    readonly fin: number
+    readonly poids: number
+  }
+
+  /** Trous du moment, les plus lourds d'abord (vendredi et samedi prioritaires). */
+  function trousDe(phase: Phase): Trou[] {
+    const trous: Trou[] = []
+    for (const [cleCreneau, creneau] of creneaux) {
+      if (creneau.bornes === null || creneau.bornes === 'ferme') continue
+      const priorite = prioriteDuJour(creneau.besoin.date)
+      let debut: number | null = null
+      for (let index = 0; index <= TRANCHES_PAR_JOUR; index += 1) {
+        const manque =
+          index < TRANCHES_PAR_JOUR && (creneau.presents[index] ?? 0) < seuilDe(creneau, index, phase)
+        if (manque && debut === null) debut = index
+        if (!manque && debut !== null) {
+          trous.push({
+            cleCreneau,
+            creneau,
+            rayonId: creneau.besoin.rayonId,
+            jour: creneau.besoin.date,
+            debut: debut * TRANCHE_MINUTES,
+            fin: index * TRANCHE_MINUTES,
+            poids: (index - debut) * priorite,
+          })
+          debut = null
+        }
+      }
+    }
+    return trous.sort(
+      (a, b) => b.poids - a.poids || a.cleCreneau.localeCompare(b.cleCreneau) || a.debut - b.debut,
+    )
+  }
+
+  interface Mouvement {
+    readonly position: number
+    readonly ancienne: Vacation
+    readonly nouvelle: Vacation
+    readonly horaire: HoraireType
+    readonly collaborateur: Collaborateur
+    readonly score: number
+  }
+
+  /** Le rayon de depart reste-t-il a son seuil sans ce poste ? (poste deja retire) */
+  function departTient(vacation: Vacation, horaire: HoraireType, phase: Phase): boolean {
+    const creneau = creneaux.get(cle(vacation.rayonId, vacation.jour))
+    if (creneau === undefined) return true
+    return (tranchesDe.get(horaire.id) ?? []).every(
+      (index) => (creneau.presents[index] ?? 0) >= seuilDe(creneau, index, phase),
+    )
+  }
+
+  function meilleurMouvement(trou: Trou, phase: Phase): Mouvement | null {
+    if (trou.creneau.bornes === null || trou.creneau.bornes === 'ferme') return null
+    const ouverture = enMinutes(trou.creneau.bornes.debut)
+    const fermeture = enMinutes(trou.creneau.bornes.fin)
+    const critiques = [
+      ...new Set(
+        trou.creneau.besoin.tranches
+          .slice(trou.debut / TRANCHE_MINUTES, trou.fin / TRANCHE_MINUTES)
+          .flatMap((tranche) => tranche.competencesCritiques),
+      ),
+    ].sort()
+    const candidats: Mouvement[] = []
+
+    placees.forEach((ancienne, position) => {
+      const collaborateur = equipe.find((c) => c.id === ancienne.collaborateurId)
+      if (collaborateur === undefined || !peutTravaillerDans(collaborateur, trou.rayonId)) return
+      if (critiques.some((competence) => !estAutonome(collaborateur, competence))) return
+      // Un autre jour : seulement s'il est libre le jour du trou.
+      if (ancienne.jour !== trou.jour && joursOccupes.get(collaborateur.id)?.has(trou.jour) === true) return
+      if (ancienne.jour !== trou.jour && ecarteDEmblee(collaborateur, trou.rayonId, trou.jour)) return
+
+      const horaireAncien = horairePour(ancienne, horaires, tranchesDe)
+      inscrire(ancienne, horaireAncien, collaborateur, -1)
+      if (departTient(ancienne, horaireAncien, phase)) {
+        const longueur = Math.min(duree(ancienne.debut, ancienne.fin), fermeture - ouverture)
+        const departs = new Set(
+          [trou.fin - longueur, trou.debut, ouverture, fermeture - longueur].map((depart) =>
+            Math.min(Math.max(depart, ouverture), fermeture - longueur),
+          ),
+        )
+        for (const depart of departs) {
+          const horaire = posteSurMesure(depart, depart + longueur, estMineur(collaborateur), trou.jour)
+          let gain = 0
+          for (const index of tranchesDe.get(horaire.id) ?? []) {
+            if ((trou.creneau.presents[index] ?? 0) < seuilDe(trou.creneau, index, phase)) gain += 1
+          }
+          if (gain === 0) continue
+          // Ce que le depart perd sous sa cible (a eviter, sans l'interdire).
+          const creneauDepart = creneaux.get(cle(ancienne.rayonId, ancienne.jour))
+          let perteCible = 0
+          if (creneauDepart !== undefined) {
+            for (const index of tranchesDe.get(horaireAncien.id) ?? []) {
+              if ((creneauDepart.presents[index] ?? 0) < seuilDe(creneauDepart, index, 'cible')) {
+                perteCible += 1
+              }
+            }
+          }
+          const nouvelle: Vacation = {
+            ...ancienne,
+            id: `${ancienne.id}-r-${trou.rayonId}-${trou.jour}-${enTexte(depart)}`,
+            rayonId: trou.rayonId,
+            jour: trou.jour,
+            debut: horaire.debut,
+            fin: horaire.fin,
+            pauseMinutes: horaire.pauseMinutes,
+            pauseDebut: horaire.pauseDebut,
+          }
+          candidats.push({
+            position,
+            ancienne,
+            nouvelle,
+            horaire,
+            collaborateur,
+            score:
+              gain * 10 * prioriteDuJour(trou.jour) -
+              perteCible * prioriteDuJour(ancienne.jour) -
+              (ancienne.jour !== trou.jour ? 0.5 : 0),
+          })
+        }
+      }
+      inscrire(ancienne, horaireAncien, collaborateur, 1)
+    })
+
+    candidats.sort((a, b) => b.score - a.score || a.nouvelle.id.localeCompare(b.nouvelle.id))
+    for (const candidat of candidats.slice(0, 12)) {
+      if (candidat.score <= 0) break
+      const siennes = (parPersonne.get(candidat.collaborateur.id) ?? []).filter(
+        (v) => v.id !== candidat.ancienne.id,
+      )
+      if (affectationPermise(candidat.nouvelle, candidat.collaborateur, siennes, entrees, critiques)) {
+        return candidat
+      }
+    }
+    return null
+  }
+
+  function reparerLesTrous(): number {
+    if (regles === undefined) return 0
+    const finDuTemps = Date.now() + 2000
+    let faites = 0
+    for (const phase of ['minimum', 'cible'] as const) {
+      const sansSolution = new Set<string>()
+      for (let tour = 0; tour < 300 && Date.now() < finDuTemps; tour += 1) {
+        let mouvement: Mouvement | null = null
+        for (const trou of trousDe(phase)) {
+          const repere = `${trou.cleCreneau}|${trou.debut}`
+          if (sansSolution.has(repere)) continue
+          if (Date.now() >= finDuTemps) break
+          mouvement = meilleurMouvement(trou, phase)
+          if (mouvement !== null) break
+          sansSolution.add(repere)
+        }
+        if (mouvement === null) break
+        inscrire(
+          mouvement.ancienne,
+          horairePour(mouvement.ancienne, horaires, tranchesDe),
+          mouvement.collaborateur,
+          -1,
+        )
+        placees[mouvement.position] = mouvement.nouvelle
+        inscrire(mouvement.nouvelle, mouvement.horaire, mouvement.collaborateur, 1)
+        faites += 1
+        // L'etat a change : les trous sans solution peuvent en avoir une.
+        sansSolution.clear()
+      }
+    }
+    return faites
+  }
 
   /*
    * 6. Les pauses, la ou un collegue couvre.
@@ -1368,6 +1585,77 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     return retouches
   }
 
+  /**
+   * Diagnostic d'un trou : pour chaque personne qui tient ce rayon, ce qui
+   * l'empeche de le combler. C'est ce qui permet de decider soi-meme : un
+   * renfort a appeler, un conge a decaler, une grille a revoir.
+   */
+  function pourquoiPersonne(
+    rayonId: string,
+    jour: string,
+    debutTrou: number,
+    finTrou: number,
+    toutes: readonly Vacation[],
+  ): string {
+    const nom = (id: string) => rayons.find((r) => r.id === id)?.nom ?? id
+    const raisons: string[] = []
+    const concernes = equipe
+      .filter((c) => peutTravaillerDans(c, rayonId))
+      .sort(
+        (a, b) =>
+          Number(b.rayonPrincipal === rayonId) - Number(a.rayonPrincipal === rayonId) ||
+          a.id.localeCompare(b.id),
+      )
+    for (const collaborateur of concernes) {
+      const siennes = toutes.filter((v) => v.collaborateurId === collaborateur.id)
+      const ceJour = siennes.find((v) => v.jour === jour)
+      let raison: string
+      if (ceJour !== undefined) {
+        const debutPoste = enMinutes(ceJour.debut)
+        const finPoste = debutPoste + duree(ceJour.debut, ceJour.fin)
+        const verrou = verrouillees.some((v) => v.id === ceJour.id) ? ', case verrouillée' : ''
+        const debutPause = ceJour.pauseDebut === undefined ? null : enMinutes(ceJour.pauseDebut)
+        const enPause =
+          debutPause !== null &&
+          debutPause < finTrou &&
+          debutPause + ceJour.pauseMinutes > debutTrou
+        if (ceJour.rayonId === rayonId && enPause) {
+          raison = `en pause à ce moment-là${verrou}`
+        } else if (ceJour.rayonId === rayonId && debutPoste <= debutTrou && finTrou <= finPoste) {
+          raison = `déjà en rayon, il faudrait une personne de plus${verrou}`
+        } else if (ceJour.rayonId === rayonId) {
+          raison = `présent de ${ceJour.debut} à ${ceJour.fin}${verrou}`
+        } else {
+          raison = `travaille en ${nom(ceJour.rayonId)} de ${ceJour.debut} à ${ceJour.fin}, rayon qu’il faudrait dégarnir${verrou}`
+        }
+      } else {
+        const bornes = creneaux.get(cle(rayonId, jour))?.bornes
+        const ouverture = bornes != null && bornes !== 'ferme' ? enMinutes(bornes.debut) : debutTrou
+        const fermeture = bornes != null && bornes !== 'ferme' ? enMinutes(bornes.fin) : finTrou
+        const debut = Math.max(ouverture, Math.min(debutTrou, fermeture - DUREE_MINIMALE_POSTE))
+        const essai: Vacation = {
+          id: 'diagnostic',
+          collaborateurId: collaborateur.id,
+          rayonId,
+          jour,
+          debut: enTexte(debut),
+          fin: enTexte(Math.min(fermeture, debut + DUREE_MINIMALE_POSTE)),
+          pauseMinutes: 0,
+        }
+        const refus = raisonDeRefus(essai, collaborateur, siennes, entrees, [])
+        const faites = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
+        raison =
+          refus ??
+          `déjà à ses heures (${heuresEnTexte(faites, 2)} pour ${heuresEnTexte(visee(collaborateur) ?? collaborateur.heuresHebdomadaires, 2)})`
+      }
+      raisons.push(`${nomAffiche(collaborateur)} : ${raison}`)
+      if (raisons.length >= 6) break
+    }
+    return raisons.length === 0
+      ? 'Personne dans l’équipe ne tient ce rayon.'
+      : `Pourquoi personne : ${raisons.join(' · ')}.`
+  }
+
   // ------------------------------------------------ Resultat et restes
   const ordonnees = [...verrouillees, ...placees].sort(
     (a, b) =>
@@ -1404,10 +1692,11 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
         }
       }
       if (plages.length > 0) {
+        const [debutTrou, finTrou] = (plages[0] as string).split('–').map(enMinutes) as [number, number]
         restes.push(
           `${nomDuRayon}, le ${jourEnTexte(besoin.date)} : minimum non tenu de ` +
-            `${plages.slice(0, 4).join(', ')}${plages.length > 4 ? '…' : ''} ` +
-            `(souvent une pause sans relève, ou personne de disponible).`,
+            `${plages.slice(0, 4).join(', ')}${plages.length > 4 ? '…' : ''}. ` +
+            pourquoiPersonne(besoin.rayonId, besoin.date, debutTrou, finTrou, ordonnees),
         )
       }
       continue

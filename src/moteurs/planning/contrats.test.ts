@@ -215,6 +215,19 @@ describe('chacun fait ses heures', () => {
     }
   })
 
+  it('dit, pour chaque trou, pourquoi personne ne le comble', () => {
+    const trous = resultat.restesAExpliquer.filter((reste) => reste.includes('minimum non tenu'))
+    for (const trou of trous) expect(trou).toMatch(/Pourquoi personne : .+ : /)
+  })
+
+  it('le vendredi et le samedi, encore à définir, demandent au moins la cible du jeudi', () => {
+    const jeudi = entrees.besoins.find((b) => b.rayonId === R.maree && b.date === '2026-11-05')!
+    const vendredi = entrees.besoins.find((b) => b.rayonId === R.maree && b.date === '2026-11-06')!
+    for (const tranche of vendredi.tranches) {
+      expect(tranche.personnes).toBeGreaterThanOrEqual(jeudi.tranches[tranche.index]?.cible ?? 0)
+    }
+  })
+
   it('donne le même planning à données égales', () => {
     const encore = genererLePlanning(entrees)
     expect(encore.vacations).toEqual(resultat.vacations)

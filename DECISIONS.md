@@ -1795,3 +1795,40 @@ heures supplémentaires se comptent sur le travail effectif.
 ### D-146 — Les cases verrouillées sont annoncées
 Un bandeau indique combien de cases sont verrouillées (« elles ne seront pas
 recalculées ») et propose « Tout déverrouiller ».
+
+### D-147 — Réparer les trous en déplaçant des postes
+**Constat.** Une fois chacun à ses heures, le générateur ne savait plus
+qu'échanger deux personnes sur un même poste : il ne pensait pas à déplacer
+la journée d'un renfort d'un rayon en surplus vers un rayon en manque.
+**Décision.** Une étape de **réparation** suit la complétion des heures. Pour
+chaque trou (minimum d'abord, cible ensuite ; vendredi et samedi en premier),
+elle cherche une personne qui tient le rayon en manque et dont un poste — le
+même jour ailleurs, ou un autre jour où elle est en surplus — peut être
+déplacé **sans faire tomber son rayon de départ sous son minimum** (sous sa
+cible, pour la phase cible). Le poste déplacé garde sa durée et se cale sur
+le trou (fin à 20 h pour un trou à 19 h 30). Toutes les règles légales
+repassent.
+**Limite constatée sur un essai réaliste** : quand l'équipe d'un rayon est
+juste (Fruits & Légumes : 5 titulaires, aucun renfort extérieur, 23 postes à
+tenir par semaine avec la règle provisoire du week-end), chaque déplacement
+créerait un trou ailleurs : la réparation n'a alors rien à faire, et le
+diagnostic le dit.
+
+### D-148 — Vendredi et samedi : la cible du jeudi en attendant (demandé)
+**Décision.** Tant que le vendredi ou le samedi d'un rayon est « à définir »,
+il emprunte la **cible du jeudi comme minimum et comme cible**, limitée aux
+horaires du rayon ce jour-là. Le point reste signalé « à définir » (« en
+attendant : vendredi et samedi = cible du jeudi »). Le dimanche garde ses
+seuls planchers. Réglable rayon par rayon (remplissage vide = désactivé).
+**Écart assumé à D-126** (« ne jamais inventer ») : c'est Arnaud qui le
+demande, pour que le week-end ait plus de monde que la semaine.
+
+### D-149 — Priorité des jours : vendredi et samedi × 1,5
+Un trou du vendredi ou du samedi pèse 1,5 fois plus qu'un trou de semaine,
+dans le calcul comme dans la réparation. Réglable dans Règles internes.
+
+### D-150 — Chaque trou dit pourquoi personne ne le comble
+Sous le planning, chaque minimum non tenu liste les personnes qui tiennent
+ce rayon et ce qui les retient : en pause, déjà en rayon, travaille dans tel
+rayon qu'il faudrait dégarnir, déjà à ses heures, congé, école, règle légale
+précise, case verrouillée.

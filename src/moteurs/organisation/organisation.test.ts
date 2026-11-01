@@ -29,10 +29,10 @@ describe('points à définir', () => {
 
   it('relève les effectifs du vendredi au dimanche des rayons trad', () => {
     for (const rayon of ['Fruits & Légumes', 'Marée', 'Charcuterie / Fromage', 'Boucherie Trad', 'Boucherie LS']) {
-      expect(libelles).toContain(`${rayon} : effectifs du vendredi au dimanche.`)
+      expect(libelles).toContain(`${rayon} : effectifs du vendredi au dimanche (en attendant : vendredi et samedi = cible du jeudi).`)
       expect(libelles).toContain(`${rayon} : effectifs du lundi au jeudi à affiner.`)
     }
-    expect(libelles).not.toContain('Fraîche découpe : effectifs du vendredi au dimanche.')
+    expect(libelles.some((l) => l.startsWith('Fraîche découpe : effectifs'))).toBe(false)
   })
 
   it('relève l’effectif de semaine et les heures de fin de la préparation traiteur', () => {

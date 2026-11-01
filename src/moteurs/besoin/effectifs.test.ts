@@ -46,8 +46,8 @@ describe('effectif d’une tranche', () => {
   })
 
   it('tient le plancher un jour entier à définir', () => {
-    expect(effectifDeLaTranche(GRILLE, 5, tranche('10:00'))).toEqual({ minimum: 1, cible: 1 })
-    expect(effectifDeLaTranche(GRILLE, 5, tranche('07:00'))).toEqual({ minimum: 0, cible: 0 })
+    expect(effectifDeLaTranche(GRILLE, 5, tranche('10:00'))).toMatchObject({ minimum: 1, cible: 1 })
+    expect(effectifDeLaTranche(GRILLE, 5, tranche('07:00'))).toMatchObject({ minimum: 0, cible: 0 })
   })
 })
 
@@ -90,9 +90,29 @@ describe('besoin d’un rayon piloté par sa grille', () => {
     expect(t?.cible).toBe(3)
   })
 
-  it('vendredi non encore défini : la présence permanente tient seule', () => {
+  it('vendredi non encore défini : il emprunte la cible du jeudi, comme minimum', () => {
     const b = besoin(RAYON.maree, VENDREDI)
+    // Jeudi 11 h - 13 h : minimum 1, cible 2. Vendredi : 2 et 2.
+    expect(b.tranches[tranche('11:00')]?.personnes).toBe(2)
+    expect(b.tranches[tranche('11:00')]?.cible).toBe(2)
     expect(b.tranches[tranche('09:00')]?.personnes).toBe(1)
+  })
+
+  it('un jour emprunté s’arrête aux horaires du rayon ce jour-là', () => {
+    const configuration = CONFIGURATIONS_LA_VAUGINE.find((c) => c.rayonId === RAYON.charcuterieFromage)!
+    // Vendredi, la charcuterie ouvre a 7 h (le jeudi a 6 h 30).
+    const ouvertes = new Set<number>()
+    for (let i = tranche('07:00'); i < tranche('20:00'); i += 1) ouvertes.add(i)
+    const b = calculerBesoin(configuration, { ...contexte(VENDREDI), tranchesOuvertes: ouvertes })
+    expect(b.tranches[tranche('06:30')]?.personnes).toBe(0)
+    expect(b.tranches[tranche('07:00')]?.personnes).toBeGreaterThan(0)
+  })
+
+  it('un jour emprunté se désactive avec un remplissage vide', () => {
+    const configuration = CONFIGURATIONS_LA_VAUGINE.find((c) => c.rayonId === RAYON.maree)!
+    const sans = { ...configuration, grilleEffectifs: { ...configuration.grilleEffectifs!, joursVidesRemplisPar: {} } }
+    const b = calculerBesoin(sans, contexte(VENDREDI))
+    expect(b.tranches[tranche('11:00')]?.personnes).toBe(1)
     expect(b.tranches[tranche('07:00')]?.personnes).toBe(0)
   })
 

@@ -8,6 +8,7 @@ import {
 } from '../../domaine/collaborateur'
 import type { Magasin } from '../../domaine/magasin'
 import {
+  jourDeRemplacement,
   LIBELLES_FONCTION,
   type OrganisationPlanning,
   type TachePlanifiee,
@@ -99,11 +100,16 @@ function pointsDesEffectifs(entrees: EntreesPoints): PointADefinir[] {
     )
 
     if (joursVides.length > 0) {
+      const empruntes = joursVides.filter((jour) => jourDeRemplacement(grille, jour) !== null)
       points.push({
         id: `effectifs-jours-${rayon.id}`,
         nature: 'a-definir',
         rubrique: 'Effectifs',
-        libelle: `${rayon.nom} : effectifs du ${joursEnTexte(joursVides)}.`,
+        libelle:
+          `${rayon.nom} : effectifs du ${joursEnTexte(joursVides)}` +
+          (empruntes.length > 0
+            ? ` (en attendant : ${joursEnTexte(empruntes)} = cible du jeudi).`
+            : '.'),
       })
     }
     if (joursIncomplets.length > 0) {

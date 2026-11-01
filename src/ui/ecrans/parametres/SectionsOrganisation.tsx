@@ -3,8 +3,10 @@ import { JOURS_SEMAINE, nomDuJour, type JourSemaine } from '../../../domaine/cal
 import { nomAffiche } from '../../../domaine/collaborateur'
 import { rayonParId } from '../../../domaine/magasin'
 import {
+  jourDeRemplacement,
   LIBELLES_FONCTION,
   LIBELLES_NATURE_TACHE,
+  PRIORITE_PAR_JOUR_PAR_DEFAUT,
   type CreneauEffectif,
   type GrilleEffectifs,
   type OrganisationPlanning,
@@ -280,7 +282,12 @@ export function SectionEffectifs() {
       </h3>
 
       {creneaux === null ? (
-        <p>Les effectifs de ce jour ne sont pas encore définis. Seuls les planchers s’appliquent.</p>
+        <p>
+          Les effectifs de ce jour ne sont pas encore définis.{' '}
+          {jourDeRemplacement(grille, jour) !== null
+            ? `En attendant, le planning prend la cible du ${nomDuJour(jourDeRemplacement(grille, jour) as JourSemaine)} comme minimum et comme cible.`
+            : 'Seuls les planchers s’appliquent.'}
+        </p>
       ) : creneaux.length === 0 ? (
         <p>Personne n’est attendu ce jour-là.</p>
       ) : (
@@ -815,6 +822,27 @@ export function SectionReglesInternes() {
           suffixe="min"
           valeur={r.dureeMaximaleDepannageMinutes}
           onChange={(dureeMaximaleDepannageMinutes) => reglerRegles({ dureeMaximaleDepannageMinutes })}
+        />
+        <ChampNombre
+          libelle="Priorité du vendredi"
+          pas={0.25}
+          aide="1 = comme les autres jours. Au-dessus, ses trous passent en premier."
+          valeur={(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[5] ?? 1}
+          onChange={(valeur) =>
+            reglerRegles({
+              prioriteParJour: { ...(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT), 5: Math.max(0.25, valeur) },
+            })
+          }
+        />
+        <ChampNombre
+          libelle="Priorité du samedi"
+          pas={0.25}
+          valeur={(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT)[6] ?? 1}
+          onChange={(valeur) =>
+            reglerRegles({
+              prioriteParJour: { ...(r.prioriteParJour ?? PRIORITE_PAR_JOUR_PAR_DEFAUT), 6: Math.max(0.25, valeur) },
+            })
+          }
         />
         <ChampNombre
           libelle="Jours ouvrables par semaine"

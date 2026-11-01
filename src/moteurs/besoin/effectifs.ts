@@ -1,5 +1,5 @@
 import type { JourSemaine } from '../../domaine/calendrier'
-import type { GrilleEffectifs } from '../../domaine/organisation'
+import { jourDeRemplacement, type GrilleEffectifs } from '../../domaine/organisation'
 import { debutDeTranche, enMinutes } from '../../domaine/temps'
 
 /**
@@ -14,6 +14,8 @@ export interface EffectifTranche {
   readonly minimum: number
   /** Souhaite ; jamais inferieur au minimum. */
   readonly cible: number
+  /** Jour emprunte, quand le jour est encore a definir (vendredi <- jeudi). */
+  readonly provisoireDepuis?: JourSemaine
 }
 
 function couvre(debut: string, fin: string, minute: number): boolean {
@@ -37,10 +39,19 @@ export function effectifDeLaTranche(
   let minimum = 0
   let cible = 0
 
-  for (const creneau of grille.jours[jour] ?? []) {
+  // Jour encore a definir : il emprunte provisoirement la CIBLE d'un autre
+  // jour, comme minimum et comme cible (vendredi et samedi <- jeudi).
+  const source = jourDeRemplacement(grille, jour)
+  for (const creneau of grille.jours[source ?? jour] ?? []) {
     if (!couvre(creneau.debut, creneau.fin, minute)) continue
-    minimum = Math.max(minimum, creneau.minimum ?? 0)
-    cible = Math.max(cible, creneau.cible ?? creneau.minimum ?? 0)
+    if (source === null) {
+      minimum = Math.max(minimum, creneau.minimum ?? 0)
+      cible = Math.max(cible, creneau.cible ?? creneau.minimum ?? 0)
+    } else {
+      const visee = creneau.cible ?? creneau.minimum ?? 0
+      minimum = Math.max(minimum, visee)
+      cible = Math.max(cible, visee)
+    }
   }
   for (const plancher of grille.planchers) {
     if (!plancher.jours.includes(jour)) continue
@@ -48,5 +59,9 @@ export function effectifDeLaTranche(
     minimum = Math.max(minimum, plancher.minimum)
   }
 
-  return { minimum, cible: Math.max(cible, minimum) }
+  return {
+    minimum,
+    cible: Math.max(cible, minimum),
+    ...(source === null ? {} : { provisoireDepuis: source }),
+  }
 }

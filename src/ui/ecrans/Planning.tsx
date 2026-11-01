@@ -380,9 +380,10 @@ export function Planning() {
           vacations: planningCourant.vacations,
           collaborateurs: etat.collaborateurs,
           infractions,
+          pausesPayees: etat.organisation.reglesInternes.pausesPayeesIncluses,
         }),
       ),
-    [besoinsDeLaSemaine, planningCourant.vacations, etat.collaborateurs, infractions],
+    [besoinsDeLaSemaine, planningCourant.vacations, etat.collaborateurs, infractions, etat.organisation.reglesInternes],
   )
 
 
@@ -479,6 +480,29 @@ export function Planning() {
           légale, couvre le besoin au mieux et répartit équitablement les sujétions. Ce n’est
           qu’une proposition : vous la corrigez case par case ensuite.
         </p>
+
+        {casesVerrouillees.size > 0 && etatGeneration !== 'en-cours' && (
+          <div className="avis" role="status">
+            <p>
+              <strong>
+                {casesVerrouillees.size} case{casesVerrouillees.size > 1 ? 's' : ''} verrouillée
+                {casesVerrouillees.size > 1 ? 's' : ''} 🔒
+              </strong>{' '}
+              : {casesVerrouillees.size > 1 ? 'elles ne seront' : 'elle ne sera'} pas recalculée
+              {casesVerrouillees.size > 1 ? 's' : ''}. Ne verrouillez que ce que vous avez ajusté à
+              la main et voulez garder.
+            </p>
+            <button
+              type="button"
+              className="bouton"
+              onClick={() =>
+                modifierPlanning(semaine, (avant) => ({ ...avant, casesVerrouillees: [] }))
+              }
+            >
+              Tout déverrouiller
+            </button>
+          </div>
+        )}
 
         {horsHoraires.length > 0 && etatGeneration !== 'en-cours' && (
           <div className="avis avis--attention" role="status">
@@ -666,6 +690,7 @@ export function Planning() {
           onBasculerVerrou={basculerLeVerrou}
           infractionsParPersonne={infractionsParPersonne}
           renforts={renfortsDeLaSemaine}
+          pausesPayees={etat.organisation.reglesInternes.pausesPayeesIncluses}
           onChoisirCase={(collaborateurId, jour) =>
             setCaseChoisie(
               caseChoisie?.collaborateurId === collaborateurId && caseChoisie.jour === jour

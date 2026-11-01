@@ -1,8 +1,8 @@
 import type { Collaborateur } from '../../domaine/collaborateur'
 import { nomAffiche } from '../../domaine/collaborateur'
 import type { BesoinJour } from '../besoin'
-import { calculerCouverture } from '../indicateurs'
-import { dureeTravailEffectif, type Infraction, type Vacation } from '../regles'
+import { calculerCouverture, heuresAuContrat } from '../indicateurs'
+import { type Infraction, type Vacation } from '../regles'
 import { heuresEnTexte } from '../../domaine/nombres'
 
 /**
@@ -31,6 +31,8 @@ export interface EntreesControles {
   readonly vacations: readonly Vacation[]
   readonly collaborateurs: readonly Collaborateur[]
   readonly infractions: readonly Infraction[]
+  /** Pauses payees comprises dans le contrat (D-125). */
+  readonly pausesPayees?: boolean
 }
 
 export function controlerAvantValidation(entrees: EntreesControles): Controle[] {
@@ -104,12 +106,10 @@ export function controlerAvantValidation(entrees: EntreesControles): Controle[] 
 
   // 3. Ecarts au contrat.
   const ecarts = equipe
+    .filter((collaborateur) => collaborateur.forfait !== true)
     .map((collaborateur) => ({
       collaborateur,
-      heures:
-        entrees.vacations
-          .filter((vacation) => vacation.collaborateurId === collaborateur.id)
-          .reduce((somme, vacation) => somme + dureeTravailEffectif(vacation), 0) / 60,
+      heures: heuresAuContrat(entrees.vacations, collaborateur.id, entrees.pausesPayees ?? false),
     }))
     .map(({ collaborateur, heures }) => ({
       collaborateur,

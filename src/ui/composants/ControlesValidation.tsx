@@ -28,8 +28,9 @@ export function ControlesValidation({ besoins, vacations, infractions }: Proprie
         vacations,
         collaborateurs: etat.collaborateurs,
         infractions,
+        pausesPayees: etat.organisation.reglesInternes.pausesPayeesIncluses,
       }),
-    [besoins, vacations, etat.collaborateurs, infractions],
+    [besoins, vacations, etat.collaborateurs, infractions, etat.organisation.reglesInternes],
   )
 
   const sortieAutorisee = peutSortir(controles)

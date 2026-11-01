@@ -1773,3 +1773,25 @@ proposé qu'aux personnes qui tiennent ce rayon (titulaire ou renfort).
 **Et pour les postes déjà posés** : l'écran Planning signale tout poste hors
 des horaires de son rayon, ou dans un rayon que la personne ne tient pas, avec
 un bouton « Retirer ces postes ».
+
+---
+
+## Retours après essai sur l'iPad (1er novembre 2026, soir)
+
+### C-31 — Le total du planning affichait le travail effectif, pas les heures du contrat ❗
+**Constat.** La colonne « Total » comparait le **travail effectif** (pauses
+déduites) aux 36 h 75 du contrat. Avec des pauses payées et comprises (D-125),
+une personne parfaitement planifiée apparaissait à 35,0 h et « −1,8 » en
+rouge : on la croyait sous son contrat.
+**Corrigé.** La colonne s'appelle « Planifié » : présence entière, pauses
+comprises, comparée au contrat ; « au contrat » s'affiche quand l'écart est
+d'un quart d'heure au plus ; le travail effectif reste lisible en dessous
+(« dont 35,00 h de travail »), car c'est lui que la loi plafonne. Le cadre au
+forfait affiche « forfait », sans écart. Même correction pour le contrôle
+« écarts au contrat » avant validation et pour la comparaison des scénarios.
+Les écrans **Heures** (paie) et **Pilotage** gardent le travail effectif : les
+heures supplémentaires se comptent sur le travail effectif.
+
+### D-146 — Les cases verrouillées sont annoncées
+Un bandeau indique combien de cases sont verrouillées (« elles ne seront pas
+recalculées ») et propose « Tout déverrouiller ».

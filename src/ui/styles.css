@@ -2048,3 +2048,14 @@ select.champ__saisie {
   font-size: 12px;
   color: var(--texte-doux);
 }
+
+/* Total de la semaine : ecart neutre (forfait), contrat tenu, travail effectif. */
+.grille__ecart--neutre,
+.grille__ecart--ok {
+  color: var(--texte-doux);
+}
+.grille__effectif {
+  display: block;
+  font-size: 12px;
+  color: var(--texte-doux);
+}

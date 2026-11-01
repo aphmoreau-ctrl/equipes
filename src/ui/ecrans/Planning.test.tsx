@@ -115,12 +115,13 @@ describe('écran Planning', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
-    // 05:30 a 12:30 moins 20 min de pause = 6,7 h, pour un contrat de 35 h.
-    // Le total apparait dans la grille et dans la vue tous rayons.
+    // 05:30 a 12:30 : 7 h planifiees, pauses payees comprises (D-125), pour
+    // un contrat de 35 h ; dont 6 h 40 de travail effectif.
     const grille = screen.getByRole('heading', { name: 'Grille de la semaine' })
       .parentElement as HTMLElement
-    expect(within(grille).getByText('6,7 h')).toBeInTheDocument()
-    expect(within(grille).getByText('−28,3')).toBeInTheDocument()
+    expect(within(grille).getByText('7,00 h')).toBeInTheDocument()
+    expect(within(grille).getAllByText('−28,0').length).toBeGreaterThan(0)
+    expect(within(grille).getByText('dont 6,67 h de travail')).toBeInTheDocument()
   })
 })
 
@@ -508,3 +509,15 @@ function ajouterJoursLocal(date: string, jours: number): string {
   d.setUTCDate(d.getUTCDate() + jours)
   return d.toISOString().slice(0, 10)
 }
+
+describe('cases verrouillées', () => {
+  it('annonce les cases verrouillées et les déverrouille toutes d’un geste', () => {
+    afficher()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getAllByRole('button', { name: /^Verrouiller Camille D\., lundi/ })[0] as HTMLElement)
+    expect(screen.getByText(/elle ne sera pas recalculée/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Tout déverrouiller' }))
+    expect(screen.queryByRole('button', { name: 'Tout déverrouiller' })).not.toBeInTheDocument()
+  })
+})

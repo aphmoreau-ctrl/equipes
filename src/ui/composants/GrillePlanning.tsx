@@ -3,6 +3,7 @@ import { jourDeLaSemaine, nomDuJour } from '../../domaine/calendrier'
 import { dureeTravailEffectif, type Vacation } from '../../moteurs/regles'
 import type { Rayon } from '../../domaine/magasin'
 import { ecartEnTexte, heuresEnTexte } from '../../domaine/nombres'
+import { duree } from '../../domaine/temps'
 
 /**
  * Grille du planning : une ligne par personne, une colonne par jour.
@@ -22,6 +23,7 @@ export function GrillePlanning({
   casesVerrouillees,
   onChoisirCase,
   onBasculerVerrou,
+  pausesPayees = false,
 }: {
   readonly collaborateurs: readonly Collaborateur[]
   readonly jours: readonly string[]
@@ -45,6 +47,11 @@ export function GrillePlanning({
   readonly casesVerrouillees: ReadonlySet<string>
   readonly onChoisirCase: (collaborateurId: string, jour: string) => void
   readonly onBasculerVerrou: (collaborateurId: string, jour: string) => void
+  /**
+   * Pauses payees comprises dans le contrat (D-125) : le total compare alors
+   * la presence entiere, pauses comprises, aux heures du contrat.
+   */
+  readonly pausesPayees?: boolean
 }) {
   function vacationsDe(collaborateurId: string, jour: string): Vacation[] {
     return vacations.filter(
@@ -57,6 +64,20 @@ export function GrillePlanning({
       vacations
         .filter((vacation) => vacation.collaborateurId === collaborateurId)
         .reduce((somme, vacation) => somme + dureeTravailEffectif(vacation), 0) / 60
+    )
+  }
+
+  /** Heures au titre du contrat : pauses comprises si elles sont payees. */
+  function heuresPlanifiees(collaborateurId: string): number {
+    return (
+      vacations
+        .filter((vacation) => vacation.collaborateurId === collaborateurId)
+        .reduce(
+          (somme, vacation) =>
+            somme +
+            (pausesPayees ? duree(vacation.debut, vacation.fin) : dureeTravailEffectif(vacation)),
+          0,
+        ) / 60
     )
   }
 
@@ -79,14 +100,16 @@ export function GrillePlanning({
               </th>
             ))}
             <th scope="col" className="grille__total">
-              Total
+              {pausesPayees ? 'Planifié' : 'Total'}
             </th>
           </tr>
         </thead>
         <tbody>
           {collaborateurs.map((collaborateur) => {
-            const heures = heuresDe(collaborateur.id)
-            const ecart = heures - collaborateur.heuresHebdomadaires
+            const effectives = heuresDe(collaborateur.id)
+            const heures = heuresPlanifiees(collaborateur.id)
+            const forfait = collaborateur.forfait === true
+            const ecart = forfait ? 0 : heures - collaborateur.heuresHebdomadaires
             const infractions = infractionsParPersonne[collaborateur.id] ?? 0
 
             return (
@@ -161,11 +184,18 @@ export function GrillePlanning({
                 })}
 
                 <td className="grille__total">
-                  <span className="grille__heures">{heuresEnTexte(heures)}</span>
-                  {Math.abs(ecart) >= 0.5 && (
+                  <span className="grille__heures">{heuresEnTexte(heures, 2)}</span>
+                  {forfait ? (
+                    <span className="grille__ecart grille__ecart--neutre">forfait</span>
+                  ) : Math.abs(ecart) > 0.25 ? (
                     <span className={ecart > 0 ? 'grille__ecart grille__ecart--haut' : 'grille__ecart'}>
                       {ecartEnTexte(ecart)}
                     </span>
+                  ) : (
+                    heures > 0 && <span className="grille__ecart grille__ecart--ok">au contrat</span>
+                  )}
+                  {pausesPayees && heures > 0 && (
+                    <span className="grille__effectif">dont {heuresEnTexte(effectives, 2)} de travail</span>
                   )}
                 </td>
               </tr>

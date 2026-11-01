@@ -188,6 +188,26 @@ export function calculerCouverture(
   }
 }
 
+/**
+ * Heures planifiees au titre du contrat : presence entiere quand les pauses
+ * sont payees et comprises dans le contrat (D-125), travail effectif sinon.
+ */
+export function heuresAuContrat(
+  vacations: readonly Vacation[],
+  collaborateurId: string,
+  pausesPayees: boolean,
+): number {
+  return (
+    vacations
+      .filter((vacation) => vacation.collaborateurId === collaborateurId)
+      .reduce(
+        (somme, vacation) =>
+          somme + (pausesPayees ? duree(vacation.debut, vacation.fin) : dureeTravailEffectif(vacation)),
+        0,
+      ) / 60
+  )
+}
+
 /** Heures de travail effectif prevues pour une personne. */
 export function heuresPrevues(vacations: readonly Vacation[], collaborateurId: string): number {
   return (
@@ -209,16 +229,18 @@ export interface EcartAuContrat {
 export function ecartsAuContrat(
   vacations: readonly Vacation[],
   collaborateurs: readonly Collaborateur[],
+  pausesPayees = false,
 ): EcartAuContrat[] {
   return collaborateurs
     .filter((collaborateur) => collaborateur.actif)
     .map((collaborateur) => {
-      const prevues = heuresPrevues(vacations, collaborateur.id)
+      const prevues = heuresAuContrat(vacations, collaborateur.id, pausesPayees)
       return {
         collaborateurId: collaborateur.id,
         heuresPrevues: prevues,
         heuresContrat: collaborateur.heuresHebdomadaires,
-        ecart: prevues - collaborateur.heuresHebdomadaires,
+        // Cadre au forfait : ses heures ne se comptent pas.
+        ecart: collaborateur.forfait === true ? 0 : prevues - collaborateur.heuresHebdomadaires,
       }
     })
     .sort((a, b) => a.collaborateurId.localeCompare(b.collaborateurId))

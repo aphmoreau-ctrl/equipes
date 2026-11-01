@@ -129,7 +129,9 @@ export function calculerBesoin(
       const effectif = effectifDeLaTranche(grille, jour, index)
       personnes = effectif.minimum
       cible = effectif.cible
-      if (effectif.cible > 0) {
+      if (effectif.cible > 0) competences.add(grille.competence)
+      // La competence n'est indispensable que la ou un minimum est exige.
+      if (effectif.minimum > 0) {
         competences.add(grille.competence)
         critiques.add(grille.competence)
         niveauxMinimum[grille.competence] = Math.max(

@@ -295,6 +295,8 @@ export function Planning() {
         vacationsAnterieures: historique(semaine),
         planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
         dureeMaximaleMs: 5000,
+        reglesInternes: etat.organisation.reglesInternes,
+        plagesAffluence: etat.organisation.plagesAffluence,
       },
       (resultat) => {
         for (const construite of resultat.semaines) {

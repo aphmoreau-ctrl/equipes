@@ -200,6 +200,11 @@ export interface ReglesInternes {
   readonly finDuMatin: string
   /** Duree maximale d'un depannage dans un rayon. null = A DEFINIR. */
   readonly dureeMaximaleDepannageMinutes: Minutes | null
+  /**
+   * Le planning propose ne depasse pas le contrat de plus de ce temps par
+   * semaine. Absent (reglage anterieur) = 1 h.
+   */
+  readonly depassementContratMaximumMinutes?: Minutes
 }
 
 /** Une verification a faire hors de l'application (RH, convention). */
@@ -230,6 +235,7 @@ export const REGLES_INTERNES_PAR_DEFAUT: ReglesInternes = {
   joursConsecutifsMaximum: 6,
   finDuMatin: '14:00',
   dureeMaximaleDepannageMinutes: 2 * 60,
+  depassementContratMaximumMinutes: 60,
 }
 
 /** Organisation vide : aucune tache, aucune rotation. Celle de la demonstration. */

@@ -1,4 +1,5 @@
-import { estAutonome, type Collaborateur } from '../../domaine/collaborateur'
+import { estAutonome, horsCalculDHeures, type Collaborateur } from '../../domaine/collaborateur'
+import { duree } from '../../domaine/temps'
 import { TRANCHE_MINUTES } from '../../domaine/temps'
 import type { BesoinJour } from '../besoin'
 import { dureeTravailEffectif, type Vacation } from '../regles'
@@ -32,6 +33,17 @@ export interface PoidsPenalites {
   readonly manque: number
   /** Prime accordee a la couverture d'une competence critique. */
   readonly competenceCritique: number
+  /**
+   * Par personne manquante sous la CIBLE (au-dessus du minimum), pour un
+   * rayon dote d'une grille d'effectifs. Absent = 0.
+   */
+  readonly cible?: number
+  /**
+   * Par personne au-dela de la cible, pour un rayon dote d'une grille.
+   * Plus leger que le sureffectif ordinaire : ces heures sont dues au
+   * contrat, mieux vaut les placer que les perdre. Absent = sureffectif.
+   */
+  readonly audelaDeLaCible?: number
 }
 
 export const POIDS_PAR_DEFAUT: PoidsPenalites = {
@@ -43,6 +55,31 @@ export const POIDS_PAR_DEFAUT: PoidsPenalites = {
   changement: 1,
   manque: 20,
   competenceCritique: 15,
+  // Sous l'ecart au contrat (6 par heure, soit 1,5 par quart d'heure) : on
+  // vise la cible avec les heures dues, sans faire depasser les contrats.
+  cible: 1.2,
+  audelaDeLaCible: 0.5,
+}
+
+/**
+ * Minutes comptees au titre du contrat pour une vacation.
+ *
+ * Pauses payees et comprises dans le contrat (D-125) : toute la presence
+ * compte, pause comprise. Sinon : le seul travail effectif.
+ */
+export function minutesAuContrat(vacation: Vacation, pausesPayees: boolean): number {
+  return pausesPayees ? duree(vacation.debut, vacation.fin) : dureeTravailEffectif(vacation)
+}
+
+/** Ecart au contrat, en heures. Un cadre au forfait n'en a jamais. */
+export function ecartAuContratEnHeures(
+  collaborateur: Collaborateur,
+  siennes: readonly Vacation[],
+  pausesPayees: boolean,
+): number {
+  if (horsCalculDHeures(collaborateur)) return 0
+  const heures = siennes.reduce((somme, v) => somme + minutesAuContrat(v, pausesPayees), 0) / 60
+  return Math.abs(heures - collaborateur.heuresHebdomadaires)
 }
 
 /** Somme des sujetions deja accumulees par une personne. */
@@ -143,6 +180,7 @@ export function penaliser(
   collaborateurs: readonly Collaborateur[],
   poids: PoidsPenalites,
   planningPrecedent: readonly Vacation[] = [],
+  pausesPayees = false,
 ): DetailPenalites {
   let manque = 0
   let sureffectif = 0
@@ -164,8 +202,7 @@ export function penaliser(
 
   for (const collaborateur of actifs) {
     const siennes = vacations.filter((v) => v.collaborateurId === collaborateur.id)
-    const heures = siennes.reduce((somme, v) => somme + dureeTravailEffectif(v), 0) / 60
-    ecart += Math.abs(heures - collaborateur.heuresHebdomadaires)
+    ecart += ecartAuContratEnHeures(collaborateur, siennes, pausesPayees)
 
     secondaire += siennes.filter((v) => v.rayonId !== collaborateur.rayonPrincipal).length
 
@@ -231,9 +268,9 @@ export function penalitePersonne(
   poids: PoidsPenalites,
   sujetionMoyenne: number,
   reperesPrecedents: ReadonlySet<string>,
+  pausesPayees = false,
 ): number {
-  const heures = siennes.reduce((somme, v) => somme + dureeTravailEffectif(v), 0) / 60
-  let penalite = Math.abs(heures - collaborateur.heuresHebdomadaires) * poids.ecartAuContrat
+  let penalite = ecartAuContratEnHeures(collaborateur, siennes, pausesPayees) * poids.ecartAuContrat
 
   penalite +=
     siennes.filter((v) => v.rayonId !== collaborateur.rayonPrincipal).length *

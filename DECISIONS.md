@@ -1654,3 +1654,63 @@ Le test « change de jour » des feuilles de route choisissait le 3 octobre en
 dur ; depuis que la semaine affichée est celle de novembre, ce jour n'existait
 plus dans la liste et le test échouait. Il choisit désormais le samedi de la
 semaine affichée, quelle qu'elle soit.
+
+---
+
+## Règles du planning v2 — Le générateur donne à chacun ses heures (1er novembre 2026)
+
+Demandé par Arnaud après un premier essai avec la vraie équipe : « les salariés
+doivent faire leurs heures ». Ce point de l'étape 3 passe avant l'étape 2.
+
+### D-135 — Minimum, puis cible, puis heures du contrat
+**Décision.** Pour un rayon piloté par sa grille, le générateur tient d'abord
+le **minimum** (le plus lourd), vise ensuite la **cible**, puis place les
+**heures dues** au contrat, même au-delà de la cible. Les poids : manque 20,
+écart au contrat 6 par heure, cible 1,2 et au-delà de la cible 0,5 par quart
+d'heure — la cible ne fait jamais dépasser un contrat, et des heures dues
+valent mieux placées que perdues.
+**Alternative.** Laisser des heures non placées plutôt que de dépasser la
+cible : il suffit d'augmenter le poids « au-delà de la cible ».
+
+### D-136 — Des postes de 6 h à 8 h, dans les horaires du rayon
+**Décision.** Les rayons à grille reçoivent des **postes de contrat** (6 h,
+7 h, 7 h 15, 7 h 30, 8 h, et toute la plage quand elle est courte comme le
+dimanche matin), accrochés à l'ouverture, à la fermeture, à 8 h 30 et à 13 h.
+Un poste ne sort **jamais** des horaires du rayon, et rien n'est placé un jour
+de fermeture.
+**Raison.** Les anciens postes plafonnaient à 6 h 40 de travail par jour :
+impossible de faire 36 h 75 en cinq jours.
+
+### D-137 — La pause du poste suit les règles internes et la loi
+**Décision.** Pause = 3 min par heure de présence, portée à 20 min dès 6 h
+de travail (30 min dès 4 h 30 pour un mineur). Elle se place dans une plage
+permise (8 h 30-11 h, 15 h-17 h 30), hors affluence, au plus près du milieu
+du poste.
+
+### D-138 — Plafond de dépassement : 1 h par semaine
+**Décision.** Le planning proposé ne fait pas dépasser un contrat de plus
+d'**1 h** par semaine (réglable : Paramètres → Règles internes). Un trou qui
+en résulte est **annoncé**, avec ses heures exactes, plutôt que comblé par des
+heures supplémentaires silencieuses.
+**Constat sur un essai réaliste** : les trous restants sont surtout des
+pauses sans relève (un seul titulaire en rayon) et la fin de soirée en Marée
+(trois titulaires pour 6 h-20 h tous les jours), comme le prévoyait le §2.
+
+### D-139 — Nouvelles contraintes strictes du générateur
+- jamais un **jour d'école** ;
+- « **le matin uniquement** » : le poste finit au plus tard à l'heure réglée
+  (14 h) ;
+- un rayon tenu **en dépannage** n'est jamais proposé d'office (D-130) ;
+- le **cadre au forfait** n'a aucun écart d'heures : il n'est pas placé
+  automatiquement, vous posez ses présences à la main.
+
+### D-140 — Le calcul a été accéléré
+**Décision.** Le générateur garde en mémoire ce qui n'a pas changé d'un tour
+à l'autre (part de chaque rayon-jour, pénalité de chaque personne) et ne trie
+plus toute la liste des candidats. Sur une équipe de 26 personnes et 8 rayons,
+la semaine se calcule en 3 à 4 secondes au lieu de dépasser la limite de 5.
+
+### C-29 — Les heures manquantes étaient divisées par deux ❗
+Le message « il manque encore … de présence » comptait encore en
+demi-heures depuis le passage au quart d'heure : il annonçait le double de
+la réalité. Corrigé.

@@ -816,6 +816,16 @@ export function SectionReglesInternes() {
           valeur={r.dureeMaximaleDepannageMinutes}
           onChange={(dureeMaximaleDepannageMinutes) => reglerRegles({ dureeMaximaleDepannageMinutes })}
         />
+        <ChampNombre
+          libelle="Dépassement du contrat au plus"
+          suffixe="h / semaine"
+          pas={0.25}
+          aide="Le planning proposé ne fait pas faire plus d’heures que cela au-delà du contrat."
+          valeur={(r.depassementContratMaximumMinutes ?? 60) / 60}
+          onChange={(heures) =>
+            reglerRegles({ depassementContratMaximumMinutes: Math.round(heures * 60) })
+          }
+        />
       </div>
       <div className="groupe-boutons">
         <Interrupteur

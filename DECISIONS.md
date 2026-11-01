@@ -1934,3 +1934,20 @@ contre 15 à 18 en semaine ; tout le monde le samedi, deux absents le vendredi
 (leurs autres jours tiennent juste leur cible).
 **Réglages** : Paramètres → Règles internes → « Jours prioritaires »,
 « Jours de repos de préférence », « Poids des jours prioritaires ».
+
+### D-156 — Travailler rayon par rayon (demandé)
+**Décision.** Dans la vue d'un rayon, un encadré « Travail sur le rayon »
+donne pour la semaine :
+- les heures **nécessaires** (minimum et cible de la grille), les heures
+  **disponibles** (titulaires et renforts : ce qu'ils font déjà ici plus ce
+  qui leur reste à faire, une fois retirées leurs heures dans les autres
+  rayons), le **solde** par rapport à la cible, et le planifié ici ;
+- la liste des personnes qui tiennent le rayon : rang (titulaire, renfort,
+  dépannage), heures à faire, ailleurs, ici, restantes, jours où elles ne
+  peuvent pas venir ; une case à cocher pour les inclure ou non ;
+- un bouton **« Générer ce rayon »** : seul ce rayon est recalculé ; les
+  postes des autres rayons sont figés mais comptent dans les heures et les
+  règles de chacun ; les cases verrouillées ne bougent pas.
+Le dépannage n'est ni compté dans les heures disponibles, ni proposé au
+calcul : il se pose à la main. Si le solde est positif et qu'un minimum reste
+découvert, chaque trou est expliqué (« Pourquoi personne »).

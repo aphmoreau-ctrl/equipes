@@ -594,6 +594,21 @@ describe('vue par rayon', () => {
     expect(within(controle).getByText('Alertes acceptées pour cette semaine')).toBeInTheDocument()
   })
 
+  it('génère seulement ce rayon, sans toucher aux autres', async () => {
+    const { lireEtat } = await import('../../donnees/etat')
+    await preparer()
+    afficher()
+    choisirMaree()
+    expect(screen.getByRole('heading', { name: 'Travail sur le rayon Marée' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Inclure Bérénice dans le calcul')).toBeChecked()
+    fireEvent.click(screen.getByRole('button', { name: 'Générer ce rayon' }))
+    const semaine = lundiDeLaSemaine(aujourdhui())
+    const vacations = lireEtat().plannings[semaine]?.vacations ?? []
+    // Le poste de Berenice en charcuterie, le mardi, n'a pas bouge.
+    expect(vacations.some((v) => v.id === 'c')).toBe(true)
+    expect(vacations.filter((v) => v.rayonId === 'maree').length).toBeGreaterThan(2)
+  }, 30000)
+
   it('se souvient du dernier rayon choisi', async () => {
     await preparer()
     const premier = afficher()

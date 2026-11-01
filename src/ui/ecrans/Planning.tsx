@@ -16,6 +16,8 @@ import {
   rayonsPrincipaux,
 } from '../../domaine/collaborateur'
 import { CouvertureRayon } from '../composants/CouvertureRayon'
+import { AtelierRayon } from '../composants/AtelierRayon'
+import { bilanDuRayon, fusionnerLeRayon, postesFigesPourUnRayon } from '../../moteurs/planning/atelier'
 import { ControleSemaine } from '../composants/ControleSemaine'
 import { controlerLaSemaine } from '../../moteurs/controle'
 import { rayonsActifs } from '../../domaine/magasin'
@@ -88,6 +90,8 @@ export function Planning() {
       // Rien a faire : le choix vaudra pour cette session seulement.
     }
   }
+  /** Personnes laissees de cote quand on genere seulement le rayon choisi. */
+  const [exclusDuRayon, setExclusDuRayon] = useState<readonly string[]>([])
   /** Renforts ajoutes a la main a la vue d'un rayon, pour leur poser un poste. */
   const [renfortsAjoutes, setRenfortsAjoutes] = useState<readonly string[]>([])
   const [caseChoisie, setCaseChoisie] = useState<{ collaborateurId: string; jour: string } | null>(
@@ -405,6 +409,50 @@ export function Planning() {
     )
   }
 
+  /**
+   * Ne calcule que le rayon choisi. Les postes des autres rayons sont figes
+   * (ils comptent dans les heures et les regles de chacun), les personnes
+   * decochees sont laissees de cote, les cases verrouillees ne bougent pas.
+   */
+  function genererCeRayon(): void {
+    if (filtreRayon === 'tous') return
+    const rayonId = filtreRayon
+    generer(
+      {
+        semaines: [
+          {
+            semaine,
+            besoins: besoinsDeLaSemaine.filter((besoin) => besoin.rayonId === rayonId),
+            vacationsVerrouillees: postesFigesPourUnRayon(
+              rayonId,
+              planningCourant.vacations,
+              casesVerrouillees,
+            ),
+          },
+        ],
+        rayons: rayons.filter((rayon) => rayon.id === rayonId),
+        collaborateurs: etat.collaborateurs.filter((c) => !exclusDuRayon.includes(c.id)),
+        absences: absencesEffectives(etat),
+        horairesTypes: etat.magasin.horairesTypes,
+        parametres: etat.reglesParametres,
+        vacationsAnterieures: historique(semaine),
+        planningPrecedent: planning(ajouterJours(semaine, -7)).vacations,
+        dureeMaximaleMs: 5000,
+        reglesInternes: etat.organisation.reglesInternes,
+        plagesAffluence: etat.organisation.plagesAffluence,
+      },
+      (resultat) => {
+        const premiere = resultat.semaines[0]
+        if (premiere === undefined) return
+        modifierPlanning(semaine, (avant) => ({
+          ...avant,
+          vacations: fusionnerLeRayon(rayonId, avant.vacations, premiere.resultat.vacations, casesVerrouillees),
+        }))
+        setProposition(premiere.resultat)
+      },
+    )
+  }
+
   function changerLeSuivi(nouvelEtat: EtatSuivi, date: string, remarques: string): void {
     modifierPlanning(semaine, (precedent) => changerEtat(precedent, nouvelEtat, date, remarques))
   }
@@ -518,6 +566,7 @@ export function Planning() {
               onClick={() => {
                 setFiltreRayon(rayon.id)
                 setRenfortsAjoutes([])
+                setExclusDuRayon([])
               }}
             >
               {rayon.nom}
@@ -765,6 +814,32 @@ export function Planning() {
           {filtreRayon !== 'tous' && ` — ${rayons.find((r) => r.id === filtreRayon)?.nom ?? ''}`}
         </h2>
         <p>Touchez une case pour placer ou retirer une vacation.</p>
+
+        {filtreRayon !== 'tous' && (
+          <AtelierRayon
+            nomDuRayon={rayons.find((r) => r.id === filtreRayon)?.nom ?? ''}
+            bilan={bilanDuRayon({
+              rayonId: filtreRayon,
+              semaine,
+              besoins: besoinsDeLaSemaine,
+              vacations: planningCourant.vacations,
+              collaborateurs: etat.collaborateurs,
+              absences: absencesEffectives(etat),
+              pausesPayees: etat.organisation.reglesInternes.pausesPayeesIncluses,
+              joursOuvrables: etat.organisation.reglesInternes.joursHabituelsParSemaine ?? 6,
+            })}
+            exclus={new Set(exclusDuRayon)}
+            onBasculer={(id) =>
+              setExclusDuRayon(
+                exclusDuRayon.includes(id)
+                  ? exclusDuRayon.filter((x) => x !== id)
+                  : [...exclusDuRayon, id],
+              )
+            }
+            onGenerer={genererCeRayon}
+            enCours={etatGeneration === 'en-cours'}
+          />
+        )}
 
         {renfortsPossibles.length > 0 && (
           <label className="champ champ--etroit">

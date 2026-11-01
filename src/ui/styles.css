@@ -2194,3 +2194,38 @@ select.champ__saisie {
   font-size: 14px;
   color: var(--texte-doux);
 }
+
+/* --------------------------------------------- Travail sur un rayon */
+.atelier-rayon {
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 10px;
+}
+.atelier-rayon h3 {
+  margin: 0;
+}
+.atelier-rayon__bilan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.atelier-rayon__bilan dt {
+  font-size: 13px;
+  color: var(--texte-doux);
+}
+.atelier-rayon__bilan dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.atelier-rayon__negatif {
+  color: var(--alerte);
+}
+.atelier-rayon__table input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+}

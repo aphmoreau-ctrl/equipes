@@ -65,6 +65,7 @@ describe('écran Planning', () => {
 
     fireEvent.click(jours[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 
     expect(within(grille()).getAllByText('05:30–12:30').length).toBeGreaterThan(0)
   })
@@ -74,27 +75,60 @@ describe('écran Planning', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     expect(within(grille()).getAllByText('05:30–12:30')).toHaveLength(1)
 
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Repos/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     expect(within(grille()).queryByText('05:30–12:30')).not.toBeInTheDocument()
   })
 
-  it('signale immédiatement une règle enfreinte', () => {
+  it('vérifie la faisabilité avant d’enregistrer : un septième jour est refusé', () => {
     afficher()
-    // Sept jours d'affilee : le repos hebdomadaire saute.
-    for (const jour of ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']) {
+    // Six jours : permis (grande distribution).
+    for (const jour of ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']) {
       const cases = screen.getAllByRole('button', { name: new RegExp(`^Camille D\\., ${jour}`) })
       fireEvent.click(cases[0] as HTMLElement)
       fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     }
+    // Le septieme : le repos hebdomadaire saute (L3132-1). Constat bloquant,
+    // affiche AVANT d'enregistrer ; le bouton reste inactif.
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., dimanche/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    const editeur = screen.getByRole('region', { name: 'Modifier la journée' })
+    expect(within(editeur).getByText('Impossible en l’état')).toBeInTheDocument()
+    expect(within(editeur).getAllByText(/7 jours travaillés dans la semaine/).length).toBeGreaterThan(0)
+    expect(within(editeur).getByRole('button', { name: /^Enregistrer/ })).toBeDisabled()
+  })
 
-    expect(screen.getByRole('heading', { name: 'Contrôle de la semaine' })).toBeInTheDocument()
-    // Sept jours d'affilee : interdit en soi (L3132-1), constat ferme.
-    // Le constat apparait dans le controle des regles ET dans les controles
-    // avant validation : les deux disent la meme chose, a deux endroits.
-    expect(screen.getAllByText(/7 jours travaillés dans la semaine/).length).toBeGreaterThan(0)
-    expect(screen.queryByText('Aucune règle enfreinte')).not.toBeInTheDocument()
+  it('dit ce qu’une modification provoque et ce qu’elle règle, heures comprises', () => {
+    afficher()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    const editeur = screen.getByRole('region', { name: 'Modifier la journée' })
+    expect(within(editeur).getByText('Vérification de faisabilité')).toBeInTheDocument()
+    // 05:30-12:30 : 7 h de plus sur la semaine.
+    expect(within(editeur).getByText(/Journée : 7/)).toBeInTheDocument()
+    // Une fin avant le debut : erreur de saisie, enregistrement impossible.
+    fireEvent.change(within(editeur).getByLabelText('Fin'), { target: { value: '05:00' } })
+    expect(within(editeur).getByText(/doit être après le début/)).toBeInTheDocument()
+    expect(within(editeur).getByRole('button', { name: /^Enregistrer/ })).toBeDisabled()
+  })
+
+  it('pose deux postes dans deux rayons le même jour, au quart d’heure', () => {
+    afficher()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    const editeur = screen.getByRole('region', { name: 'Modifier la journée' })
+    fireEvent.click(within(editeur).getByRole('button', { name: 'Fin : un quart d’heure plus tard' }))
+    expect(within(editeur).getByLabelText('Fin')).toHaveValue('12:45')
+    fireEvent.click(within(editeur).getByRole('button', { name: /^Ajouter un poste/ }))
+    expect(within(editeur).getByText(/^Poste 2/)).toBeInTheDocument()
+    fireEvent.click(within(editeur).getByRole('button', { name: /^Enregistrer/ }))
+    expect(screen.queryByRole('region', { name: 'Modifier la journée' })).not.toBeInTheDocument()
   })
 
   it('prévient quand la personne s’est déclarée indisponible', () => {
@@ -117,6 +151,7 @@ describe('écran Planning', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     // 05:30 a 12:30 : 7 h planifiees, pauses payees comprises (D-125), pour
     // un contrat de 35 h ; dont 6 h 40 de travail effectif.
     const grille = screen.getByRole('heading', { name: 'Grille de la semaine' })
@@ -173,6 +208,7 @@ describe('circuit de suivi', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Soumis' }))
     fireEvent.click(screen.getByRole('button', { name: /Enregistrer « Soumis »/ }))
     premiere.unmount()
@@ -201,6 +237,7 @@ describe('proposition automatique', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
     expect(screen.getByText(/remplacera/)).toBeInTheDocument()
@@ -213,6 +250,7 @@ describe('proposition automatique', () => {
     const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
     fireEvent.click(jour)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Proposer un planning' }))
     fireEvent.click(screen.getByRole('button', { name: 'Oui, remplacer' }))
@@ -380,6 +418,7 @@ describe('verrouillage des cases', () => {
   function placerUneVacation(): void {
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
   }
 
   it('ne propose un verrou que sur une case occupée', () => {
@@ -387,14 +426,14 @@ describe('verrouillage des cases', () => {
     expect(screen.queryByRole('button', { name: /^Verrouiller Camille D\./ })).not.toBeInTheDocument()
 
     placerUneVacation()
-    expect(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Déverrouiller Camille D\., lundi/ })).toBeInTheDocument()
   })
 
   it('verrouille puis déverrouille une case', () => {
     afficher()
     placerUneVacation()
 
-    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
+    // Une journee saisie a la main est verrouillee d'office.
     expect(
       screen.getByRole('button', { name: /^Déverrouiller Camille D\., lundi/ }),
     ).toHaveAttribute('aria-pressed', 'true')
@@ -409,16 +448,12 @@ describe('verrouillage des cases', () => {
   it('compte les cases verrouillées à côté du bouton Relancer', () => {
     afficher()
     placerUneVacation()
-    expect(screen.getByText('aucune case verrouillée pour l’instant')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
     expect(screen.getByText('1 case verrouillée')).toBeInTheDocument()
   })
 
   it('garde la vacation verrouillée après une relance', () => {
     afficher()
     placerUneVacation()
-    fireEvent.click(screen.getByRole('button', { name: /^Verrouiller Camille D\., lundi/ }))
 
     const avant = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0]
     const horaireAvant = avant?.textContent
@@ -437,6 +472,7 @@ describe('pauses et absences dans le planning', () => {
     afficher()
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     expect(within(grille()).getAllByText('Pause 09:00 (20 min)').length).toBeGreaterThan(0)
   })
 
@@ -517,7 +553,7 @@ describe('cases verrouillées', () => {
     afficher()
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
-    fireEvent.click(screen.getAllByRole('button', { name: /^Verrouiller Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     expect(screen.getByText(/elle ne sera pas recalculée/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Tout déverrouiller' }))
     expect(screen.queryByRole('button', { name: 'Tout déverrouiller' })).not.toBeInTheDocument()

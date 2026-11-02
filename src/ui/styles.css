@@ -2241,3 +2241,65 @@ select.champ__saisie {
   padding-top: 10px;
   margin-top: 10px;
 }
+
+/* ------------------------------------------------ Edition d'une journee */
+.poste-saisi {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit);
+  background: var(--fond-carte);
+}
+
+.poste-saisi legend {
+  font-weight: 650;
+  padding: 0 6px;
+}
+
+.poste-saisi__heures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 10px 0;
+}
+
+.champ-heure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.champ-heure__ligne {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.champ-heure__saisie {
+  width: 8.5em;
+  min-height: var(--cible-tactile);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bouton--carre {
+  min-width: var(--cible-tactile);
+  min-height: var(--cible-tactile);
+  padding: 0;
+  font-size: 22px;
+  justify-content: center;
+}
+
+.faisabilite {
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: var(--rayon-petit);
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+}
+
+.faisabilite h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}

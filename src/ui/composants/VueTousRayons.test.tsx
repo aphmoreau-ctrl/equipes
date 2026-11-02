@@ -67,6 +67,7 @@ describe('vue tous rayons', () => {
     fireEvent.change(ajout, { target: { value: camille?.value ?? '' } })
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 
     const vue = section()
     expect(within(vue).getByText(/Camille D\./)).toBeInTheDocument()

@@ -22,6 +22,7 @@ function section(): HTMLElement {
 function placerUneVacation(): void {
   fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
   fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+  fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 }
 
 beforeEach(() => {

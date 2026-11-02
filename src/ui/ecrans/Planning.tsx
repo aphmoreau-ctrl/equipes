@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ajouterJours,
   aujourdhui,
@@ -20,6 +20,11 @@ import { AtelierRayon } from '../composants/AtelierRayon'
 import { bilanDuRayon, fusionnerLeRayon, postesFigesPourUnRayon } from '../../moteurs/planning/atelier'
 import { ControleSemaine } from '../composants/ControleSemaine'
 import { controlerLaSemaine } from '../../moteurs/controle'
+import { verifierLaModification, type PosteSaisi } from '../../moteurs/controle/faisabilite'
+import { EditeurJournee } from '../composants/EditeurJournee'
+import { estMineur, type Collaborateur } from '../../domaine/collaborateur'
+import { fenetresDuJour } from '../../domaine/organisation'
+import { pauseDuPoste, placerLaPause } from '../../moteurs/planning/generateur'
 import { rayonsActifs } from '../../domaine/magasin'
 import {
   LIBELLES_ORIGINE,
@@ -310,39 +315,45 @@ export function Planning() {
   const tauxGlobal = besoinTotal === 0 ? 1 : 1 - manqueTotal / besoinTotal
 
   // ------------------------------------------------------ Modifications
-  function ajouterVacation(
-    collaborateurId: string,
-    jour: string,
-    debut: string,
-    fin: string,
-    pauseMinutes: number,
-    pauseDebut: string,
-    rayonId: string,
-  ): void {
-    const vacation: Vacation = {
-      id: `v-${collaborateurId}-${jour}-${debut}-${Date.now()}`,
-      collaborateurId,
-      rayonId,
-      jour,
-      debut,
-      fin,
-      pauseMinutes,
-      pauseDebut,
-    }
+  /**
+   * Enregistre la journee modifiee a la main et la VERROUILLE : relancer le
+   * planning n'y touchera plus.
+   */
+  function enregistrerLaJournee(collaborateurId: string, jour: string, vacations: readonly Vacation[]): void {
+    const cle = `${collaborateurId}|${jour}`
+    const horodatage = Date.now()
     modifierPlanning(semaine, (precedent) => ({
       ...precedent,
-      vacations: [...precedent.vacations, vacation],
+      vacations: [
+        ...precedent.vacations.filter((v) => !(v.collaborateurId === collaborateurId && v.jour === jour)),
+        ...vacations.map((v, rang) => ({ ...v, id: `v-${collaborateurId}-${jour}-${rang}-${horodatage}` })),
+      ],
+      casesVerrouillees: [...new Set([...(precedent.casesVerrouillees ?? []), cle])].sort(),
     }))
   }
 
-  function viderLaCase(collaborateurId: string, jour: string): void {
-    modifierPlanning(semaine, (precedent) => ({
-      ...precedent,
-      vacations: precedent.vacations.filter(
-        (vacation) =>
-          !(vacation.collaborateurId === collaborateurId && vacation.jour === jour),
-      ),
-    }))
+  /** Pause conseillee pour un poste : duree et heure selon les regles internes. */
+  function pauseConseillee(
+    collaborateur: Collaborateur,
+    jour: string,
+    debut: string,
+    fin: string,
+  ): { pauseMinutes: number; pauseDebut: string } {
+    const regles = etat.organisation.reglesInternes
+    const d = enMinutes(debut)
+    const f = d + duree(debut, fin)
+    const pause = pauseDuPoste(f - d, regles, estMineur(collaborateur), etat.reglesParametres)
+    if (pause === 0) return { pauseMinutes: 0, pauseDebut: '' }
+    const numero = jourDeLaSemaine(jour)
+    const depart = placerLaPause(
+      d,
+      f,
+      pause,
+      regles,
+      etat.organisation.plagesAffluence[numero] ?? [],
+      fenetresDuJour(regles, numero),
+    )
+    return { pauseMinutes: pause, pauseDebut: enTexte(depart) }
   }
 
   /**
@@ -513,6 +524,42 @@ export function Planning() {
       }),
     [semaine, planningCourant.vacations, historique, infractions, besoinsDeLaSemaine, etat],
   )
+  /** Verification de faisabilite d'une journee modifiee a la main (avant/apres). */
+  const verifierLaJournee = useCallback(
+    (postes: readonly PosteSaisi[]) => {
+      if (caseChoisie === null) {
+        throw new Error('Aucune case choisie.')
+      }
+      return verifierLaModification(
+        {
+          semaine,
+          vacations: planningCourant.vacations,
+          vacationsAnterieures: historique(semaine),
+          besoins: besoinsDeLaSemaine,
+          rayons: etat.magasin.rayons,
+          collaborateurs: etat.collaborateurs,
+          absences: absencesEffectives(etat),
+          organisation: etat.organisation,
+          pausesPayees: etat.organisation.reglesInternes.pausesPayeesIncluses,
+          infractionsDe: (vacations) =>
+            verifier(
+              contexteDeVerification(vacations, etat.reglesParametres, {
+                collaborateurs: etat.collaborateurs,
+                vacationsAnterieures: historique(semaine),
+                datePublication: datePublication(planningCourant),
+                heuresSupplementairesAnnuelles: etat.heuresSupplementairesAnnuelles,
+                absences: absencesEffectives(etat),
+              }),
+            ),
+        },
+        caseChoisie.collaborateurId,
+        caseChoisie.jour,
+        postes,
+      )
+    },
+    [caseChoisie, semaine, planningCourant, historique, besoinsDeLaSemaine, etat],
+  )
+
   const constatsVisibles =
     filtreRayon === 'tous'
       ? constatsSemaine
@@ -884,57 +931,35 @@ export function Planning() {
         />
 
         {caseChoisie !== null && collaborateurChoisi !== undefined && (
-          <div className="editeur-case">
-            <p className="champ__libelle">
-              {nomAffiche(collaborateurChoisi)} — {nomDuJour(jourDeLaSemaine(caseChoisie.jour))}{' '}
-              {caseChoisie.jour.slice(8)}
-            </p>
-
-            {!estDisponible(collaborateurChoisi, jourDeLaSemaine(caseChoisie.jour)) && (
-              <p className="avis avis--attention">
-                {nomAffiche(collaborateurChoisi)} a déclaré ne pas être disponible ce jour-là.
-              </p>
+          <EditeurJournee
+            key={`${caseChoisie.collaborateurId}|${caseChoisie.jour}|${semaine}`}
+            titre={`${nomAffiche(collaborateurChoisi)} — ${nomDuJour(jourDeLaSemaine(caseChoisie.jour))} ${caseChoisie.jour.slice(8)}`}
+            collaborateur={collaborateurChoisi}
+            vacationsDuJour={planningCourant.vacations.filter(
+              (v) => v.collaborateurId === caseChoisie.collaborateurId && v.jour === caseChoisie.jour,
             )}
-
-            <p className="champ__aide">Horaire type</p>
-            <div className="groupe-boutons">
-              {etat.magasin.horairesTypes.map((horaire) => (
-                <button
-                  key={horaire.id}
-                  type="button"
-                  className="bouton"
-                  onClick={() => {
-                    const rayonId =
-                      filtreRayon === 'tous' ? collaborateurChoisi.rayonPrincipal : filtreRayon
-                    viderLaCase(caseChoisie.collaborateurId, caseChoisie.jour)
-                    ajouterVacation(
-                      caseChoisie.collaborateurId,
-                      caseChoisie.jour,
-                      horaire.debut,
-                      horaire.fin,
-                      horaire.pauseMinutes,
-                      horaire.pauseDebut,
-                      rayonId,
-                    )
-                  }}
-                >
-                  {horaire.nom}
-                  <span className="bouton__aide">
-                    {horaire.debut}–{horaire.fin}
-                  </span>
-                </button>
-              ))}
-
-              <button
-                type="button"
-                className="bouton"
-                onClick={() => viderLaCase(caseChoisie.collaborateurId, caseChoisie.jour)}
-              >
-                Repos
-                <span className="bouton__aide">vider la case</span>
-              </button>
-            </div>
-          </div>
+            rayons={rayons}
+            rayonParDefaut={filtreRayon === 'tous' ? collaborateurChoisi.rayonPrincipal : filtreRayon}
+            horairesTypes={etat.magasin.horairesTypes}
+            heuresContrat={collaborateurChoisi.heuresHebdomadaires}
+            avertissements={[
+              ...(!estDisponible(collaborateurChoisi, jourDeLaSemaine(caseChoisie.jour))
+                ? [`${nomAffiche(collaborateurChoisi)} a déclaré ne pas être disponible ce jour-là.`]
+                : []),
+              ...(estAbsent(absencesEffectives(etat), caseChoisie.collaborateurId, caseChoisie.jour)
+                ? [`${nomAffiche(collaborateurChoisi)} est absent ou en congé ce jour-là.`]
+                : []),
+            ]}
+            verifier={verifierLaJournee}
+            pauseConseillee={(debut, fin) =>
+              pauseConseillee(collaborateurChoisi, caseChoisie.jour, debut, fin)
+            }
+            onEnregistrer={(vacations) => {
+              enregistrerLaJournee(caseChoisie.collaborateurId, caseChoisie.jour, vacations)
+              setCaseChoisie(null)
+            }}
+            onFermer={() => setCaseChoisie(null)}
+          />
         )}
 
         {filtreRayon !== 'tous' && (

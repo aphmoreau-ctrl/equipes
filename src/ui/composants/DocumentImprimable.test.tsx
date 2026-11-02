@@ -17,6 +17,7 @@ function placerUneVacation(): void {
   const jour = screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement
   fireEvent.click(jour)
   fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+  fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 }
 
 function publier(): void {

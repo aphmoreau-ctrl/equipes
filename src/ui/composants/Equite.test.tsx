@@ -33,6 +33,7 @@ describe('équité sur quatre semaines', () => {
     afficher()
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., samedi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
 
     const equite = section()
     const ligne = within(equite).getByRole('row', { name: /^Camille D\./ })
@@ -51,6 +52,7 @@ describe('équité sur quatre semaines', () => {
     afficher()
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., samedi/ })[0] as HTMLElement)
     fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Enregistrer.*verrouillée/ }))
     expect(within(section()).getByText(/Un dimanche pèse une fois et demie/)).toBeInTheDocument()
   })
 })

@@ -2083,3 +2083,38 @@ La règle « pas de poste de moins de 6 h » empêchait aussi d'**allonger** un
 poste déjà court (5 h → 5 h 30, encore sous 6 h) : deux personnes de la
 préparation finissaient 1 h 15 sous leur contrat. Elle ne joue plus qu'au
 raccourcissement.
+
+## Modification à la main, avec vérification de faisabilité (2 novembre 2026)
+
+### D-164 — Chaque journée se modifie à la main, vérifiée avant d'être enregistrée
+**Demande d'Arnaud.** « Il faut que je puisse modifier manuellement chaque
+planning pour chaque personne pour chaque rayon et qu'il y ait une
+vérification de faisabilité. »
+**Décision.** Toucher une case du planning (vue « Tous » ou vue d'un rayon)
+ouvre l'**éditeur de la journée** :
+- un ou **plusieurs postes** dans la journée (renfort dans un autre rayon,
+  coupure), chacun avec son **rayon** (tous les rayons proposés : ceux de la
+  personne d'abord, marqués titulaire / renfort / dépannage ; les autres
+  « ne le tient pas »), son **début** et sa **fin** au quart d'heure (boutons
+  − et + pour le doigt), sa **pause** (durée et heure, ou « Pause conseillée »
+  selon les règles internes) ;
+- les horaires types restent en raccourci ; « Repos » vide la journée.
+La **vérification de faisabilité** se refait à chaque changement, AVANT
+d'enregistrer. Elle passe la semaine au contrôle complet (loi, pauses,
+horaires et rayons, minimum de chaque rayon, contrat…) avant et après, et
+dit : ce que la modification **provoque**, ce qui **évolue**, ce qu'elle
+**règle**, et les heures de la semaine avant → après, face au contrat.
+- **Impossible** (règle légale enfreinte, ou saisie illisible : fin avant
+  le début, postes qui se chevauchent, pause hors du poste) : le bouton
+  « Enregistrer » reste inactif ;
+- **Faisable, avec des alertes** (sous-effectif, écart au contrat, rayon que
+  la personne ne tient pas…) : « Enregistrer malgré les alertes » ;
+- **Faisable** : rien de nouveau.
+Une journée enregistrée à la main est **verrouillée d'office** : relancer le
+planning n'y touchera plus (le cadenas permet de la libérer).
+**Raison.** Arnaud est seul décideur ; la loi n'est jamais négociable, le
+reste se discute en connaissance de cause (même logique que le contrôle de
+la semaine).
+**Alternative.** Laisser enregistrer même un poste illégal et ne le signaler
+qu'ensuite (comportement précédent) : rejeté, c'est précisément ce que la
+vérification doit empêcher.

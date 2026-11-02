@@ -49,6 +49,14 @@ export interface PoidsPenalites {
    * PREFERE le matin (sans que ce soit une contrainte). Absent = 0.
    */
   readonly preferenceDuMatin?: number
+  /**
+   * Par heure d'ecart entre un poste et le poste « ideal » de la personne
+   * (heures de la semaine / jours travailles vises : 36 h 75 / 6 = 6 h 07).
+   * C'est ce qui fait des semaines de 6 jours plutot que de 4 longs jours.
+   */
+  readonly longueurDuPoste?: number
+  /** Par jour travaille au-dela des jours vises (6 par defaut, moins les conges). */
+  readonly jourEnTrop?: number
 }
 
 export const POIDS_PAR_DEFAUT: PoidsPenalites = {
@@ -67,6 +75,8 @@ export const POIDS_PAR_DEFAUT: PoidsPenalites = {
   // Une preference, pas une regle : elle departage, sans jamais coûter un
   // minimum (un manque d'un quart d'heure pese deja 20).
   preferenceDuMatin: 6,
+  longueurDuPoste: 4,
+  jourEnTrop: 10,
 }
 
 /**

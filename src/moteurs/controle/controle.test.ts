@@ -148,3 +148,46 @@ describe('contrôle de la semaine', () => {
     expect(new Set(a).size).toBe(a.length)
   })
 })
+
+describe('repos autour du dimanche', () => {
+  const jours = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07']
+  it('bloque une semaine sans jour libre après un dimanche travaillé sans repos la semaine d’avant', () => {
+    // Semaine d'avant : conge le lundi 26, travail du mardi au dimanche 1er.
+    const avant = ['2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'].map((j, i) =>
+      v(`a${i}`, abel.id, RAYON.maree, j, '07:00', '13:00'),
+    )
+    const cetteSemaine = jours.map((j, i) => v(`c${i}`, abel.id, RAYON.maree, j, '07:00', '13:00'))
+    const constats = controler(cetteSemaine, {
+      vacationsAnterieures: avant,
+      absences: [{ id: 'cp', collaborateurId: abel.id, debut: '2026-10-26', fin: '2026-10-26', type: 'conge-paye', prevue: true }],
+    })
+    const dimanche = constats.find((c) => c.categorie === 'Repos du dimanche')
+    expect(dimanche).toMatchObject({ gravite: 'bloquant', jour: '2026-11-01' })
+    // Un jour libre cette semaine suffit.
+    expect(
+      controler(cetteSemaine.slice(1), {
+        vacationsAnterieures: avant,
+        absences: [{ id: 'cp', collaborateurId: abel.id, debut: '2026-10-26', fin: '2026-10-26', type: 'conge-paye', prevue: true }],
+      }).some((c) => c.categorie === 'Repos du dimanche'),
+    ).toBe(false)
+  })
+
+  it('un dimanche travaillé cette semaine, sans jour libre : repos à prévoir la semaine suivante', () => {
+    const vacations = [...jours.slice(1), '2026-11-08'].map((j, i) => v(`d${i}`, abel.id, RAYON.maree, j, '07:00', '12:45'))
+    const constats = controler(vacations, {
+      absences: [{ id: 'cp', collaborateurId: abel.id, debut: '2026-11-02', fin: '2026-11-02', type: 'conge-paye', prevue: true }],
+    })
+    const dimanche = constats.find((c) => c.categorie === 'Repos du dimanche')
+    expect(dimanche?.aConfirmer).toBe(true)
+    expect(dimanche?.libelle).toMatch(/à prévoir la semaine suivante/)
+  })
+
+  it('se règle : désactivée, elle ne signale rien', () => {
+    const vacations = [...jours.slice(1), '2026-11-08'].map((j, i) => v(`d${i}`, abel.id, RAYON.maree, j, '07:00', '12:45'))
+    const constats = controler(vacations, {
+      absences: [{ id: 'cp', collaborateurId: abel.id, debut: '2026-11-02', fin: '2026-11-02', type: 'conge-paye', prevue: true }],
+      organisation: { ...etat.organisation, reglesInternes: { ...etat.organisation.reglesInternes, reposCompletAutourDuDimanche: false } },
+    })
+    expect(constats.some((c) => c.categorie === 'Repos du dimanche')).toBe(false)
+  })
+})

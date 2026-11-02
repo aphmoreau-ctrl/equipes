@@ -138,6 +138,27 @@ function auxBornes(rayonId: string, borne: 0 | 1): Map<string, number> {
 }
 
 describe('un planning cohérent (règle de base du générateur)', () => {
+  it('six jours sur sept : chacun travaille 6 jours, sauf école ou mineur', () => {
+    const joursDe = (id: string) => new Set(resultat.vacations.filter((v) => v.collaborateurId === id).map((v) => v.jour)).size
+    const adultes = etat.collaborateurs.filter((c) => !estMineur(c) && c.prenom !== 'Ulysse' && !c.forfait)
+    const aSix = adultes.filter((c) => joursDe(c.id) === 6)
+    // La grande majorite ; un manque de place se dit dans les restes.
+    expect(aSix.length / adultes.length).toBeGreaterThanOrEqual(0.85)
+    for (const c of adultes) expect(joursDe(c.id), c.prenom).toBeLessThanOrEqual(6)
+  })
+
+  it('postes de 6 h 15 au plus en semaine, 7 h le vendredi et le samedi (36 h 75 sur 6 jours)', () => {
+    for (const v of resultat.vacations) {
+      const c = etat.collaborateurs.find((x) => x.id === v.collaborateurId)!
+      if (c.forfait || c.heuresHebdomadaires !== H || c.prenom === 'Ulysse') continue
+      // Poste ideal : contrat / jours (5 pour un mineur), + 15 min, + 1 h le vendredi et le samedi.
+      const ideal = (H * 60) / (estMineur(c) ? 5 : 6)
+      const marge = jourDeLaSemaine(v.jour) >= 5 && jourDeLaSemaine(v.jour) <= 6 ? 45 : 0
+      const max = Math.ceil((ideal + marge) / 15) / 4
+      expect(duree(v.debut, v.fin) / 60, `${c.prenom} ${v.jour}`).toBeLessThanOrEqual(max)
+    }
+  })
+
   it('pas de micro-poste : 6 h au moins, sauf rayon ouvert moins longtemps ce jour-là', () => {
     const courts = resultat.vacations.filter((v) => {
       // Le rayon est « ouvert », pour le planning, la ou sa grille demande du monde.
@@ -187,11 +208,28 @@ describe('chacun fait ses heures', () => {
         expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeLessThanOrEqual(48)
         continue
       }
-      expect(heuresDe(resultat, collaborateur.id), collaborateur.prenom).toBeCloseTo(vise, 0)
-      expect(Math.abs(heuresDe(resultat, collaborateur.id) - vise), collaborateur.prenom).toBeLessThanOrEqual(0.25)
+      // Postes non raccourcis pour ne pas creer de trou au minimum (le minimum
+      // passe avant le contrat) : un petit depassement, toujours dit.
+      const ecart = heuresDe(resultat, collaborateur.id) - vise
+      if (
+        ecart > 0.25 &&
+        resultat.restesAExpliquer.some(
+          (r) => r.startsWith(`${collaborateur.prenom} :`) && r.includes('ne pouvaient pas être raccourcis'),
+        )
+      ) {
+        expect(ecart, collaborateur.prenom).toBeLessThanOrEqual(1.5)
+        continue
+      }
+      expect(Math.abs(ecart), collaborateur.prenom).toBeLessThanOrEqual(0.25)
     }
     expect(
-      resultat.restesAExpliquer.filter((r) => r.includes('à faire cette semaine') && !r.startsWith('Yvon')),
+      // Personne n'est laisse SOUS ses heures sans raison (Yvon, mineur, mis a part).
+      resultat.restesAExpliquer.filter(
+        (r) =>
+          r.includes('à faire cette semaine') &&
+          !r.startsWith('Yvon') &&
+          !r.includes('ne pouvaient pas être raccourcis'),
+      ),
     ).toEqual([])
   })
 
@@ -204,12 +242,36 @@ describe('chacun fait ses heures', () => {
       ],
     })
     // 36 h 75 - 2 x 6 h 07 = 24 h 30, au quart d'heure pres.
-    expect(Math.abs(heuresDe(avecConge, abel.id) - 24.5)).toBeLessThanOrEqual(0.25)
+    // A une demi-heure pres : quatre postes de 6 h au moins, pas de micro-poste.
+    expect(Math.abs(heuresDe(avecConge, abel.id) - 24.5)).toBeLessThanOrEqual(0.5)
     expect(
       avecConge.vacations.some(
         (v) => v.collaborateurId === abel.id && (v.jour === '2026-11-05' || v.jour === '2026-11-06'),
       ),
     ).toBe(false)
+  })
+
+  it('dimanche travaillé sans repos la semaine d’avant : un jour de repos complet cette semaine', () => {
+    const abel = etat.collaborateurs.find((c) => c.prenom === 'Abel')!
+    // Semaine d'avant (fictive) : conge le lundi, travail du mardi au dimanche.
+    const avant = ['2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'].map((jour) => ({
+      id: `av-${jour}`,
+      collaborateurId: abel.id,
+      rayonId: R.maree,
+      jour,
+      debut: '07:00',
+      fin: '13:00',
+      pauseMinutes: 0,
+    }))
+    const r = genererLePlanning({
+      ...entrees,
+      vacationsAnterieures: avant,
+      absences: [{ id: 'cp', collaborateurId: abel.id, debut: '2026-10-26', fin: '2026-10-26', type: 'conge-paye', prevue: true }],
+    })
+    const travailles = new Set(
+      r.vacations.filter((v) => v.collaborateurId === abel.id && jourDeLaSemaine(v.jour) <= 6).map((v) => v.jour),
+    )
+    expect(travailles.size).toBeLessThanOrEqual(5)
   })
 
   it('n’enfreint aucune règle légale', () => {
@@ -316,8 +378,10 @@ describe('chacun fait ses heures', () => {
 
   it('vendredi et samedi : présence maximale, repos plutôt du lundi au mercredi', () => {
     const presents = (date: string) => new Set(resultat.vacations.filter((v) => v.jour === date).map((v) => v.collaborateurId)).size
-    expect(presents('2026-11-06')).toBeGreaterThan(presents('2026-11-02'))
-    expect(presents('2026-11-07')).toBeGreaterThan(presents('2026-11-03'))
+    // Six jours sur sept : le repos tombe surtout le dimanche ; le vendredi et
+    // le samedi comptent au moins autant de monde que le lundi et le mardi.
+    expect(presents('2026-11-06')).toBeGreaterThanOrEqual(presents('2026-11-02'))
+    expect(presents('2026-11-07')).toBeGreaterThanOrEqual(presents('2026-11-03'))
     // Qui manque un jour prioritaire est nomme, avec la raison.
     for (const reste of resultat.restesAExpliquer.filter((r) => r.includes('jour prioritaire'))) {
       expect(reste).toMatch(/ne travaillent pas .+ \(.+\)/)

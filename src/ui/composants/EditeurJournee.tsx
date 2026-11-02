@@ -131,6 +131,11 @@ export function EditeurJournee(props: Proprietes) {
     [...props.vacationsDuJour].sort((a, b) => a.debut.localeCompare(b.debut)).map(versPoste),
   )
 
+  /** Postes dont la pause a ete saisie a la main : on n'y touche plus. */
+  const [pausesManuelles, setPausesManuelles] = useState<ReadonlySet<number>>(() =>
+    // Une journee deja enregistree garde sa pause telle quelle.
+    new Set(props.vacationsDuJour.map((_, rang) => rang)),
+  )
   const { verifier } = props
   const resultat = useMemo(() => verifier(postes), [postes, verifier])
 
@@ -139,10 +144,14 @@ export function EditeurJournee(props: Proprietes) {
       avant.map((poste, i) => {
         if (i !== rang) return poste
         const nouveau = { ...poste, ...modification }
-        if (!recalculerPause || dureeDuPoste(nouveau) === 0) return nouveau
+        if (!recalculerPause || pausesManuelles.has(rang) || dureeDuPoste(nouveau) === 0) return nouveau
         return { ...nouveau, ...props.pauseConseillee(nouveau.debut, nouveau.fin) }
       }),
     )
+  }
+
+  function marquerManuelle(rang: number): void {
+    if (!pausesManuelles.has(rang)) setPausesManuelles(new Set([...pausesManuelles, rang]))
   }
 
   function ajouterUnPoste(): void {
@@ -185,7 +194,8 @@ export function EditeurJournee(props: Proprietes) {
           <fieldset key={rang} className="poste-saisi">
             <legend>
               {postes.length > 1 ? `Poste ${rang + 1}` : 'Poste'} ·{' '}
-              {heuresEnTexte(dureeDuPoste(poste) / 60, 2)}
+              {heuresEnTexte(dureeDuPoste(poste) / 60, 2)} de présence ·{' '}
+              {heuresEnTexte(Math.max(0, dureeDuPoste(poste) - poste.pauseMinutes) / 60, 2)} de travail effectif
             </legend>
             <label className="champ">
               <span className="champ__libelle">Rayon</span>
@@ -228,18 +238,23 @@ export function EditeurJournee(props: Proprietes) {
                   type="number"
                   inputMode="numeric"
                   min={0}
-                  max={120}
+                  max={240}
+                  step={1}
                   value={poste.pauseMinutes}
-                  onChange={(evenement) =>
+                  onChange={(evenement) => {
+                    marquerManuelle(rang)
                     changer(rang, { pauseMinutes: Math.max(0, Number(evenement.target.value) || 0) })
-                  }
+                  }}
                 />
               </label>
               {poste.pauseMinutes > 0 && (
                 <ChampHeure
                   libelle="Début de pause"
                   valeur={poste.pauseDebut ?? ''}
-                  onChange={(valeur) => changer(rang, { pauseDebut: valeur })}
+                  onChange={(valeur) => {
+                    marquerManuelle(rang)
+                    changer(rang, { pauseDebut: valeur })
+                  }}
                 />
               )}
             </div>
@@ -247,7 +262,15 @@ export function EditeurJournee(props: Proprietes) {
               <button
                 type="button"
                 className="bouton"
-                onClick={() => changer(rang, {}, true)}
+                onClick={() => {
+                  const sans = new Set(pausesManuelles)
+                  sans.delete(rang)
+                  setPausesManuelles(sans)
+                  const poste = postes[rang]
+                  if (poste !== undefined && dureeDuPoste(poste) > 0) {
+                    setPostes(postes.map((p, i) => (i === rang ? { ...p, ...props.pauseConseillee(p.debut, p.fin) } : p)))
+                  }
+                }}
               >
                 Pause conseillée
                 <span className="bouton__aide">durée et heure selon vos règles</span>
@@ -255,7 +278,12 @@ export function EditeurJournee(props: Proprietes) {
               <button
                 type="button"
                 className="bouton"
-                onClick={() => setPostes(postes.filter((_, i) => i !== rang))}
+                onClick={() => {
+                  setPostes(postes.filter((_, i) => i !== rang))
+                  setPausesManuelles(
+                    new Set([...pausesManuelles].filter((i) => i !== rang).map((i) => (i > rang ? i - 1 : i))),
+                  )
+                }}
               >
                 Retirer ce poste
               </button>
@@ -273,7 +301,8 @@ export function EditeurJournee(props: Proprietes) {
                 key={horaire.id}
                 type="button"
                 className="bouton"
-                onClick={() =>
+                onClick={() => {
+                  setPausesManuelles(new Set())
                   setPostes([
                     {
                       rayonId: postes[0]?.rayonId ?? props.rayonParDefaut,
@@ -283,7 +312,7 @@ export function EditeurJournee(props: Proprietes) {
                       ...(horaire.pauseDebut !== undefined ? { pauseDebut: horaire.pauseDebut } : {}),
                     },
                   ])
-                }
+                }}
               >
                 {horaire.nom}
                 <span className="bouton__aide">
@@ -300,7 +329,14 @@ export function EditeurJournee(props: Proprietes) {
           Ajouter un poste
           <span className="bouton__aide">renfort dans un autre rayon, coupure…</span>
         </button>
-        <button type="button" className="bouton" onClick={() => setPostes([])}>
+        <button
+          type="button"
+          className="bouton"
+          onClick={() => {
+            setPostes([])
+            setPausesManuelles(new Set())
+          }}
+        >
           Repos
           <span className="bouton__aide">vider la journée</span>
         </button>

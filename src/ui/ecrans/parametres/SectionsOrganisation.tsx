@@ -1084,11 +1084,21 @@ export function SectionReglesInternes() {
           }}
         />
         <ChampNombre
-          libelle="Jours ouvrables par semaine"
-          aide="Un jour de congé vaut le contrat divisé par ce nombre (6 : décompte légal des congés payés)."
+          libelle="Jours travaillés par semaine"
+          aide="6 sur 7 : chacun travaille ce nombre de jours, congés déduits. Un jour de congé vaut le contrat divisé par ce nombre."
           valeur={r.joursHabituelsParSemaine ?? 6}
           onChange={(joursHabituelsParSemaine) =>
             reglerRegles({ joursHabituelsParSemaine: Math.min(7, Math.max(1, joursHabituelsParSemaine)) })
+          }
+        />
+        <ChampNombre
+          libelle="Durée minimale d’un poste"
+          suffixe="h"
+          pas={0.25}
+          aide="Pas de poste plus court, sauf si le rayon ouvre moins longtemps ce jour-là (dimanche matin)."
+          valeur={(r.dureeMinimalePosteMinutes ?? 360) / 60}
+          onChange={(heures) =>
+            reglerRegles({ dureeMinimalePosteMinutes: Math.round(Math.min(10, Math.max(2, heures)) * 4) * 15 })
           }
         />
         <ChampNombre
@@ -1112,6 +1122,16 @@ export function SectionReglesInternes() {
           libelle="Jamais de pause pendant l’affluence"
           actif={r.pauseInterditeEnAffluence}
           onChange={(pauseInterditeEnAffluence) => reglerRegles({ pauseInterditeEnAffluence })}
+        />
+        <Interrupteur
+          libelle="Jours travaillés stricts (6 sur 7) : postes d’environ contrat ÷ jours"
+          actif={r.joursTravaillesStricts !== false}
+          onChange={(joursTravaillesStricts) => reglerRegles({ joursTravaillesStricts })}
+        />
+        <Interrupteur
+          libelle="Dimanche travaillé : un jour de repos complet la semaine avant ou après"
+          actif={r.reposCompletAutourDuDimanche !== false}
+          onChange={(reposCompletAutourDuDimanche) => reglerRegles({ reposCompletAutourDuDimanche })}
         />
       </div>
       <p className="champ__libelle">Jours prioritaires (présence maximale : tout le monde y travaille, sauf congé)</p>

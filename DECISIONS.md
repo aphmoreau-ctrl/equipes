@@ -2118,3 +2118,57 @@ la semaine).
 **Alternative.** Laisser enregistrer même un poste illégal et ne le signaler
 qu'ensuite (comportement précédent) : rejeté, c'est précisément ce que la
 vérification doit empêcher.
+
+## Six jours sur sept, saisie libre, repos autour du dimanche (2 novembre 2026)
+
+### D-165 — Six jours sur sept : postes d'environ contrat ÷ 6
+**Consigne d'Arnaud.** « Les salariés travaillent 6 jours sur sept avec
+contrat de 36,75 heures. »
+**Décision.** Réglage « Jours travaillés stricts (6 sur 7) », activé par
+défaut (Paramètres › Règles internes, avec « Jours travaillés par semaine » = 6).
+Chacun vise ce nombre de jours, moins ses congés, absences, jours d'école
+(5 au plus pour un mineur : deux jours de repos d'affilée, paramètre légal).
+Le poste « idéal » = heures de la semaine ÷ jours visés (36 h 75 ÷ 6 =
+6 h 07). Un poste ne dépasse pas ce poste idéal arrondi au quart d'heure
+(6 h 15) en semaine, et 45 min de plus le vendredi et le samedi (7 h).
+Un jour de plus que les jours visés est pénalisé ; aucun ajout de jour ne
+fait dépasser le plafond du contrat (1 h par défaut).
+**Conséquence chiffrée (à arbitrer par Arnaud).** 6 jours × 6 h au moins
+(durée minimale d'un poste) = 36 h : il ne reste que 45 min de souplesse
+sur 36 h 75. Le vendredi et le samedi ne peuvent donc presque pas être
+renforcés par des postes plus longs. Sur la semaine type (vraies données,
+banc d'essai local, rien dans le dépôt) : chacun fait ses 6 jours et ses
+heures à un quart d'heure près, mais le **manque au minimum passe d'environ
+6 h 45 à 22 h 30** sur la semaine, surtout en Fruits & Légumes, Marée et
+Cuisine mobile, le vendredi et le samedi. Trois leviers, tous réglables :
+1. « Durée minimale d'un poste » à 5 h : des jours courts en début de semaine
+   libèrent des heures pour le vendredi et le samedi ;
+2. désactiver « Jours travaillés stricts » : postes libres, 4 ou 5 longs
+   jours possibles (comportement précédent) ;
+3. revoir les minimums de la grille du vendredi et du samedi.
+**Alternative.** Laisser les postes libres par défaut : contraire à la
+consigne.
+
+### D-166 — Dimanche travaillé : un jour de repos complet la semaine avant ou après
+**Consigne d'Arnaud.** « Un salarié qui travaille le dimanche doit
+obligatoirement avoir un jour complet de repos la semaine avant ou après. »
+**Décision.** Réglage activé par défaut. « La semaine avant » : du lundi au
+samedi qui précèdent ce dimanche ; « la semaine après » : du lundi au samedi
+qui le suivent. Un jour de repos complet : aucun poste, et **ni congé ni
+absence** (un congé payé n'est pas un repos). Contrôle de la semaine :
+constat **bloquant** « Repos du dimanche » ; si la semaine suivante n'est pas
+encore planifiée, « à prévoir la semaine suivante » (à confirmer). Le
+générateur ne prend jamais le dernier jour libre d'une semaine qui doit ce
+repos (dimanche d'avant travaillé sans repos dans sa semaine).
+**Alternative.** Compter un congé comme un repos : écarté, ce n'en est pas un.
+
+### D-167 — Temps de travail et pause : tout se saisit à la main
+**Consigne d'Arnaud.** « Temps travail et pause je dois pouvoir tout
+renseigner si je veux manuellement. »
+**Décision.** Dans l'éditeur de la journée : début, fin, durée de la pause
+(0 à 240 min, 0 = sans pause) et heure de la pause sont libres. Une pause
+saisie à la main n'est **plus recalculée** quand on change les horaires
+(seul « Pause conseillée » la recalcule). Chaque poste affiche sa présence
+et son **travail effectif**. Une journée déjà enregistrée garde sa pause.
+La durée minimale d'un poste devient un réglage (6 h par défaut), comme les
+autres règles.

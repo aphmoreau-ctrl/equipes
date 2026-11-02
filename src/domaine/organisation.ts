@@ -283,6 +283,20 @@ export interface ReglesInternes {
    */
   readonly joursHabituelsParSemaine?: number
   /**
+   * Chacun travaille ce nombre de jours (6 sur 7), conges deduits : postes
+   * proches de contrat / jours (6 h 07 pour 36 h 75), un peu plus longs les
+   * jours prioritaires. Faux = postes libres (4 ou 5 longs jours possibles).
+   * Absent = vrai.
+   */
+  readonly joursTravaillesStricts?: boolean
+  /** Duree minimale d'un poste, en minutes (sauf rayon ouvert moins longtemps). Absent = 6 h. */
+  readonly dureeMinimalePosteMinutes?: Minutes
+  /**
+   * Dimanche travaille : un jour de repos complet (ni poste, ni conge) du
+   * lundi au samedi de la semaine avant ou de la semaine apres. Absent = vrai.
+   */
+  readonly reposCompletAutourDuDimanche?: boolean
+  /**
    * Priorite de chaque jour quand il faut choisir ou combler un trou :
    * 1 = normal. Absent = vendredi et samedi a 1,5 (les plus charges).
    */
@@ -347,6 +361,9 @@ export const REGLES_INTERNES_PAR_DEFAUT: ReglesInternes = {
   dureeMaximaleDepannageMinutes: 2 * 60,
   depassementContratMaximumMinutes: 60,
   joursHabituelsParSemaine: 6,
+  joursTravaillesStricts: true,
+  dureeMinimalePosteMinutes: 360,
+  reposCompletAutourDuDimanche: true,
   prioriteParJour: PRIORITE_PAR_JOUR_PAR_DEFAUT,
   joursPrioritaires: [5, 6],
   joursDeReposPreferes: [1, 2, 3],

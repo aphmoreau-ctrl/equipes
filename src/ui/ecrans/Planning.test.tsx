@@ -118,6 +118,20 @@ describe('écran Planning', () => {
     expect(within(editeur).getByRole('button', { name: /^Enregistrer/ })).toBeDisabled()
   })
 
+  it('garde une pause saisie à la main quand les horaires changent', () => {
+    afficher()
+    fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)
+    fireEvent.click(screen.getByRole('button', { name: /^Matin/ }))
+    const editeur = screen.getByRole('region', { name: 'Modifier la journée' })
+    fireEvent.change(within(editeur).getByLabelText('Pause (min)'), { target: { value: '45' } })
+    fireEvent.change(within(editeur).getByLabelText('Début de pause'), { target: { value: '10:15' } })
+    fireEvent.click(within(editeur).getByRole('button', { name: 'Fin : un quart d’heure plus tard' }))
+    expect(within(editeur).getByLabelText('Pause (min)')).toHaveValue(45)
+    expect(within(editeur).getByLabelText('Début de pause')).toHaveValue('10:15')
+    // Le travail effectif se lit poste par poste.
+    expect(within(editeur).getByText(/de travail effectif/)).toBeInTheDocument()
+  })
+
   it('pose deux postes dans deux rayons le même jour, au quart d’heure', () => {
     afficher()
     fireEvent.click(screen.getAllByRole('button', { name: /^Camille D\., lundi/ })[0] as HTMLElement)

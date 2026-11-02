@@ -17,6 +17,7 @@ import { heuresEnTexte } from '../../domaine/nombres'
 import type { BesoinJour } from '../besoin'
 import { couvreLaTranche } from '../indicateurs'
 import { dureeTravailEffectif, type Infraction, type Vacation } from '../regles'
+import { dimanchesTravailles, reposAutourDuDimanche } from './dimanche'
 
 /**
  * Controle de la semaine (regles du planning v2, etape 2).
@@ -35,6 +36,7 @@ export type CategorieControle =
   | 'Pause'
   | 'Journée'
   | 'Jours d’affilée'
+  | 'Repos du dimanche'
   | 'Horaires et rayons'
   | 'Couverture'
   | 'Contrat'
@@ -74,6 +76,7 @@ export interface EntreesControleSemaine {
 
 const ORDRE: readonly CategorieControle[] = [
   'Règle légale',
+  'Repos du dimanche',
   'Rôtisserie',
   'Couverture',
   'Horaires et rayons',
@@ -233,6 +236,42 @@ export function controlerLaSemaine(entrees: EntreesControleSemaine): Constat[] {
           jour,
           libelle: `${nomAffiche(collaborateur)} — ${suite} jours de travail d’affilée au ${jourEnTexte(jour)}`,
           explication: `Au plus ${regles.joursConsecutifsMaximum} jours d’affilée (règle interne), d’une semaine sur l’autre.`,
+        })
+      }
+    }
+  }
+
+  // 4 bis. Dimanche travaille : un jour de repos complet la semaine avant ou
+  // apres (regle reglable). Le dimanche de cette semaine et celui d'avant.
+  if (regles.reposCompletAutourDuDimanche !== false) {
+    const dimancheAvant = ajouterJours(entrees.semaine, -1)
+    const dimancheCeluiCi = ajouterJours(entrees.semaine, 6)
+    for (const collaborateur of entrees.collaborateurs.filter((c) => c.actif)) {
+      for (const dimanche of dimanchesTravailles(collaborateur.id, toutes)) {
+        if (dimanche !== dimancheAvant && dimanche !== dimancheCeluiCi) continue
+        const etatRepos = reposAutourDuDimanche(
+          dimanche,
+          collaborateur.id,
+          toutes,
+          entrees.absences,
+          dimanche === dimancheAvant,
+        )
+        if (etatRepos === 'tenu') continue
+        ajouter({
+          cle: `${collaborateur.id}|${dimanche}`,
+          gravite: 'bloquant',
+          categorie: 'Repos du dimanche',
+          rayonId: rayonDuJour(collaborateur.id, dimanche),
+          collaborateurId: collaborateur.id,
+          jour: dimanche,
+          libelle:
+            etatRepos === 'a-prevoir'
+              ? `${nomAffiche(collaborateur)} — dimanche ${jourEnTexte(dimanche)} travaillé : jour de repos complet à prévoir la semaine suivante`
+              : `${nomAffiche(collaborateur)} — dimanche ${jourEnTexte(dimanche)} travaillé sans jour de repos complet, ni la semaine avant ni la semaine après`,
+          explication:
+            'Qui travaille le dimanche doit avoir un jour de repos complet (sans poste, ni congé) ' +
+            'du lundi au samedi de la semaine avant ou de la semaine après.',
+          ...(etatRepos === 'a-prevoir' ? { aConfirmer: true } : {}),
         })
       }
     }

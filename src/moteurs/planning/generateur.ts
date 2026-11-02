@@ -1,6 +1,7 @@
 import { estAbsent, type Absence } from '../../domaine/absence'
 import { couvreLaTranche } from '../indicateurs'
-import { jourDeLaSemaine, jourEnTexte, semaineDe } from '../../domaine/calendrier'
+import { ajouterJours, jourDeLaSemaine, jourEnTexte, lundiDeLaSemaine, semaineDe } from '../../domaine/calendrier'
+import { joursDeReposComplets, reposAutourDuDimanche, semainesAutourDuDimanche } from '../controle/dimanche'
 import {
   enFormation,
   estAutonome,
@@ -220,6 +221,28 @@ function raisonDeRefus(
     (autre) => Math.abs(ecartEnJours(autre.jour, vacation.jour)) <= 7,
   )
 
+  /*
+   * Dimanche travaille la semaine d'avant, sans jour de repos complet dans
+   * sa semaine : le repos est du cette semaine (du lundi au samedi). On ne
+   * prend pas le dernier jour libre.
+   */
+  if (
+    entrees.reglesInternes !== undefined &&
+    entrees.reglesInternes.reposCompletAutourDuDimanche !== false &&
+    jourDeLaSemaine(vacation.jour) !== 7
+  ) {
+    const dimanche = ajouterJours(lundiDeLaSemaine(vacation.jour), -1)
+    const toutes = [...anterieures, ...siennesDeLaSemaine]
+    if (
+      toutes.some((v) => v.jour === dimanche) &&
+      reposAutourDuDimanche(dimanche, collaborateur.id, toutes, entrees.absences, false) !== 'tenu'
+    ) {
+      const { apres } = semainesAutourDuDimanche(dimanche)
+      const libres = joursDeReposComplets(apres, collaborateur.id, [...toutes, vacation], entrees.absences)
+      if (libres.length === 0) return `dimanche ${jourEnTexte(dimanche)} travaillé : un jour de repos complet est dû cette semaine`
+    }
+  }
+
   const siennes = [...siennesDeLaSemaine, ...voisines, vacation]
   const infractions = verifier(
     contexteDeVerification(siennes, entrees.parametres, {
@@ -373,7 +396,7 @@ export function postesCourts(besoins: readonly BesoinJour[]): HoraireType[] {
 }
 
 /** Longueurs des postes de contrat, en minutes : de 6 h a 8 h 30. */
-const LONGUEURS_POSTES_DE_CONTRAT = [6 * 60, 7 * 60, 7 * 60 + 15, 7 * 60 + 30, 8 * 60]
+const LONGUEURS_POSTES_DE_CONTRAT = [6 * 60, 6 * 60 + 15, 6 * 60 + 30, 7 * 60, 7 * 60 + 15, 7 * 60 + 30, 8 * 60]
 
 /** Heures d'accroche supplementaires, en plus de l'ouverture et de la fermeture. */
 const ACCROCHES = ['08:30', '13:00']
@@ -579,6 +602,58 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   const visee = (collaborateur: Collaborateur): number | undefined =>
     heuresVisees.get(collaborateur.id)
 
+  /*
+   * Jours travailles vises : 6 jours sur 7 par defaut (reglable), moins les
+   * jours de conge, d'absence, d'ecole ou de formation, et jamais plus que
+   * les jours ou la personne est disponible. Le poste « ideal » en decoule :
+   * 36 h 75 sur 6 jours, 6 h 07.
+   */
+  const joursVises = new Map<string, number>()
+  if (regles !== undefined) {
+    for (const collaborateur of entrees.collaborateurs) {
+      const nonTravailles = joursNonTravailles(collaborateur)
+      const disponibles = jours.filter(
+        (jour) => !nonTravailles.includes(jour) && estDisponible(collaborateur, jourDeLaSemaine(jour)),
+      ).length
+      // Un mineur : 5 jours au plus (deux jours de repos d'affilee, parametre legal).
+      const plafondLegal = estMineur(collaborateur)
+        ? entrees.parametres.joursMaximumParSemaineJeune
+        : Number.POSITIVE_INFINITY
+      joursVises.set(
+        collaborateur.id,
+        Math.max(
+          1,
+          Math.min(disponibles, plafondLegal, joursHabituels - Math.min(nonTravailles.length, joursHabituels)),
+        ),
+      )
+    }
+  }
+  const joursStricts = regles !== undefined && regles.joursTravaillesStricts !== false
+  const posteIdeal = (collaborateur: Collaborateur): number | undefined => {
+    if (!joursStricts) return undefined
+    const heures = visee(collaborateur)
+    const nombre = joursVises.get(collaborateur.id)
+    return heures === undefined || nombre === undefined ? undefined : (heures * 60) / nombre
+  }
+  /**
+   * Longueur maximale d'un poste : le poste ideal plus un quart d'heure
+   * (6 h 30 pour 36 h 75 sur 6 jours), plus une heure les jours prioritaires
+   * (7 h 15 le vendredi et le samedi, ou l'affluence demande plus). Au-dela,
+   * la personne ferait ses heures en 4 ou 5 longs jours au lieu de 6.
+   */
+  const MARGE_AU_DESSUS_DU_POSTE_IDEAL = 0
+  const MARGE_LES_JOURS_PRIORITAIRES = 45
+  const posteTropLong = (collaborateur: Collaborateur, minutes: number, jour: string): boolean => {
+    return minutes > longueurPermise(collaborateur, jour)
+  }
+  /** Longueur maximale d'un poste ce jour-la, pour cette personne (minutes). */
+  function longueurPermise(collaborateur: Collaborateur, jour: string): number {
+    const ideal = posteIdeal(collaborateur)
+    if (ideal === undefined) return Number.POSITIVE_INFINITY
+    const marge = estPrioritaire(jour) ? MARGE_LES_JOURS_PRIORITAIRES : MARGE_AU_DESSUS_DU_POSTE_IDEAL
+    return Math.ceil((ideal + marge) / TRANCHE_MINUTES) * TRANCHE_MINUTES
+  }
+
   /** Priorite d'un jour (vendredi et samedi d'abord, par defaut). */
   const joursPrioritaires = regles?.joursPrioritaires ?? JOURS_PRIORITAIRES_PAR_DEFAUT
   const joursDeRepos = regles?.joursDeReposPreferes ?? JOURS_DE_REPOS_PREFERES_PAR_DEFAUT
@@ -700,7 +775,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
   function longueurMinimale(rayonId: string, jour: string): number {
     const bornes = creneaux.get(cle(rayonId, jour))?.bornes ?? null
     if (bornes === null || bornes === 'ferme') return DUREE_MINIMALE_POSTE
-    return Math.min(6 * 60, duree(bornes.debut, bornes.fin))
+    return Math.min(regles?.dureeMinimalePosteMinutes ?? 6 * 60, duree(bornes.debut, bornes.fin))
   }
 
   /** Tranches couvertes par chaque horaire type, calculees une seule fois. */
@@ -797,6 +872,24 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           variation += POIDS_EQUITE_BORNES * (fermetures.get(collaborateur.id) ?? 0)
         }
       }
+      // Six jours sur sept : un poste proche du poste « ideal » de la personne,
+      // dans la limite de ce que le rayon ouvre ce jour-la (dimanche matin).
+      if (posteTropLong(collaborateur, duree(horaire.debut, horaire.fin), vacation.jour)) variation += poids.manque * 50
+      const ideal = posteIdeal(collaborateur)
+      // (Pas les jours prioritaires : le vendredi et le samedi, des postes plus
+      // longs, jusqu'a la limite, la ou l'affluence les demande.)
+      if (
+        ideal !== undefined &&
+        !estPrioritaire(vacation.jour) &&
+        creneau.bornes !== null &&
+        creneau.bornes !== 'ferme'
+      ) {
+        // Les jours calmes, le poste le plus court permis (6 h) : le temps
+        // gagne sert aux postes plus longs du vendredi et du samedi.
+        const vise = Math.min(ideal, longueurMinimale(vacation.rayonId, vacation.jour))
+        variation +=
+          ((poids.longueurDuPoste ?? 0) * Math.abs(duree(horaire.debut, horaire.fin) - vise)) / 60
+      }
       // Preference du matin : celui qui prefere le matin ferme en dernier.
       if (
         collaborateur.posteDuMatin === 'preference' &&
@@ -815,6 +908,19 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     }
 
     const siennes = parPersonne.get(collaborateur.id) ?? []
+    // Un jour de plus que les jours vises (un septieme, ou un sixieme pour
+    // qui a un conge) : a eviter, sans l'interdire si le minimum l'exige.
+    const vises = joursVises.get(collaborateur.id)
+    const occupes = joursOccupes.get(collaborateur.id)
+    if (
+      joursStricts &&
+      vises !== undefined &&
+      occupes !== undefined &&
+      !occupes.has(vacation.jour) &&
+      occupes.size >= vises
+    ) {
+      variation += poids.jourEnTrop ?? 0
+    }
     variation +=
       penalitePersonne(
         collaborateur,
@@ -1412,7 +1518,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             const ouverture = enMinutes(creneau.bornes.debut)
             const fermeture = enMinutes(creneau.bornes.fin)
             const longueur = Math.min(
-              Math.max(duree(ancienne.debut, ancienne.fin), longueurMinimale(rayonId, jourCible)),
+              Math.max(
+                Math.min(duree(ancienne.debut, ancienne.fin), longueurPermise(collaborateur, jourCible)),
+                longueurMinimale(rayonId, jourCible),
+              ),
               fermeture - ouverture,
             )
             const affluence = affluenceDuJour(jourDeLaSemaine(jourCible))
@@ -1443,6 +1552,13 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
                 pauseDebut: horaire.pauseDebut,
               }
               if (meilleur !== null && gain <= meilleur.gain) continue
+              // Un poste allonge au deplacement ne fait pas depasser le plafond.
+              if (
+                duree(nouvelle.debut, nouvelle.fin) > duree(ancienne.debut, ancienne.fin) &&
+                auDelaDuPlafond(collaborateur, nouvelle)
+              ) {
+                continue
+              }
               if (!affectationPermise(nouvelle, collaborateur, siennes, entrees, [])) continue
               meilleur = { nouvelle, horaire, gain }
             }
@@ -1594,7 +1710,10 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
         !rayonsPrincipaux(collaborateur).includes(ancienne.rayonId)
       if (decalage || retourAuRayonPrincipal || departTient(ancienne, horaireAncien, phase)) {
         const longueur = Math.min(
-          Math.max(duree(ancienne.debut, ancienne.fin), longueurMinimale(trou.rayonId, trou.jour)),
+          Math.max(
+            Math.min(duree(ancienne.debut, ancienne.fin), longueurPermise(collaborateur, trou.jour)),
+            longueurMinimale(trou.rayonId, trou.jour),
+          ),
           fermeture - ouverture,
         )
         const departs = new Set(
@@ -1630,6 +1749,13 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             fin: horaire.fin,
             pauseMinutes: horaire.pauseMinutes,
             pauseDebut: horaire.pauseDebut,
+          }
+          // Un poste allonge au deplacement ne fait pas depasser le plafond.
+          if (
+            duree(nouvelle.debut, nouvelle.fin) > duree(ancienne.debut, ancienne.fin) &&
+            auDelaDuPlafond(collaborateur, nouvelle)
+          ) {
+            continue
           }
           if (decalage) {
             /*
@@ -1727,6 +1853,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
     for (const { position, collaborateur, d, f } of candidats) {
       const ancienne = placees[position] as Vacation
       if (!dansLesBornes(ancienne.rayonId, ancienne.jour, enTexte(d), enTexte(f))) continue
+      if (posteTropLong(collaborateur, f - d, ancienne.jour)) continue
       const horaire = posteSurMesure(d, f, estMineur(collaborateur), ancienne.jour)
       const nouvelle: Vacation = {
         ...ancienne,
@@ -1780,6 +1907,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
       const jeune = estMineur(collaborateur)
       for (const horaire of horairesDuCreneau(trou.rayonId, trou.jour, true)) {
         if (horaire.id.startsWith('contrat-j-') !== jeune) continue
+        if (posteTropLong(collaborateur, duree(horaire.debut, horaire.fin), trou.jour)) continue
         let gain = 0
         for (const index of tranchesDe.get(horaire.id) ?? []) {
           if (index * TRANCHE_MINUTES < trou.debut || index * TRANCHE_MINUTES >= trou.fin) continue
@@ -2047,6 +2175,7 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
           // Pas de micro-poste : on ne raccourcit pas sous la longueur minimale
           // (un poste deja court peut toujours etre allonge).
           if (f - d < Math.min(longueurMinimale(ancienne.rayonId, ancienne.jour), fin - debut)) continue
+          if (f - d > fin - debut && posteTropLong(collaborateur, f - d, ancienne.jour)) continue
           if (!dansLesBornes(ancienne.rayonId, ancienne.jour, enTexte(d), enTexte(f))) continue
           const horaire = posteSurMesure(d, f, jeune, ancienne.jour)
           const nouvelle: Vacation = {
@@ -2084,6 +2213,9 @@ export function genererLePlanning(entrees: EntreesGeneration): ResultatGeneratio
             const nouvelle = enVacation({ collaborateur, rayon, jour, horaire })
             const apres = ecart - minutesAuContrat(nouvelle, pausesPayees)
             if (Math.abs(apres) >= Math.abs(ecart)) continue
+            // Pas au-dela du depassement permis : un jour de plus ne doit pas
+            // faire passer de « 2 h 45 de moins » a « 1 h 45 de trop ».
+            if (-apres > depassementMaximum) continue
             retouches.push({
               ancienne: null,
               position: -1,
